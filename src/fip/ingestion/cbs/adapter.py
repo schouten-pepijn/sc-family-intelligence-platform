@@ -8,6 +8,7 @@ from fip.ingestion.base import RawRecord
 
 
 class CBSODataSource:
+    # Adapter for CBS OData API (Dutch statistics bureau)
     ENTITIES = ("Observations", "MeasureCodes", "PeriodenCodes", "RegioSCodes")
 
     name = "cbs_statline"
@@ -23,7 +24,7 @@ class CBSODataSource:
         self.base_url = f"https://datasets.cbs.nl/odata/v1/CBS/{table_id}"
 
     def iter_records(self, since: datetime | None = None) -> Iterator[RawRecord]:
-        # CBS OData pulls are full-table at this stage, so `since` is intentionally unused for now.
+        # Full-table pulls only; incremental sync not yet implemented
         _ = since
         for entity in self.ENTITIES:
             url: str | None = f"{self.base_url}/{entity}"
@@ -34,6 +35,7 @@ class CBSODataSource:
                 for row in data.get("value", []):
                     yield self._build_raw_record(entity, row)
 
+                # Follow OData pagination links until exhausted
                 url = data.get("@odata.nextLink")
 
     def healthcheck(self) -> bool:
@@ -49,6 +51,7 @@ class CBSODataSource:
         reraise=True,
     )
     def _get(self, url: str) -> dict:
+        # Retry transient network failures with exponential backoff
         with httpx.Client(timeout=30.0) as client:
             response = client.get(url)
             response.raise_for_status()

@@ -7,6 +7,7 @@ from typing import Iterator, Protocol
 
 @dataclass(frozen=True)
 class RawRecord:
+    # Immutable record of raw data retrieved from an external source
     source_name: str
     entity_name: str
     natural_key: str
@@ -18,6 +19,7 @@ class RawRecord:
 
 
 class Source(Protocol):
+    # Interface for data source adapters
     name: str
     schema_version: str
 
