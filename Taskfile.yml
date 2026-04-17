@@ -1,0 +1,87 @@
+version: "3"
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  env:
+    desc: Create .env from .env.template if it does not exist
+    cmds:
+      - >-
+        python -c "from pathlib import Path; src = Path('.env.template'); dst = Path('.env');
+        print('Created .env from .env.template') if not dst.exists() and dst.write_text(src.read_text())
+        is not None else print('.env already exists')"
+
+  install:
+    desc: Install project dependencies, including dev tools
+    cmds:
+      - uv sync --dev
+
+  format:
+    desc: Format the codebase
+    cmds:
+      - uv run ruff format .
+
+  lint:
+    desc: Run lint checks
+    cmds:
+      - uv run ruff check .
+
+  lint-fix:
+    desc: Run lint checks and apply safe fixes
+    cmds:
+      - uv run ruff check . --fix
+
+  typecheck:
+    desc: Run mypy on the src package
+    cmds:
+      - uv run mypy src
+
+  test:
+    desc: Run the test suite
+    cmds:
+      - uv run pytest
+
+  test-unit:
+    desc: Run unit tests only
+    cmds:
+      - uv run pytest tests/unit
+
+  check:
+    desc: Run the standard local quality gate
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: test
+
+  precommit:
+    desc: Run pre-commit on all files
+    cmds:
+      - uv run pre-commit run --all-files
+
+  version:
+    desc: Show the current configured version
+    cmds:
+      - uv run bump-my-version show current_version
+
+  version-show:
+    desc: Show which version bumps are available
+    cmds:
+      - uv run bump-my-version show-bump
+
+  bump-patch:
+    desc: Bump the patch version in pyproject.toml
+    cmds:
+      - uv run bump-my-version bump patch
+
+  bump-minor:
+    desc: Bump the minor version in pyproject.toml
+    cmds:
+      - uv run bump-my-version bump minor
+
+  bump-major:
+    desc: Bump the major version in pyproject.toml
+    cmds:
+      - uv run bump-my-version bump major
