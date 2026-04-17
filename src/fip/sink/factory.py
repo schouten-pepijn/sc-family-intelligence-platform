@@ -26,8 +26,6 @@ class IcebergSinkFactory:
 
         normalized_entity = self.ENTITY_TABLE_NAMES.get(entity)
         if normalized_entity is None:
-            raise ValueError(
-                f"Unknown entity name '{entity}'. No mapping to table name found."
-            )
+            raise ValueError(f"Unknown entity name '{entity}'. No mapping to table name found.")
 
         return f"{self.namespace}.cbs_{normalized_entity}_{table_id.lower()}"

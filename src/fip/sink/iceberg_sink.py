@@ -21,6 +21,7 @@ BRONZE_ROW_FIELDS = (
 
 class IcebergSink:
     def __init__(self, table_ident: str) -> None:
+        # TODO: move to injection
         self.table_ident = table_ident
         self.last_written: list[RawRecord] = []
         self.last_written_rows: list[dict[str, object]] = []
@@ -29,9 +30,7 @@ class IcebergSink:
         if records:
             first_entity = records[0].entity_name
             if any(record.entity_name != first_entity for record in records):
-                raise ValueError(
-                    "IcebergSink.write expects records for a single entity"
-                )
+                raise ValueError("IcebergSink.write expects records for a single entity")
 
         self.last_written = list(records)
         self.last_written_rows = [self._serialize_record(record) for record in records]
