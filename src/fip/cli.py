@@ -2,6 +2,13 @@ import typer
 
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.service import ingest_source_to_sink
+from fip.readback.duckdb import (
+    attach_lakekeeper_catalog,
+    connect as connect_duckdb,
+    count_rows,
+    load_extensions,
+    sample_rows,
+)
 from fip.settings import get_settings
 from fip.sink.factory import IcebergSinkFactory
 
@@ -31,6 +38,32 @@ def ingest_cbs(
 
     written = ingest_source_to_sink(source, sink_factory)
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
+
+
+@app.command("inspect-bronze")
+def inspect_bronze(
+    table_name: str = typer.Option(..., "--table", help="Bronze table name to inspect."),
+    namespace: str | None = typer.Option(
+        None,
+        help="Iceberg namespace to inspect. Defaults to configured bronze namespace.",
+    ),
+    limit: int = typer.Option(5, help="Number of sample rows to display."),
+) -> None:
+    con = connect_duckdb()
+
+    try:
+        load_extensions(con)
+        attach_lakekeeper_catalog(con)
+
+        row_count = count_rows(con, table_name=table_name, namespace=namespace)
+        rows = sample_rows(con, table_name=table_name, namespace=namespace, limit=limit)
+    finally:
+        con.close()
+
+    typer.echo(f"Row count: {row_count}")
+    typer.echo(f"Sample rows ({len(rows)}):")
+    for row in rows:
+        typer.echo(str(row))
 
 
 def main() -> None:
