@@ -1,0 +1,14 @@
+{
+  "value": [
+    {
+      "Id": 1,
+      "Measure": "A",
+      "Value": 123
+    },
+    {
+      "Id": 2,
+      "Measure": "B",
+      "Value": 456
+    }
+  ]
+}

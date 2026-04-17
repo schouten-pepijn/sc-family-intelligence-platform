@@ -1,0 +1,9 @@
+{
+  "value": [
+    {
+      "Id": 1,
+      "Value": 100
+    }
+  ],
+  "@odata.nextLink": "https://example.test/observations-page-2"
+}
