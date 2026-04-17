@@ -4,7 +4,16 @@ Personal data platform for comparing Dutch regions, municipalities, and later sp
 
 ## Current Phase
 
-The repo is in the foundation stage. The current goal is to set up a clean Python project structure before adding infrastructure, ingestion adapters, and dbt models.
+The repo is in the first end-to-end data-platform phase. The current direction is:
+
+- Docker:
+  - MinIO for object storage
+  - Trino for SQL access
+- Local:
+  - Python ingestion and write scripts
+  - DuckDB for validation and ad-hoc analysis
+
+The near-term goal is to make Python write Bronze datasets to MinIO, validate them locally with DuckDB, and keep Trino available as the SQL/query layer.
 
 ## Project Structure
 
@@ -17,6 +26,6 @@ The repo is in the foundation stage. The current goal is to set up a clean Pytho
 
 ## Near-Term Plan
 
-1. Finalize Python project configuration and developer tooling.
-2. Add local infrastructure definitions for MinIO, Polaris, and Trino.
-3. Implement the first CBS ingestion adapter and fixture-driven tests.
+1. Keep the local stack minimal: MinIO + Trino in Docker, Python + DuckDB locally.
+2. Replace the placeholder sink with a real Python write path to MinIO-backed Bronze/Iceberg data.
+3. Use DuckDB for local readback and validation before hardening the Trino side further.
