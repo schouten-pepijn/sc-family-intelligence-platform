@@ -11,8 +11,3 @@ repos:
     hooks:
       - id: ruff
       - id: ruff-format
-  - repo: https://github.com/callowayproject/bump-my-version
-    rev: 1.2.4
-    hooks:
-      - id: bump-my-version
-        args: ["show-bump"]
