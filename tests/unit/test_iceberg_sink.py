@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from fip.settings import Settings
 from fip.ingestion.base import RawRecord
 from fip.sink.iceberg_sink import BRONZE_ROW_FIELDS, IcebergSink
 
@@ -103,3 +104,51 @@ def test_iceberg_sink_to_arrow_table_uses_expected_schema() -> None:
 
     schema = sink._get_arrow_schema()
     assert table.schema == schema
+
+
+def test_iceberg_sink_namespace_returns_first_identifier_part() -> None:
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
+
+    assert sink._namespace() == "bronze"
+
+
+def test_iceberg_sink_load_catalog_uses_expected_lakekeeper_and_s3_settings(
+    monkeypatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_load_catalog(name: str, **properties: str) -> object:
+        captured["name"] = name
+        captured["properties"] = properties
+        return object()
+
+    monkeypatch.setattr(
+        "fip.sink.iceberg_sink.get_settings",
+        lambda: Settings(
+            lakekeeper_catalog_uri="http://localhost:8181/catalog",
+            lakekeeper_warehouse_name="local",
+            s3_endpoint="http://localhost:9000",
+            s3_access_key_id="minio",
+            s3_secret_access_key="minio123",
+            aws_region="local-01",
+            s3_path_style_access=True,
+        ),
+    )
+    monkeypatch.setattr("fip.sink.iceberg_sink.load_catalog", fake_load_catalog)
+
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
+
+    catalog = sink._load_catalog()
+
+    assert catalog is not None
+    assert captured["name"] == "lakekeeper"
+    assert captured["properties"] == {
+        "type": "rest",
+        "uri": "http://localhost:8181/catalog",
+        "warehouse": "local",
+        "s3.endpoint": "http://localhost:9000",
+        "s3.access-key-id": "minio",
+        "s3.secret-access-key": "minio123",
+        "s3.region": "local-01",
+        "s3.force-virtual-addressing": False,
+    }
