@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import Mock, patch
 
 import httpx
@@ -231,3 +232,20 @@ def test_cbs_source_get_raises_after_max_retries() -> None:
             raise AssertionError("Expected ConnectError after retry exhaustion")
 
     assert mock_get.call_count == 3
+
+
+def test_cbs_source_build_raw_record_maps_fields_correctly() -> None:
+    source = CBSODataSource(table_id="83625NED", run_id="run-001")
+    row = {"Id": 1, "Value": 123}
+
+    record = source._build_raw_record("Observations", row)
+
+    assert record.source_name == "cbs_statline"
+    assert record.entity_name == "83625NED.Observations"
+    assert record.natural_key == "1"
+    assert isinstance(record.retrieved_at, datetime)
+    assert record.retrieved_at.tzinfo is not None
+    assert record.run_id == "run-001"
+    assert record.payload == row
+    assert record.schema_version == "v1"
+    assert record.http_status == 200
