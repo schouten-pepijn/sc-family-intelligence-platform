@@ -9,6 +9,16 @@ wheels/
 # Virtual environments
 .venv
 
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.dagster_home/
+
+# Local environment files
+.env
+.env.*
+!.env.template
 
 # local files
 own_docs/

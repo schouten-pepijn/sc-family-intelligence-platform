@@ -1,0 +1,21 @@
+* text=auto eol=lf
+
+# Python
+*.py text eol=lf
+
+# Shell
+*.sh text eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+
+# Data bestanden
+*.csv text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+
+# Binary (belangrijk)
+*.parquet binary
+*.zip binary
+*.png binary
+*.jpg binary
