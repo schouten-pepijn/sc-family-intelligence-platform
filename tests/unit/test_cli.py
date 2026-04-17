@@ -13,17 +13,17 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
             calls["table_id"] = table_id
             calls["run_id"] = run_id
 
-    class FakeSink:
-        def __init__(self, table_ident: str) -> None:
-            calls["target_table"] = table_ident
+    class FakeSinkFactory:
+        def __init__(self, prefix: str) -> None:
+            calls["target_prefix"] = prefix
 
-    def fake_ingest_source_to_sink(source, sink) -> int:
+    def fake_ingest_source_to_sink(source, sink_factory) -> int:
         calls["source"] = source
-        calls["sink"] = sink
+        calls["sink_factory"] = sink_factory
         return 7
 
     monkeypatch.setattr(cli, "CBSODataSource", FakeSource)
-    monkeypatch.setattr(cli, "IcebergSink", FakeSink)
+    monkeypatch.setattr(cli, "IcebergSinkFactory", FakeSinkFactory)
     monkeypatch.setattr(cli, "ingest_source_to_sink", fake_ingest_source_to_sink)
 
     result = runner.invoke(
@@ -34,13 +34,13 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
             "83625NED",
             "--run-id",
             "run-001",
-            "--target-table",
-            "bronze.cbs.observations_83625ned",
+            "--target-prefix",
+            "bronze.cbs",
         ],
     )
 
     assert result.exit_code == 0
-    assert result.stdout == "Wrote 7 records to bronze.cbs.observations_83625ned\n"
+    assert result.stdout == "Wrote 7 records using sink prefix bronze.cbs\n"
     assert calls["table_id"] == "83625NED"
     assert calls["run_id"] == "run-001"
-    assert calls["target_table"] == "bronze.cbs.observations_83625ned"
+    assert calls["target_prefix"] == "bronze.cbs"
