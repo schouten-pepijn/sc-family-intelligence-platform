@@ -144,8 +144,8 @@ def test_iceberg_sink_load_catalog_uses_expected_lakekeeper_and_s3_settings(
         "fip.sink.iceberg_sink.get_settings",
         lambda: Settings(
             lakekeeper_catalog_uri="http://localhost:8181/catalog",
-            lakekeeper_warehouse_name="local",
-            s3_endpoint="http://localhost:9000",
+            lakekeeper_warehouse_name="local-host",
+            s3_endpoint="http://192.168.1.89:9000",
             s3_access_key_id="minio",
             s3_secret_access_key="minio123",
             aws_region="local-01",
@@ -163,8 +163,8 @@ def test_iceberg_sink_load_catalog_uses_expected_lakekeeper_and_s3_settings(
     assert captured["properties"] == {
         "type": "rest",
         "uri": "http://localhost:8181/catalog",
-        "warehouse": "local",
-        "s3.endpoint": "http://localhost:9000",
+        "warehouse": "local-host",
+        "s3.endpoint": "http://192.168.1.89:9000",
         "s3.access-key-id": "minio",
         "s3.secret-access-key": "minio123",
         "s3.region": "local-01",
