@@ -106,8 +106,8 @@ def test_iceberg_sink_to_arrow_table_returns_expected_row_count_and_columns() ->
     sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
     records = [make_raw_record("1"), make_raw_record("2")]
 
-    sink.write(records)
-    table = sink._to_arrow_table(sink.last_written_rows)
+    rows = [sink._serialize_record(record) for record in records]
+    table = sink._to_arrow_table(rows)
 
     assert table.num_rows == 2
     assert table.column_names == list(BRONZE_ROW_FIELDS)
@@ -117,8 +117,8 @@ def test_iceberg_sink_to_arrow_table_uses_expected_schema() -> None:
     sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
     records = [make_raw_record("1")]
 
-    sink.write(records)
-    table = sink._to_arrow_table(sink.last_written_rows)
+    rows = [sink._serialize_record(record) for record in records]
+    table = sink._to_arrow_table(rows)
 
     schema = sink._get_arrow_schema()
     assert table.schema == schema
