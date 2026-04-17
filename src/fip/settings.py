@@ -13,8 +13,6 @@ class Settings(BaseSettings):
         default="bronze",
         validation_alias=AliasChoices("FIP_BRONZE_NAMESPACE", "BRONZE_NAMESPACE"),
     )
-<<<<<<< Updated upstream
-=======
     lakekeeper_warehouse_name: str = Field(
         default="local",
         validation_alias="LAKEKEEPER_WAREHOUSE_NAME",
@@ -39,7 +37,6 @@ class Settings(BaseSettings):
         default=True,
         validation_alias="S3_PATH_STYLE_ACCESS",
     )
->>>>>>> Stashed changes
 
     model_config = SettingsConfigDict(
         env_file=(".env", ".env.template"),
