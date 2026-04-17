@@ -31,6 +31,21 @@ def test_iceberg_sink_initializes_with_table_ident() -> None:
 def test_iceberg_sink_write_returns_number_of_records() -> None:
     sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
     records = [make_raw_record("1"), make_raw_record("2")]
+    calls: dict[str, object] = {}
+
+    class FakeTable:
+        def append(
+            self,
+            df: pa.Table,
+            snapshot_properties: dict[str, str] | None = None,
+            branch: str | None = None,
+        ) -> None:
+            calls["df"] = df
+            calls["snapshot_properties"] = snapshot_properties
+            calls["branch"] = branch
+
+    sink._load_catalog = lambda: object()  # type: ignore[method-assign]
+    sink._ensure_table = lambda catalog, arrow_schema: FakeTable()  # type: ignore[method-assign]
 
     written = sink.write(records)
 
