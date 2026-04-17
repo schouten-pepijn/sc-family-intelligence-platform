@@ -39,6 +39,17 @@ class IcebergSink:
             return 0
 
         arrow_table = self._to_arrow_table(self.last_written_rows)
+        catalog = self._load_catalog()
+        table = self._ensure_table(catalog, arrow_table.schema)
+        # append style in bronze
+        table.append(
+            arrow_table,
+            snapshot_properties={
+                "fip.run_id": records[0].run_id,
+                "fip.entity_name": records[0].entity_name,
+                "fip.source_name": records[0].source_name,
+            },
+        )
 
         return len(records)
 
