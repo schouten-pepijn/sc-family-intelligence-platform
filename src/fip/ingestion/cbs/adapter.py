@@ -51,6 +51,11 @@ class CBSODataSource:
         except httpx.HTTPError:
             return False
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
     def _get(self, url: str) -> dict:
         with httpx.Client(timeout=30.0) as client:
             response = client.get(url)

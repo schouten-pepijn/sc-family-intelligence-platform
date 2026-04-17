@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import httpx
 
@@ -194,3 +194,40 @@ def test_cbs_source_natural_key_for_row_raises_when_id_is_missing() -> None:
             raise AssertionError("Expected ValueError when Id is missing")
 
     mock_get.assert_called_once_with(f"{source.base_url}/Observations")
+
+
+def test_cbs_source_get_retries_and_eventually_succeeds() -> None:
+    source = CBSODataSource(table_id="83625NED", run_id="run-001")
+
+    response = Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {"value": []}
+
+    with patch("fip.ingestion.cbs.adapter.httpx.Client.get") as mock_get:
+        mock_get.side_effect = [
+            httpx.ConnectError("temporary failure"),
+            httpx.ConnectError("temporary failure"),
+            response,
+        ]
+
+        result = source._get("https://example.test/data")
+
+    assert result == {"value": []}
+    assert mock_get.call_count == 3
+
+
+def test_cbs_source_get_raises_after_max_retries() -> None:
+    source = CBSODataSource(table_id="83625NED", run_id="run-001")
+
+    with patch(
+        "fip.ingestion.cbs.adapter.httpx.Client.get",
+        side_effect=httpx.ConnectError("temporary failure"),
+    ) as mock_get:
+        try:
+            source._get("https://example.test/data")
+        except httpx.ConnectError as exc:
+            assert str(exc) == "temporary failure"
+        else:
+            raise AssertionError("Expected ConnectError after retry exhaustion")
+
+    assert mock_get.call_count == 3
