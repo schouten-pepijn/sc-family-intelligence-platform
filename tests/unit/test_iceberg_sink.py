@@ -21,6 +21,7 @@ def test_iceberg_sink_initializes_with_table_ident() -> None:
 
     assert sink.table_ident == "bronze.cbs.observations_83625ned"
     assert sink.last_written == []
+    assert sink.last_written_rows == []
 
 
 def test_iceberg_sink_write_returns_number_of_records() -> None:
@@ -31,6 +32,14 @@ def test_iceberg_sink_write_returns_number_of_records() -> None:
 
     assert written == 2
     assert sink.last_written == records
+    assert len(sink.last_written_rows) == 2
+    assert sink.last_written_rows[0]["source_name"] == "cbs_statline"
+    assert sink.last_written_rows[0]["entity_name"] == "83625NED.Observations"
+    assert sink.last_written_rows[0]["natural_key"] == "1"
+    assert sink.last_written_rows[0]["run_id"] == "run-001"
+    assert sink.last_written_rows[0]["schema_version"] == "v1"
+    assert sink.last_written_rows[0]["http_status"] == 200
+    assert sink.last_written_rows[0]["payload"] == '{"Id": "1"}'
 
 
 def test_iceberg_sink_write_returns_zero_for_empty_input() -> None:
@@ -40,6 +49,7 @@ def test_iceberg_sink_write_returns_zero_for_empty_input() -> None:
 
     assert written == 0
     assert sink.last_written == []
+    assert sink.last_written_rows == []
 
 
 def test_iceberg_sink_write_raises_for_mixed_entity_names() -> None:
