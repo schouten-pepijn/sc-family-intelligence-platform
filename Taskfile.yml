@@ -52,6 +52,7 @@ tasks:
   check:
     desc: Run the standard local quality gate
     cmds:
+      - task: format
       - task: lint
       - task: typecheck
       - task: test
