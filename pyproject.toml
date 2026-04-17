@@ -6,12 +6,7 @@ build-backend = "hatchling.build"
 packages = ["src/fip"]
 
 [tool.hatch.build.targets.sdist]
-include = [
-    "/src",
-    "/README.md",
-    "/pyproject.toml",
-    "/Taskfile.yml",
-]
+include = ["/src", "/README.md", "/pyproject.toml", "/Taskfile.yml"]
 
 [project]
 name = "family-intelligence-platform"
@@ -19,10 +14,10 @@ version = "0.1.0"
 description = "Personal region and housing intelligence platform for family-oriented location decisions."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [
-    "pandas>=3.0.2",
-    "requests>=2.33.1",
-]
+dependencies = ["pandas>=3.0.2", "requests>=2.33.1"]
+
+[project.scripts]
+fip = "fip.cli:main"
 
 [dependency-groups]
 dev = [
