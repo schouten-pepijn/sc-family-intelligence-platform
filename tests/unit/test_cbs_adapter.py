@@ -18,8 +18,10 @@ def test_cbs_source_initializes_with_expected_values() -> None:
 def test_cbs_source_healthcheck_returns_true_when_get_succeeds() -> None:
     source = CBSODataSource(table_id="83625NED", run_id="run-001")
 
-    with patch.object(source, "_get", return_value={"value": []}):
+    with patch.object(source, "_get", return_value={"value": []}) as mock_get:
         assert source.healthcheck() is True
+
+    mock_get.assert_called_once_with(source.base_url)
 
 
 def test_cbs_source_healthcheck_returns_false_when_get_fails() -> None:
@@ -50,3 +52,26 @@ def test_cbs_source_iter_records_returns_raw_records_for_observations() -> None:
     assert records[0].run_id == "run-001"
     assert records[0].payload == {"Id": 1, "Measure": "A", "Value": 123}
     assert records[0].schema_version == "v1"
+
+
+def test_cbs_source_iter_records_follows_odata_next_link() -> None:
+    source = CBSODataSource(table_id="83625NED", run_id="run-001")
+
+    first_page = {
+        "value": [{"Id": 1, "Value": 123}],
+        "@odata.nextLink": "https://example.test/page-2",
+    }
+    second_page = {
+        "value": [{"Id": 2, "Value": 456}],
+    }
+
+    with patch.object(source, "_get", side_effect=[first_page, second_page]) as mock_get:
+        records = list(source.iter_records())
+
+    assert len(records) == 2
+    assert records[0].natural_key == "1"
+    assert records[1].natural_key == "2"
+
+    assert mock_get.call_count == 2
+    mock_get.assert_any_call(f"{source.base_url}/Observations")
+    mock_get.assert_any_call("https://example.test/page-2")
