@@ -174,6 +174,14 @@ def test_cbs_source_natural_key_for_row_returns_id_as_string() -> None:
     assert source._natural_key_for_row("Observations", {"Id": 1, "Value": 123}) == "1"
 
 
+def test_cbs_source_natural_key_for_row_returns_key_for_metadata_entity() -> None:
+    source = CBSODataSource(table_id="83625NED", run_id="run-001")
+
+    assert (
+        source._natural_key_for_row("MeasureCodes", {"Key": "M001", "Title": "Measure A"}) == "M001"
+    )
+
+
 def test_cbs_source_natural_key_for_row_raises_when_id_is_missing() -> None:
     source = CBSODataSource(table_id="83625NED", run_id="run-001")
 
@@ -181,7 +189,7 @@ def test_cbs_source_natural_key_for_row_raises_when_id_is_missing() -> None:
         try:
             list(source.iter_records())
         except ValueError as exc:
-            assert str(exc) == "Missing Id for CBS entity 'Observations'"
+            assert str(exc) == "Missing natural key for CBS entity 'Observations'. Tried fields: Id"
         else:
             raise AssertionError("Expected ValueError when Id is missing")
 
