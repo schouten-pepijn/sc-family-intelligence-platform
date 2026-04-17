@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
+from typing import cast
 
-from fip.settings import Settings
+import pyarrow as pa
+
 from fip.ingestion.base import RawRecord
+from fip.settings import Settings
 from fip.sink.iceberg_sink import BRONZE_ROW_FIELDS, IcebergSink
 
 
