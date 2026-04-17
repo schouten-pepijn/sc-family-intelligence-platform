@@ -37,6 +37,10 @@ class Settings(BaseSettings):
         default=True,
         validation_alias="S3_PATH_STYLE_ACCESS",
     )
+    duckdb_path: str = Field(
+        default=".duckdb/fip.duckdb",
+        validation_alias="DUCKDB_PATH",
+    )
 
     model_config = SettingsConfigDict(
         env_file=(".env", ".env.template"),
