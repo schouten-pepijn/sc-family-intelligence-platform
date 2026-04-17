@@ -10,6 +10,12 @@ from fip.ingestion.base import RawRecord
 class CBSODataSource:
     # Adapter for CBS OData API (Dutch statistics bureau)
     ENTITIES = ("Observations", "MeasureCodes", "PeriodenCodes", "RegioSCodes")
+    ENTITY_KEY_FIELDS = {
+        "Observations": ("Id",),
+        "MeasureCodes": ("Id", "Key", "Identifier"),
+        "PeriodenCodes": ("Id", "Key", "Identifier"),
+        "RegioSCodes": ("Id", "Key", "Identifier"),
+    }
 
     name = "cbs_statline"
     schema_version = "v1"
@@ -58,10 +64,14 @@ class CBSODataSource:
             return response.json()
 
     def _natural_key_for_row(self, entity: str, row: dict) -> str:
-        record_id = row.get("Id")
-        if record_id is None:
-            raise ValueError(f"Missing Id for CBS entity '{entity}'")
-        return str(record_id)
+        for field in self.ENTITY_KEY_FIELDS.get(entity, ("Id", "Key", "Identifier")):
+            record_id = row.get(field)
+            if record_id is not None:
+                return str(record_id)
+        raise ValueError(
+            f"Missing natural key for CBS entity '{entity}'. Tried fields: "
+            f"{', '.join(self.ENTITY_KEY_FIELDS.get(entity, ('Id', 'Key', 'Identifier')))}"
+        )
 
     def _build_raw_record(self, entity: str, row: dict) -> RawRecord:
         return RawRecord(
