@@ -14,7 +14,7 @@ The repo is in the first end-to-end data-platform phase. The current direction i
   - Python ingestion and write scripts
   - DuckDB for validation and ad-hoc analysis against Iceberg data
 
-The near-term goal is to land raw source snapshots in MinIO, write Bronze and Silver Iceberg tables through Lakekeeper, validate them locally with DuckDB, and materialize Gold tables in Postgres.
+The near-term goal is to build the first Silver Iceberg table on top of the now-working Bronze write and DuckDB readback path, and only then materialize Gold tables in Postgres.
 
 ## Project Structure
 
@@ -28,8 +28,9 @@ The near-term goal is to land raw source snapshots in MinIO, write Bronze and Si
 ## Near-Term Plan
 
 1. Keep the local stack focused: MinIO + Postgres + Lakekeeper in Docker, Python + DuckDB locally.
-2. Replace the placeholder sink with a real Python write path to Lakekeeper-backed Bronze Iceberg data on MinIO.
-3. Use DuckDB for local readback and validation before building Silver and Gold flows.
+2. Bronze Iceberg writes through Lakekeeper are working.
+3. DuckDB readback and the `inspect-bronze` CLI path are working.
+4. The next implementation step is the first Silver transform.
 
 ## Local Infra
 
