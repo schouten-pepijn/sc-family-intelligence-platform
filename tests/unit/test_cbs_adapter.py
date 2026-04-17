@@ -174,3 +174,23 @@ def test_cbs_source_iter_records_handles_pagination_across_entities() -> None:
     mock_get.assert_any_call(f"{source.base_url}/MeasureCodes")
     mock_get.assert_any_call(f"{source.base_url}/PeriodenCodes")
     mock_get.assert_any_call(f"{source.base_url}/RegioSCodes")
+
+
+def test_cbs_source_natural_key_for_row_returns_id_as_string() -> None:
+    source = CBSODataSource(table_id="83625NED", run_id="run-001")
+
+    assert source._natural_key_for_row("Observations", {"Id": 1, "Value": 123}) == "1"
+
+
+def test_cbs_source_natural_key_for_row_raises_when_id_is_missing() -> None:
+    source = CBSODataSource(table_id="83625NED", run_id="run-001")
+
+    with patch.object(source, "_get", return_value={"value": [{"Value": 123}]}) as mock_get:
+        try:
+            list(source.iter_records())
+        except ValueError as exc:
+            assert str(exc) == "Missing Id for CBS entity 'Observations'"
+        else:
+            raise AssertionError("Expected ValueError when Id is missing")
+
+    mock_get.assert_called_once_with(f"{source.base_url}/Observations")
