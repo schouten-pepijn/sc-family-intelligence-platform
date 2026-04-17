@@ -3,6 +3,8 @@ import typer
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.service import ingest_source_to_sink
 from fip.sink.factory import IcebergSinkFactory
+from fip.settings import get_settings
+
 
 app = typer.Typer(help="Family Intelligence Platform CLI.")
 
@@ -17,13 +19,19 @@ def main_callback() -> None:
 def ingest_cbs(
     table_id: str = typer.Option(..., help="CBS table id, for example 83625NED."),
     run_id: str = typer.Option(..., help="Run identifier for this ingestion."),
-    target_prefix: str = typer.Option("bronze.cbs", help="Target sink table prefix."),
+    target_namespace: str | None = typer.Option(
+        None,
+        help="Target Iceberg namespace.",
+    ),
 ) -> None:
+    if target_namespace is None:
+        target_namespace = get_settings().bronze_namespace
+
     source = CBSODataSource(table_id=table_id, run_id=run_id)
-    sink_factory = IcebergSinkFactory(prefix=target_prefix)
+    sink_factory = IcebergSinkFactory(namespace=target_namespace)
 
     written = ingest_source_to_sink(source, sink_factory)
-    typer.echo(f"Wrote {written} records using sink prefix {target_prefix}")
+    typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
 
 
 def main() -> None:

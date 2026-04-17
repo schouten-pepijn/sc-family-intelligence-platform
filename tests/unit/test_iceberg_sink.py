@@ -17,15 +17,15 @@ def make_raw_record(natural_key: str) -> RawRecord:
 
 
 def test_iceberg_sink_initializes_with_table_ident() -> None:
-    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
 
-    assert sink.table_ident == "bronze.cbs.observations_83625ned"
+    assert sink.table_ident == "bronze.cbs_observations_83625ned"
     assert sink.last_written == []
     assert sink.last_written_rows == []
 
 
 def test_iceberg_sink_write_returns_number_of_records() -> None:
-    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
     records = [make_raw_record("1"), make_raw_record("2")]
 
     written = sink.write(records)
@@ -43,7 +43,7 @@ def test_iceberg_sink_write_returns_number_of_records() -> None:
 
 
 def test_iceberg_sink_write_returns_zero_for_empty_input() -> None:
-    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
 
     written = sink.write([])
 
@@ -53,7 +53,7 @@ def test_iceberg_sink_write_returns_zero_for_empty_input() -> None:
 
 
 def test_iceberg_sink_write_raises_for_mixed_entity_names() -> None:
-    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
     records = [
         make_raw_record("1"),
         RawRecord(
@@ -76,7 +76,7 @@ def test_iceberg_sink_write_raises_for_mixed_entity_names() -> None:
 
 
 def test_iceberg_sink_serialized_row_has_expected_fields() -> None:
-    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
 
     row = sink._serialize_record(make_raw_record("1"))
 
@@ -84,7 +84,7 @@ def test_iceberg_sink_serialized_row_has_expected_fields() -> None:
 
 
 def test_iceberg_sink_to_arrow_table_returns_expected_row_count_and_columns() -> None:
-    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
     records = [make_raw_record("1"), make_raw_record("2")]
 
     sink.write(records)
@@ -95,7 +95,7 @@ def test_iceberg_sink_to_arrow_table_returns_expected_row_count_and_columns() ->
 
 
 def test_iceberg_sink_to_arrow_table_uses_expected_schema() -> None:
-    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
     records = [make_raw_record("1")]
 
     sink.write(records)

@@ -8,7 +8,7 @@ def test_iceberg_sink_factory_routes_observations_entity_to_expected_table() -> 
     sink = factory.for_entity("83625NED.Observations")
 
     assert isinstance(sink, IcebergSink)
-    assert sink.table_ident == "bronze.cbs.observations_83625ned"
+    assert sink.table_ident == "bronze.cbs_observations_83625ned"
 
 
 def test_iceberg_sink_factory_routes_measure_codes_entity_to_expected_table() -> None:
@@ -17,7 +17,7 @@ def test_iceberg_sink_factory_routes_measure_codes_entity_to_expected_table() ->
     sink = factory.for_entity("83625NED.MeasureCodes")
 
     assert isinstance(sink, IcebergSink)
-    assert sink.table_ident == "bronze.cbs.measure_codes_83625ned"
+    assert sink.table_ident == "bronze.cbs_measure_codes_83625ned"
 
 
 def test_iceberg_sink_factory_raises_for_invalid_entity_name_format() -> None:

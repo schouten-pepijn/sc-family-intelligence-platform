@@ -14,8 +14,8 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
             calls["run_id"] = run_id
 
     class FakeSinkFactory:
-        def __init__(self, prefix: str) -> None:
-            calls["target_prefix"] = prefix
+        def __init__(self, namespace: str) -> None:
+            calls["target_namespace"] = namespace
 
     def fake_ingest_source_to_sink(source, sink_factory) -> int:
         calls["source"] = source
@@ -34,13 +34,13 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
             "83625NED",
             "--run-id",
             "run-001",
-            "--target-prefix",
-            "bronze.cbs",
+            "--target-namespace",
+            "bronze",
         ],
     )
 
     assert result.exit_code == 0
-    assert result.stdout == "Wrote 7 records using sink prefix bronze.cbs\n"
+    assert result.stdout == "Wrote 7 records using sink namespace bronze\n"
     assert calls["table_id"] == "83625NED"
     assert calls["run_id"] == "run-001"
-    assert calls["target_prefix"] == "bronze.cbs"
+    assert calls["target_namespace"] == "bronze"

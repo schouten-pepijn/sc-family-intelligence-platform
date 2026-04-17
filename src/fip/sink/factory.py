@@ -9,8 +9,8 @@ class IcebergSinkFactory:
         "RegioSCodes": "regios_codes",
     }
 
-    def __init__(self, prefix: str = "bronze.cbs") -> None:
-        self.prefix = prefix
+    def __init__(self, namespace: str = "bronze") -> None:
+        self.namespace = namespace
 
     def for_entity(self, entity_name: str) -> IcebergSink:
         table_ident = self._table_ident_for_entity(entity_name)
@@ -26,6 +26,8 @@ class IcebergSinkFactory:
 
         normalized_entity = self.ENTITY_TABLE_NAMES.get(entity)
         if normalized_entity is None:
-            raise ValueError(f"Unknown entity name '{entity}'. No mapping to table name found.")
+            raise ValueError(
+                f"Unknown entity name '{entity}'. No mapping to table name found."
+            )
 
-        return f"{self.prefix}.{normalized_entity}_{table_id.lower()}"
+        return f"{self.namespace}.cbs_{normalized_entity}_{table_id.lower()}"
