@@ -168,5 +168,94 @@ def test_iceberg_sink_load_catalog_uses_expected_lakekeeper_and_s3_settings(
         "s3.access-key-id": "minio",
         "s3.secret-access-key": "minio123",
         "s3.region": "local-01",
-        "s3.force-virtual-addressing": False,
+        "s3.force-virtual-addressing": "false",
     }
+
+
+def test_iceberg_sink_write_loads_catalog_and_ensures_table(monkeypatch) -> None:
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
+    records = [make_raw_record("1")]
+
+    fake_catalog = object()
+    calls: dict[str, object] = {}
+
+    class FakeTable:
+        def append(
+            self,
+            df: pa.Table,
+            snapshot_properties: dict[str, str] | None = None,
+            branch: str | None = None,
+        ) -> None:
+            calls["df"] = df
+            calls["snapshot_properties"] = snapshot_properties
+            calls["branch"] = branch
+
+    def fake_load_catalog() -> object:
+        calls["load_catalog_called"] = True
+        return fake_catalog
+
+    def fake_ensure_table(catalog: object, arrow_schema: pa.Schema) -> FakeTable:
+        calls["catalog"] = catalog
+        calls["arrow_schema"] = arrow_schema
+        return FakeTable()
+
+    monkeypatch.setattr(sink, "_load_catalog", fake_load_catalog)
+    monkeypatch.setattr(sink, "_ensure_table", fake_ensure_table)
+
+    written = sink.write(records)
+
+    assert written == 1
+    assert calls["load_catalog_called"] is True
+    assert calls["catalog"] is fake_catalog
+    assert calls["arrow_schema"] == sink._get_arrow_schema()
+    assert calls["snapshot_properties"] == {
+        "fip.run_id": "run-001",
+        "fip.entity_name": "83625NED.Observations",
+        "fip.source_name": "cbs_statline",
+    }
+
+
+def test_iceberg_sink_write_appends_arrow_table_with_snapshot_properties(
+    monkeypatch,
+) -> None:
+    sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
+    records = [make_raw_record("1")]
+
+    fake_catalog = object()
+    calls: dict[str, object] = {}
+
+    class FakeTable:
+        def append(
+            self,
+            df: pa.Table,
+            snapshot_properties: dict[str, str] | None = None,
+            branch: str | None = None,
+        ) -> None:
+            calls["df"] = df
+            calls["snapshot_properties"] = snapshot_properties
+            calls["branch"] = branch
+
+    def fake_load_catalog() -> object:
+        return fake_catalog
+
+    def fake_ensure_table(catalog: object, arrow_schema: pa.Schema) -> FakeTable:
+        calls["catalog"] = catalog
+        calls["arrow_schema"] = arrow_schema
+        return FakeTable()
+
+    monkeypatch.setattr(sink, "_load_catalog", fake_load_catalog)
+    monkeypatch.setattr(sink, "_ensure_table", fake_ensure_table)
+
+    written = sink.write(records)
+
+    assert written == 1
+    assert calls["catalog"] is fake_catalog
+    assert calls["arrow_schema"] == sink._get_arrow_schema()
+    arrow_table = cast(pa.Table, calls["df"])
+    assert arrow_table.schema == sink._get_arrow_schema()
+    assert calls["snapshot_properties"] == {
+        "fip.run_id": "run-001",
+        "fip.entity_name": "83625NED.Observations",
+        "fip.source_name": "cbs_statline",
+    }
+    assert calls["branch"] is None
