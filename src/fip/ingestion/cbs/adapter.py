@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Iterator
 
 import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from fip.ingestion.base import RawRecord
 
