@@ -4,10 +4,12 @@ from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.service import ingest_source_to_sink
 from fip.readback.duckdb import (
     attach_lakekeeper_catalog,
-    connect as connect_duckdb,
     count_rows,
     load_extensions,
     sample_rows,
+)
+from fip.readback.duckdb import (
+    connect as connect_duckdb,
 )
 from fip.settings import get_settings
 from fip.sink.factory import IcebergSinkFactory
