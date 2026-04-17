@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import duckdb
 
 from fip.settings import get_settings
@@ -5,7 +7,9 @@ from fip.settings import get_settings
 
 def connect() -> duckdb.DuckDBPyConnection:
     settings = get_settings()
-    conn = duckdb.connect(settings.duckdb_path)
+    duckdb_path = Path(settings.duckdb_path)
+    duckdb_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = duckdb.connect(str(duckdb_path))
     return conn
 
 
@@ -35,18 +39,24 @@ def attach_lakekeeper_catalog(
 
 def show_tables(
     conn: duckdb.DuckDBPyConnection,
-    namespace: str = "bronze",
+    namespace: str | None = None,
     alias: str = "lakekeeper_catalog",
 ) -> list[tuple]:
+    if namespace is None:
+        namespace = get_settings().bronze_namespace
+
     return conn.execute(f"SHOW TABLES FROM {alias}.{namespace}").fetchall()
 
 
 def count_rows(
     conn: duckdb.DuckDBPyConnection,
     table_name: str,
-    namespace: str = "bronze",
+    namespace: str | None = None,
     alias: str = "lakekeeper_catalog",
 ) -> int:
+    if namespace is None:
+        namespace = get_settings().bronze_namespace
+
     result = conn.execute(f"SELECT COUNT(*) FROM {alias}.{namespace}.{table_name}").fetchone()
 
     if result is None:
@@ -59,7 +69,10 @@ def sample_rows(
     conn: duckdb.DuckDBPyConnection,
     table_name: str,
     limit: int = 5,
-    namespace: str = "bronze",
+    namespace: str | None = None,
     alias: str = "lakekeeper_catalog",
 ) -> list[tuple]:
+    if namespace is None:
+        namespace = get_settings().bronze_namespace
+
     return conn.execute(f"SELECT * FROM {alias}.{namespace}.{table_name} LIMIT {limit}").fetchall()
