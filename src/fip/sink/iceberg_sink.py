@@ -88,19 +88,20 @@ class IcebergSink:
 
     def _load_catalog(self) -> Catalog:
         settings = get_settings()
+        properties: dict[str, str] = {
+            "s3.endpoint": settings.s3_endpoint,
+            "s3.access-key-id": settings.s3_access_key_id,
+            "s3.secret-access-key": settings.s3_secret_access_key,
+            "s3.region": settings.aws_region,
+            "s3.force-virtual-addressing": str(not settings.s3_path_style_access).lower(),
+        }
 
         return load_catalog(
             "lakekeeper",
             type="rest",
             uri=settings.lakekeeper_catalog_uri,
             warehouse=settings.lakekeeper_warehouse_name,
-            **{
-                "s3.endpoint": settings.s3_endpoint,
-                "s3.access-key-id": settings.s3_access_key_id,
-                "s3.secret-access-key": settings.s3_secret_access_key,
-                "s3.region": settings.aws_region,
-                "s3.force-virtual-addressing": not settings.s3_path_style_access,
-            },
+            **properties,
         )
 
     def _ensure_namespace(self, catalog: Catalog) -> None:
