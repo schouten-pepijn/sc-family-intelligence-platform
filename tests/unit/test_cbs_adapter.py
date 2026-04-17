@@ -29,7 +29,24 @@ def test_cbs_source_healthcheck_returns_false_when_get_fails() -> None:
         assert source.healthcheck() is False
 
 
-def test_cbs_source_iter_records_is_empty_for_now() -> None:
+def test_cbs_source_iter_records_returns_raw_records_for_observations() -> None:
     source = CBSODataSource(table_id="83625NED", run_id="run-001")
 
-    assert list(source.iter_records()) == []
+    payload = {
+        "value": [
+            {"Id": 1, "Measure": "A", "Value": 123},
+            {"Id": 2, "Measure": "B", "Value": 456},
+        ]
+    }
+
+    with patch.object(source, "_get", return_value=payload) as mock_get:
+        records = list(source.iter_records())
+
+    mock_get.assert_called_once_with(f"{source.base_url}/Observations")
+    assert len(records) == 2
+    assert records[0].source_name == "cbs_statline"
+    assert records[0].entity_name == "83625NED.Observations"
+    assert records[0].natural_key == "1"
+    assert records[0].run_id == "run-001"
+    assert records[0].payload == {"Id": 1, "Measure": "A", "Value": 123}
+    assert records[0].schema_version == "v1"
