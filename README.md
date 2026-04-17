@@ -8,12 +8,13 @@ The repo is in the first end-to-end data-platform phase. The current direction i
 
 - Docker:
   - MinIO for object storage
-  - Trino for SQL access
+  - Postgres for Lakekeeper persistence and gold serving
+  - Lakekeeper as the Iceberg REST catalog
 - Local:
   - Python ingestion and write scripts
-  - DuckDB for validation and ad-hoc analysis
+  - DuckDB for validation and ad-hoc analysis against Iceberg data
 
-The near-term goal is to make Python write Bronze datasets to MinIO, validate them locally with DuckDB, and keep Trino available as the SQL/query layer.
+The near-term goal is to land raw source snapshots in MinIO, write Bronze and Silver Iceberg tables through Lakekeeper, validate them locally with DuckDB, and materialize Gold tables in Postgres.
 
 ## Project Structure
 
