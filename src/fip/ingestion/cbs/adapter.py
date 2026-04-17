@@ -22,17 +22,23 @@ class CBSODataSource:
     def iter_records(self, since: datetime | None = None) -> Iterator[RawRecord]:
         # CBS OData pulls are full-table at this stage, so `since` is intentionally unused for now.
         _ = since
-        data = self._get(f"{self.base_url}/Observations")
-        for row in data.get("value", []):
-            yield RawRecord(
-                source_name=self.name,
-                entity_name=f"{self.table_id}.Observations",
-                natural_key=str(row.get("Id", row)),
-                retrieved_at=datetime.now(timezone.utc),
-                run_id=self.run_id,
-                payload=row,
-                schema_version=self.schema_version,
-            )
+        url = f"{self.base_url}/Observations"
+
+        while url:
+            data = self._get(url)
+
+            for row in data.get("value", []):
+                yield RawRecord(
+                    source_name=self.name,
+                    entity_name=f"{self.table_id}.Observations",
+                    natural_key=str(row.get("Id", row)),
+                    retrieved_at=datetime.now(timezone.utc),
+                    run_id=self.run_id,
+                    payload=row,
+                    schema_version=self.schema_version,
+                )
+
+            url = data.get("@odata.nextLink")
 
     def healthcheck(self) -> bool:
         try:
