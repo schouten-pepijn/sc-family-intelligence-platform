@@ -19,6 +19,26 @@ tasks:
     cmds:
       - uv sync --dev
 
+  infra-up:
+    desc: Start the local MinIO and Trino stack
+    cmds:
+      - docker compose up -d
+
+  infra-down:
+    desc: Stop the local MinIO and Trino stack
+    cmds:
+      - docker compose down
+
+  infra-init:
+    desc: Create the local MinIO bucket used by the project
+    cmds:
+      - docker compose --profile init up minio-init
+
+  trino-cli:
+    desc: Open the Trino CLI in the running container
+    cmds:
+      - docker exec -it fip-trino trino
+
   format:
     desc: Format the codebase
     cmds:
