@@ -7,6 +7,8 @@ from fip.ingestion.base import RawRecord
 
 
 class CBSODataSource:
+    ENTITIES = ("Observations", "MeasureCodes", "PeriodenCodes", "RegioSCodes")
+
     name = "cbs_statline"
     schema_version = "v1"
 
