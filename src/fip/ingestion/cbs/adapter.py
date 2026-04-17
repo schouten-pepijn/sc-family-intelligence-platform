@@ -32,15 +32,7 @@ class CBSODataSource:
                 data = self._get(url)
 
                 for row in data.get("value", []):
-                    yield RawRecord(
-                        source_name=self.name,
-                        entity_name=f"{self.table_id}.{entity}",
-                        natural_key=self._natural_key_for_row(entity, row),
-                        retrieved_at=datetime.now(timezone.utc),
-                        run_id=self.run_id,
-                        payload=row,
-                        schema_version=self.schema_version,
-                    )
+                    yield self._build_raw_record(entity, row)
 
                 url = data.get("@odata.nextLink")
 
@@ -67,3 +59,15 @@ class CBSODataSource:
         if record_id is None:
             raise ValueError(f"Missing Id for CBS entity '{entity}'")
         return str(record_id)
+
+    def _build_raw_record(self, entity: str, row: dict) -> RawRecord:
+        return RawRecord(
+            source_name=self.name,
+            entity_name=f"{self.table_id}.{entity}",
+            natural_key=self._natural_key_for_row(entity, row),
+            retrieved_at=datetime.now(timezone.utc),
+            run_id=self.run_id,
+            payload=row,
+            schema_version=self.schema_version,
+        )
+
