@@ -14,7 +14,10 @@ version = "0.1.1"
 description = "Personal region and housing intelligence platform for family-oriented location decisions."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = ["pandas>=3.0.2", "requests>=2.33.1"]
+dependencies = [
+    "httpx>=0.28.1",
+    "pandas>=3.0.2",
+]
 
 [project.scripts]
 fip = "fip.cli:main"
