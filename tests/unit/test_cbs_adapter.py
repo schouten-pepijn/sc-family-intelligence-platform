@@ -34,17 +34,26 @@ def test_cbs_source_healthcheck_returns_false_when_get_fails() -> None:
 def test_cbs_source_iter_records_returns_raw_records_for_observations() -> None:
     source = CBSODataSource(table_id="83625NED", run_id="run-001")
 
-    payload = {
-        "value": [
-            {"Id": 1, "Measure": "A", "Value": 123},
-            {"Id": 2, "Measure": "B", "Value": 456},
-        ]
-    }
+    responses = [
+        {
+            "value": [
+                {"Id": 1, "Measure": "A", "Value": 123},
+                {"Id": 2, "Measure": "B", "Value": 456},
+            ]
+        },
+        {"value": []},
+        {"value": []},
+        {"value": []},
+    ]
 
-    with patch.object(source, "_get", return_value=payload) as mock_get:
+    with patch.object(source, "_get", side_effect=responses) as mock_get:
         records = list(source.iter_records())
 
-    mock_get.assert_called_once_with(f"{source.base_url}/Observations")
+    assert mock_get.call_count == 4
+    mock_get.assert_any_call(f"{source.base_url}/Observations")
+    mock_get.assert_any_call(f"{source.base_url}/MeasureCodes")
+    mock_get.assert_any_call(f"{source.base_url}/PeriodenCodes")
+    mock_get.assert_any_call(f"{source.base_url}/RegioSCodes")
     assert len(records) == 2
     assert records[0].source_name == "cbs_statline"
     assert records[0].entity_name == "83625NED.Observations"
