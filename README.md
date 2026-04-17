@@ -27,6 +27,40 @@ The near-term goal is to land raw source snapshots in MinIO, write Bronze and Si
 
 ## Near-Term Plan
 
-1. Keep the local stack minimal: MinIO + Trino in Docker, Python + DuckDB locally.
-2. Replace the placeholder sink with a real Python write path to MinIO-backed Bronze/Iceberg data.
-3. Use DuckDB for local readback and validation before hardening the Trino side further.
+1. Keep the local stack focused: MinIO + Postgres + Lakekeeper in Docker, Python + DuckDB locally.
+2. Replace the placeholder sink with a real Python write path to Lakekeeper-backed Bronze Iceberg data on MinIO.
+3. Use DuckDB for local readback and validation before building Silver and Gold flows.
+
+## Local Infra
+
+The local infrastructure now consists of:
+
+- `minio`: object storage for raw data and Iceberg table files
+- `minio-init`: creates the configured bucket on startup
+- `postgres`: metadata database for Lakekeeper and future gold store
+- `lakekeeper-migrate`: runs catalog migrations once
+- `lakekeeper`: serves the UI, management API, and Iceberg REST catalog
+- `lakekeeper-bootstrap`: bootstraps the catalog in unsecured local mode
+- `lakekeeper-create-warehouse`: creates the initial MinIO-backed warehouse
+
+Default host endpoints:
+
+- MinIO API: `http://localhost:9000`
+- MinIO Console: `http://localhost:9001`
+- Postgres: `localhost:5432`
+- Lakekeeper UI and API: `http://localhost:8181`
+
+Bring the stack up with:
+
+```bash
+docker compose up -d
+```
+
+The first startup sequence is:
+
+1. `minio` and `postgres` come up.
+2. `minio-init` creates the bucket.
+3. `lakekeeper-migrate` initializes the catalog schema in Postgres.
+4. `lakekeeper` starts serving on port `8181`.
+5. `lakekeeper-bootstrap` accepts the local terms bootstrap.
+6. `lakekeeper-create-warehouse` registers the first MinIO-backed warehouse.

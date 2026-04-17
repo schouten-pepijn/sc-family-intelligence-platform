@@ -9,39 +9,162 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
     volumes:
       - minio_data:/data
 
   minio-init:
-    image: minio/mc:latest
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
     container_name: fip-minio-init
-    profiles:
-      - init
     depends_on:
       minio:
-        condition: service_started
+        condition: service_healthy
+    restart: "no"
     entrypoint:
       - /bin/sh
-      - -lc
-      - until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do sleep 2; done; mc mb --ignore-existing local/${S3_BUCKET}
+      - -ec
+      - |
+        /usr/bin/mc alias set local ${S3_ENDPOINT_INTERNAL} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
+        /usr/bin/mc mb --ignore-existing local/${S3_BUCKET}
 
-  trino:
-    image: trinodb/trino:479
-    container_name: fip-trino
+  postgres:
+    image: postgres:17
+    container_name: fip-postgres
     ports:
-      - "8080:8080"
+      - "5432:5432"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      AWS_REGION: ${AWS_REGION}
-      S3_ENDPOINT: ${S3_ENDPOINT}
-      S3_PATH_STYLE_ACCESS: ${S3_PATH_STYLE_ACCESS}
-      ICEBERG_WAREHOUSE: ${ICEBERG_WAREHOUSE}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -p 5432 -d ${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
     volumes:
-      - ./ops/trino:/etc/trino
+      - postgres_data:/var/lib/postgresql/data
+
+  lakekeeper-migrate:
+    image: ${LAKEKEEPER_IMAGE}
+    container_name: fip-lakekeeper-migrate
+    restart: "no"
+    environment: &lakekeeper_environment
+      LAKEKEEPER__BASE_URI: ${LAKEKEEPER_BASE_URI}
+      LAKEKEEPER__PG_DATABASE_URL_READ: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      LAKEKEEPER__PG_DATABASE_URL_WRITE: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      LAKEKEEPER__PG_ENCRYPTION_KEY: ${LAKEKEEPER_PG_ENCRYPTION_KEY}
+      LAKEKEEPER__AUTHZ_BACKEND: allowall
+    command: ["migrate"]
     depends_on:
-      minio:
-        condition: service_started
+      postgres:
+        condition: service_healthy
+
+  lakekeeper:
+    image: ${LAKEKEEPER_IMAGE}
+    container_name: fip-lakekeeper
+    ports:
+      - "8181:8181"
+    environment: *lakekeeper_environment
+    command: ["serve"]
+    healthcheck:
+      test: ["CMD", "/home/nonroot/lakekeeper", "healthcheck"]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      lakekeeper-migrate:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+
+  lakekeeper-bootstrap:
+    image: curlimages/curl:8.16.0
+    container_name: fip-lakekeeper-bootstrap
+    restart: "no"
+    depends_on:
+      lakekeeper:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        code="$$(curl -sS -o /tmp/bootstrap.out -w '%{http_code}' \
+          -X POST \
+          http://lakekeeper:8181/management/v1/bootstrap \
+          -H 'Content-Type: application/json' \
+          --data '{"accept-terms-of-use": true}')"
+        case "$$code" in
+          200|201|204|409) exit 0 ;;
+          400)
+            if grep -q 'CatalogAlreadyBootstrapped' /tmp/bootstrap.out; then
+              exit 0
+            fi
+            cat /tmp/bootstrap.out
+            exit 1
+            ;;
+          *)
+            cat /tmp/bootstrap.out
+            exit 1
+            ;;
+        esac
+
+  lakekeeper-create-warehouse:
+    image: curlimages/curl:8.16.0
+    container_name: fip-lakekeeper-create-warehouse
+    restart: "no"
+    depends_on:
+      lakekeeper-bootstrap:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        payload="$$(cat <<EOF
+        {
+          "warehouse-name": "${LAKEKEEPER_WAREHOUSE_NAME}",
+          "project-id": "${LAKEKEEPER_PROJECT_ID}",
+          "storage-profile": {
+            "type": "s3",
+            "bucket": "${S3_BUCKET}",
+            "key-prefix": "warehouse",
+            "endpoint": "${S3_ENDPOINT_INTERNAL}",
+            "region": "${AWS_REGION}",
+            "path-style-access": ${S3_PATH_STYLE_ACCESS},
+            "flavor": "minio",
+            "sts-enabled": true
+          },
+          "storage-credential": {
+            "type": "s3",
+            "credential-type": "access-key",
+            "aws-access-key-id": "${MINIO_ROOT_USER}",
+            "aws-secret-access-key": "${MINIO_ROOT_PASSWORD}"
+          }
+        }
+        EOF
+        )"
+        code="$$(curl -sS -o /tmp/warehouse.out -w '%{http_code}' \
+          -X POST \
+          http://lakekeeper:8181/management/v1/warehouse \
+          -H 'Content-Type: application/json' \
+          --data "$$payload")"
+        case "$$code" in
+          200|201|204|409) exit 0 ;;
+          *)
+            cat /tmp/warehouse.out
+            exit 1
+            ;;
+        esac
 
 volumes:
   minio_data:
+  postgres_data:
