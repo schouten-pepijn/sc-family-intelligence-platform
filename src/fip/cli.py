@@ -4,8 +4,6 @@ from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.service import ingest_source_to_sink
 from fip.settings import get_settings
 from fip.sink.factory import IcebergSinkFactory
-from fip.settings import get_settings
-
 
 app = typer.Typer(help="Family Intelligence Platform CLI.")
 
