@@ -73,4 +73,3 @@ class CBSODataSource:
             payload=row,
             schema_version=self.schema_version,
         )
-
