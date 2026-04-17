@@ -74,13 +74,103 @@ def test_cbs_source_iter_records_follows_odata_next_link() -> None:
         "value": [{"Id": 2, "Value": 456}],
     }
 
-    with patch.object(source, "_get", side_effect=[first_page, second_page]) as mock_get:
+    responses = [
+        first_page,
+        second_page,
+        {"value": []},
+        {"value": []},
+        {"value": []},
+    ]
+
+    with patch.object(source, "_get", side_effect=responses) as mock_get:
         records = list(source.iter_records())
 
     assert len(records) == 2
     assert records[0].natural_key == "1"
     assert records[1].natural_key == "2"
 
-    assert mock_get.call_count == 2
+    assert mock_get.call_count == 5
     mock_get.assert_any_call(f"{source.base_url}/Observations")
     mock_get.assert_any_call("https://example.test/page-2")
+    mock_get.assert_any_call(f"{source.base_url}/MeasureCodes")
+    mock_get.assert_any_call(f"{source.base_url}/PeriodenCodes")
+    mock_get.assert_any_call(f"{source.base_url}/RegioSCodes")
+
+
+def test_cbs_source_iter_records_fetches_multiple_entities() -> None:
+    source = CBSODataSource(table_id="83625NED", run_id="run-001")
+
+    responses = [
+        {"value": [{"Id": 1, "Value": 100}]},
+        {"value": [{"Id": 2, "Title": "Measure A"}]},
+        {"value": [{"Id": 3, "Title": "2024JJ00"}]},
+        {"value": [{"Id": 4, "Title": "Amsterdam"}]},
+    ]
+
+    with patch.object(source, "_get", side_effect=responses) as mock_get:
+        records = list(source.iter_records())
+
+    assert len(records) == 4
+
+    assert records[0].entity_name == "83625NED.Observations"
+    assert records[1].entity_name == "83625NED.MeasureCodes"
+    assert records[2].entity_name == "83625NED.PeriodenCodes"
+    assert records[3].entity_name == "83625NED.RegioSCodes"
+
+    assert records[0].natural_key == "1"
+    assert records[1].natural_key == "2"
+    assert records[2].natural_key == "3"
+    assert records[3].natural_key == "4"
+
+    assert mock_get.call_count == 4
+    mock_get.assert_any_call(f"{source.base_url}/Observations")
+    mock_get.assert_any_call(f"{source.base_url}/MeasureCodes")
+    mock_get.assert_any_call(f"{source.base_url}/PeriodenCodes")
+    mock_get.assert_any_call(f"{source.base_url}/RegioSCodes")
+
+
+def test_cbs_source_iter_records_handles_pagination_across_entities() -> None:
+    source = CBSODataSource(table_id="83625NED", run_id="run-001")
+
+    responses = [
+        {
+            "value": [{"Id": 1, "Value": 100}],
+            "@odata.nextLink": "https://example.test/observations-page-2",
+        },
+        {
+            "value": [{"Id": 2, "Value": 200}],
+        },
+        {
+            "value": [{"Id": 3, "Title": "Measure A"}],
+        },
+        {
+            "value": [{"Id": 4, "Title": "2024JJ00"}],
+        },
+        {
+            "value": [{"Id": 5, "Title": "Amsterdam"}],
+        },
+    ]
+
+    with patch.object(source, "_get", side_effect=responses) as mock_get:
+        records = list(source.iter_records())
+
+    assert len(records) == 5
+
+    assert records[0].entity_name == "83625NED.Observations"
+    assert records[1].entity_name == "83625NED.Observations"
+    assert records[2].entity_name == "83625NED.MeasureCodes"
+    assert records[3].entity_name == "83625NED.PeriodenCodes"
+    assert records[4].entity_name == "83625NED.RegioSCodes"
+
+    assert records[0].natural_key == "1"
+    assert records[1].natural_key == "2"
+    assert records[2].natural_key == "3"
+    assert records[3].natural_key == "4"
+    assert records[4].natural_key == "5"
+
+    assert mock_get.call_count == 5
+    mock_get.assert_any_call(f"{source.base_url}/Observations")
+    mock_get.assert_any_call("https://example.test/observations-page-2")
+    mock_get.assert_any_call(f"{source.base_url}/MeasureCodes")
+    mock_get.assert_any_call(f"{source.base_url}/PeriodenCodes")
+    mock_get.assert_any_call(f"{source.base_url}/RegioSCodes")
