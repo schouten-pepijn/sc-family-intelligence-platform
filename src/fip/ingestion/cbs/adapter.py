@@ -34,7 +34,7 @@ class CBSODataSource:
                     yield RawRecord(
                         source_name=self.name,
                         entity_name=f"{self.table_id}.{entity}",
-                        natural_key=str(row.get("Id", row)),
+                        natural_key=self._natural_key_for_row(entity, row),
                         retrieved_at=datetime.now(timezone.utc),
                         run_id=self.run_id,
                         payload=row,
@@ -55,3 +55,9 @@ class CBSODataSource:
             response = client.get(url)
             response.raise_for_status()
             return response.json()
+
+    def _natural_key_for_row(self, entity: str, row: dict) -> str:
+        record_id = row.get("Id")
+        if record_id is None:
+            raise ValueError(f"Missing Id for CBS entity '{entity}'")
+        return str(record_id)
