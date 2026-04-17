@@ -137,10 +137,10 @@ services:
             "type": "s3",
             "bucket": "${S3_BUCKET}",
             "key-prefix": "warehouse",
-            "endpoint": "${S3_ENDPOINT_INTERNAL}",
+            "endpoint": "${S3_ENDPOINT}",
             "region": "${AWS_REGION}",
             "path-style-access": ${S3_PATH_STYLE_ACCESS},
-            "flavor": "minio",
+            "flavor": "s3-compat",
             "sts-enabled": true
           },
           "storage-credential": {
