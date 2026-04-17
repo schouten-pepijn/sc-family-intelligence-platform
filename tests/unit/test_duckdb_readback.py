@@ -4,9 +4,7 @@ from fip.readback import duckdb as duckdb_readback
 from fip.settings import Settings
 
 
-def test_connect_creates_parent_directory_before_opening_database(
-    monkeypatch, tmp_path
-) -> None:
+def test_connect_creates_parent_directory_before_opening_database(monkeypatch, tmp_path) -> None:
     target_path = tmp_path / ".duckdb" / "fip.duckdb"
     captured: dict[str, object] = {}
 

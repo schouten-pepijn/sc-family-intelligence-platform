@@ -98,10 +98,7 @@ def test_inspect_bronze_command_prints_row_count_and_rows(monkeypatch) -> None:
 
     assert result.exit_code == 0
     assert result.stdout == (
-        "Row count: 23095\n"
-        "Sample rows (2):\n"
-        "('row-1', 'value-1')\n"
-        "('row-2', 'value-2')\n"
+        "Row count: 23095\nSample rows (2):\n('row-1', 'value-1')\n('row-2', 'value-2')\n"
     )
     assert calls["connected"] is True
     assert calls["count_table_name"] == "cbs_observations_83625ned"
