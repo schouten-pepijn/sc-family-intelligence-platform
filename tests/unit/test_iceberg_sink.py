@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from fip.ingestion.base import RawRecord
-from fip.sink.iceberg_sink import IcebergSink
+from fip.sink.iceberg_sink import BRONZE_ROW_FIELDS, IcebergSink
 
 
 def make_raw_record(natural_key: str) -> RawRecord:
@@ -73,3 +73,33 @@ def test_iceberg_sink_write_raises_for_mixed_entity_names() -> None:
         assert str(exc) == "IcebergSink.write expects records for a single entity"
     else:
         raise AssertionError("Expected ValueError for mixed entity names")
+
+
+def test_iceberg_sink_serialized_row_has_expected_fields() -> None:
+    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+
+    row = sink._serialize_record(make_raw_record("1"))
+
+    assert tuple(row.keys()) == BRONZE_ROW_FIELDS
+
+
+def test_iceberg_sink_to_arrow_table_returns_expected_row_count_and_columns() -> None:
+    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+    records = [make_raw_record("1"), make_raw_record("2")]
+
+    sink.write(records)
+    table = sink._to_arrow_table(sink.last_written_rows)
+
+    assert table.num_rows == 2
+    assert table.column_names == list(BRONZE_ROW_FIELDS)
+
+
+def test_iceberg_sink_to_arrow_table_uses_expected_schema() -> None:
+    sink = IcebergSink(table_ident="bronze.cbs.observations_83625ned")
+    records = [make_raw_record("1")]
+
+    sink.write(records)
+    table = sink._to_arrow_table(sink.last_written_rows)
+
+    schema = sink._get_arrow_schema()
+    assert table.schema == schema
