@@ -67,17 +67,18 @@ class IcebergSink:
         return pa.Table.from_pylist(rows, schema=self._get_arrow_schema())
 
     def _get_arrow_schema(self) -> pa.Schema:
-        fields = [
-            pa.field("source_name", pa.string()),
-            pa.field("entity_name", pa.string()),
-            pa.field("natural_key", pa.string()),
-            pa.field("retrieved_at", pa.timestamp("ms")),
-            pa.field("run_id", pa.string()),
-            pa.field("schema_version", pa.string()),
-            pa.field("http_status", pa.int32()),
-            pa.field("payload", pa.string()),
-        ]
-        return pa.schema(fields)
+        return pa.schema(
+            [
+                pa.field("source_name", pa.string()),
+                pa.field("entity_name", pa.string()),
+                pa.field("natural_key", pa.string()),
+                pa.field("retrieved_at", pa.timestamp("ms")),
+                pa.field("run_id", pa.string()),
+                pa.field("schema_version", pa.string()),
+                pa.field("http_status", pa.int32()),
+                pa.field("payload", pa.string()),
+            ]
+        )
 
     def _namespace(self) -> str:
         return self.table_ident.split(".", maxsplit=1)[0]

@@ -2,6 +2,9 @@ import typer
 
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.service import ingest_source_to_sink
+from fip.lakehouse.bronze.factory import IcebergSinkFactory
+from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
+from fip.lakehouse.silver.writer import SilverObservationSink
 from fip.readback.duckdb import (
     attach_lakekeeper_catalog,
     count_rows,
@@ -12,9 +15,6 @@ from fip.readback.duckdb import (
     connect as connect_duckdb,
 )
 from fip.settings import get_settings
-from fip.silver.service import write_bronze_rows_to_silver_sink
-from fip.silver.writer import SilverObservationSink
-from fip.writers.factory import IcebergSinkFactory
 
 app = typer.Typer(help="Family Intelligence Platform CLI.")
 
