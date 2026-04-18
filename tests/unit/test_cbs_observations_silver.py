@@ -6,7 +6,7 @@ from fip.silver.cbs_observations import (
     flatten_bronze_observation_rows,
     to_silver_observation_row,
 )
-from fip.silver.observation_sink import SilverObservationSink
+from fip.silver.writer import SilverObservationSink
 
 
 def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:

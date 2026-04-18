@@ -1,5 +1,5 @@
-from fip.sink.factory import IcebergSinkFactory
-from fip.sink.iceberg_sink import IcebergSink
+from fip.writers.factory import IcebergSinkFactory
+from fip.writers.iceberg import IcebergSink
 
 
 def test_iceberg_sink_factory_routes_observations_entity_to_expected_table() -> None:
