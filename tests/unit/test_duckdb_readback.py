@@ -1,7 +1,7 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 from fip.readback import duckdb as duckdb_readback
-from fip.settings import Settings
 
 
 def test_connect_creates_parent_directory_before_opening_database(monkeypatch, tmp_path) -> None:
@@ -10,7 +10,7 @@ def test_connect_creates_parent_directory_before_opening_database(monkeypatch, t
 
     monkeypatch.setattr(
         "fip.readback.duckdb.get_settings",
-        lambda: Settings(duckdb_path=str(target_path)),
+        lambda: SimpleNamespace(duckdb_path=str(target_path)),
     )
 
     def fake_connect(path: str) -> object:
