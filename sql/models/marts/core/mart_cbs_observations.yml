@@ -2,29 +2,34 @@ version: 2
 
 models:
   - name: mart_cbs_observations
-    description: Serving-friendly observation model built from staged CBS observations.
+    description: Business-friendly observation mart built from staged CBS observations.
     columns:
       - name: source_name
-        tests:
-          - not_null
-      - name: natural_key
-        tests:
-          - not_null
-      - name: retrieved_at
         tests:
           - not_null
       - name: run_id
         tests:
           - not_null
+      - name: retrieved_at
+        tests:
+          - not_null
+      - name: observation_key
+        tests:
+          - not_null
       - name: observation_id
         tests:
           - not_null
-      - name: measure_code
+      - name: measure_id
         tests:
           - not_null
-      - name: period_code
+      - name: period_id
         tests:
           - not_null
-      - name: region_code
+      - name: period_year
+      - name: period_granularity
         tests:
           - not_null
+      - name: region_id
+        tests:
+          - not_null
+      - name: observation_value
