@@ -117,6 +117,8 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     )
     silver_written = write_bronze_rows_to_silver_sink(bronze_rows, silver_sink)
     assert silver_written == 1
+    silver_written_again = write_bronze_rows_to_silver_sink(bronze_rows, silver_sink)
+    assert silver_written_again == 1
 
     silver_conn = connect()
     try:
