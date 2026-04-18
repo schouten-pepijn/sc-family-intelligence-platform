@@ -28,6 +28,7 @@ The local validation loop is:
 - `src/fip/ingestion`: source adapters and Bronze ingestion flow
 - `src/fip/lakehouse/bronze`: Bronze Iceberg writer, factory, and sink protocols
 - `src/fip/lakehouse/silver`: Silver transforms, orchestration, and writer
+- `src/fip/gold`: Gold Postgres writer, service, and readback helpers
 - `src/fip/readback`: DuckDB validation and inspect helpers
 - `tests`: unit, integration, and fixture-based tests
 - `sql`: dbt models
@@ -38,10 +39,34 @@ The local validation loop is:
 ## Near-Term Plan
 
 1. Keep the local stack focused: MinIO + Postgres + Lakekeeper in Docker, Python + DuckDB locally.
-2. Bronze Iceberg writes through Lakekeeper are working.
+2. Bronze Iceberg writes through Lakekeeper are working, and Bronze is append-only.
 3. DuckDB readback and the `inspect-bronze` CLI path are working.
-4. Silver append, DuckDB readback, and the `inspect-silver` CLI path are working.
-5. The next implementation step is Gold materialization in Postgres.
+4. Silver full refresh, DuckDB readback, and the `inspect-silver` CLI path are working.
+5. Gold full refresh into Postgres and the `inspect-gold` CLI path are working.
+6. The next implementation step is to make the SQL/dbt layer concrete on top of Gold.
+
+## Current Data Flow
+
+The local pipeline currently looks like this:
+
+1. `ingest-cbs`
+   Bronze ingest from the CBS API into Iceberg through Lakekeeper.
+2. `inspect-bronze`
+   DuckDB validation against the Bronze Iceberg tables.
+3. `build-silver-observations`
+   Read Bronze rows, flatten them into Silver observations, and full-refresh the Silver Iceberg table.
+4. `inspect-silver`
+   DuckDB validation against the Silver Iceberg table.
+5. `build-gold-observations`
+   Read Silver rows and full-refresh the Gold Postgres table.
+6. `inspect-gold`
+   Postgres readback of the Gold table.
+
+Current write semantics:
+
+- Bronze: append-only
+- Silver: full refresh
+- Gold: full refresh
 
 ## Local Infra
 
@@ -59,7 +84,7 @@ Default host endpoints:
 
 - MinIO API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9001`
-- Postgres: `localhost:5432`
+- Postgres: `localhost:55432`
 - Lakekeeper UI and API: `http://localhost:8181`
 
 Bring the stack up with:
