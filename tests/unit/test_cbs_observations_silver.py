@@ -7,7 +7,24 @@ from fip.silver.cbs_observations import (
     to_silver_observation_row,
 )
 from fip.silver.observation_sink import SilverObservationSink
-from tests.unit.test_silver_observation_sink import make_silver_row
+
+
+def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:
+    return {
+        "source_name": "cbs_statline",
+        "natural_key": natural_key,
+        "retrieved_at": datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+        "run_id": "run-001",
+        "schema_version": "v1",
+        "http_status": 200,
+        "observation_id": observation_id,
+        "measure_code": "M001534",
+        "period_code": "1995JJ00",
+        "region_code": "NL01",
+        "numeric_value": 93750.0,
+        "value_attribute": "None",
+        "string_value": None,
+    }
 
 
 def test_flatten_bronze_observation_maps_payload_fields_to_silver_columns() -> None:
