@@ -165,3 +165,40 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     assert row[10] == 93750.0
     assert row[11] == "None"
     assert row[12] is None
+
+    gold_writer = GoldObservationWriter(table_name=gold_table_name)
+    gold_written = write_silver_rows_to_gold_sink(silver_rows_for_gold, gold_writer)
+    assert gold_written == 1
+    gold_written_again = write_silver_rows_to_gold_sink(silver_rows_for_gold, gold_writer)
+    assert gold_written_again == 1
+
+    gold_conn = connect_postgres()
+    try:
+        gold_count = count_gold_rows(
+            gold_conn,
+            table_name=gold_table_name,
+        )
+        gold_rows = sample_gold_rows(
+            gold_conn,
+            table_name=gold_table_name,
+            limit=1,
+        )
+    finally:
+        gold_conn.close()
+
+    assert gold_count == 1
+    assert len(gold_rows) == 1
+
+    gold_row = gold_rows[0]
+    assert gold_row[0] == "cbs_statline"
+    assert gold_row[1] == "0"
+    assert gold_row[3] == "integration-roundtrip"
+    assert gold_row[4] == "v1"
+    assert gold_row[5] == 200
+    assert gold_row[6] == 0
+    assert gold_row[7] == "M001534"
+    assert gold_row[8] == "1995JJ00"
+    assert gold_row[9] == "NL01"
+    assert gold_row[10] == 93750.0
+    assert gold_row[11] == "None"
+    assert gold_row[12] is None
