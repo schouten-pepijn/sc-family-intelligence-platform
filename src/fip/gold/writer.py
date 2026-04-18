@@ -116,5 +116,8 @@ class GoldObservationWriter:
             columns,
             placeholders,
         )
-        for row in rows:
-            conn.execute(sql, tuple(row[field] for field in GOLD_OBSERVATION_FIELDS))
+        with conn.cursor() as cur:
+            cur.executemany(
+                sql,
+                [tuple(row[field] for field in GOLD_OBSERVATION_FIELDS) for row in rows],
+            )
