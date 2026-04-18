@@ -45,6 +45,30 @@ class Settings(BaseSettings):
         default=".duckdb/fip.duckdb",
         validation_alias="DUCKDB_PATH",
     )
+    postgres_host: str = Field(
+        default="localhost",
+        validation_alias="POSTGRES_HOST",
+    )
+    postgres_port: int = Field(
+        default=5432,
+        validation_alias="POSTGRES_PORT",
+    )
+    postgres_db: str = Field(
+        default="fip",
+        validation_alias="POSTGRES_DB",
+    )
+    postgres_user: str = Field(
+        default="fip",
+        validation_alias="POSTGRES_USER",
+    )
+    postgres_password: str = Field(
+        default="fip123",
+        validation_alias="POSTGRES_PASSWORD",
+    )
+    postgres_schema: str = Field(
+        default="gold",
+        validation_alias="POSTGRES_SCHEMA",
+    )
 
     model_config = SettingsConfigDict(
         env_file=(".env", ".env.template"),
