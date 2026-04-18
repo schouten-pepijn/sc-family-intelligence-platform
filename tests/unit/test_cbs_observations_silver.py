@@ -6,6 +6,8 @@ from fip.silver.cbs_observations import (
     flatten_bronze_observation_rows,
     to_silver_observation_row,
 )
+from fip.silver.observation_sink import SilverObservationSink
+from tests.unit.test_silver_observation_sink import make_silver_row
 
 
 def test_flatten_bronze_observation_maps_payload_fields_to_silver_columns() -> None:
@@ -74,6 +76,35 @@ def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> No
     assert flattened_rows[0]["natural_key"] == "1"
     assert flattened_rows[1]["observation_id"] == 2
     assert flattened_rows[1]["natural_key"] == "2"
+
+
+def test_silver_observation_sink_write_loads_catalog_and_ensures_table(
+    monkeypatch,
+) -> None:
+    sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
+    rows = [make_silver_row("1", 1)]
+
+    fake_catalog = object()
+    calls: dict[str, object] = {}
+
+    def fake_load_catalog() -> object:
+        calls["load_catalog_called"] = True
+        return fake_catalog
+
+    def fake_ensure_table(catalog, arrow_schema) -> object:
+        calls["catalog"] = catalog
+        calls["arrow_schema"] = arrow_schema
+        return object()
+
+    monkeypatch.setattr(sink, "_load_catalog", fake_load_catalog)
+    monkeypatch.setattr(sink, "_ensure_table", fake_ensure_table)
+
+    written = sink.write(rows)
+
+    assert written == 1
+    assert calls["load_catalog_called"] is True
+    assert calls["catalog"] is fake_catalog
+    assert calls["arrow_schema"] == sink._get_arrow_schema()
 
 
 def test_to_silver_observation_row_returns_expected_field_order() -> None:
