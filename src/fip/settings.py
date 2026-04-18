@@ -50,7 +50,7 @@ class Settings(BaseSettings):
         validation_alias="POSTGRES_HOST",
     )
     postgres_port: int = Field(
-        default=5432,
+        default=55432,
         validation_alias="POSTGRES_PORT",
     )
     postgres_db: str = Field(
