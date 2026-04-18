@@ -1,4 +1,4 @@
-from fip.sink.iceberg_sink import IcebergSink
+from fip.writers.iceberg import IcebergSink
 
 
 class IcebergSinkFactory:

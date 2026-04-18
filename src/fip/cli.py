@@ -12,9 +12,9 @@ from fip.readback.duckdb import (
     connect as connect_duckdb,
 )
 from fip.settings import get_settings
-from fip.silver.observation_sink import SilverObservationSink
 from fip.silver.service import write_bronze_rows_to_silver_sink
-from fip.sink.factory import IcebergSinkFactory
+from fip.silver.writer import SilverObservationSink
+from fip.writers.factory import IcebergSinkFactory
 
 app = typer.Typer(help="Family Intelligence Platform CLI.")
 

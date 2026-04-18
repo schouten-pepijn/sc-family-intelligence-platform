@@ -17,7 +17,6 @@ class SilverObservationSink:
             return 0
 
         self.last_written_rows = [self._to_silver_row(row) for row in rows]
-
         arrow_table = self._to_arrow_table(self.last_written_rows)
         catalog = self._load_catalog()
         table = self._ensure_table(catalog, arrow_table.schema)
@@ -64,7 +63,6 @@ class SilverObservationSink:
 
     def _load_catalog(self) -> Catalog:
         settings = get_settings()
-
         properties: dict[str, str] = {
             "type": "rest",
             "uri": settings.lakekeeper_catalog_uri,
@@ -75,7 +73,6 @@ class SilverObservationSink:
             "s3.region": settings.aws_region,
             "s3.force-virtual-addressing": str(not settings.s3_path_style_access).lower(),
         }
-
         return load_catalog("lakekeeper", **properties)
 
     def _ensure_namespace(self, catalog: Catalog) -> None:

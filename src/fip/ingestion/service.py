@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from fip.ingestion.base import Source
-from fip.sink.base import SinkFactory
+from fip.writers.base import SinkFactory
 
 
 def ingest_source_to_sink(source: Source, sink_factory: SinkFactory) -> int:

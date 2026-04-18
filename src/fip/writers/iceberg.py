@@ -21,7 +21,6 @@ BRONZE_ROW_FIELDS = (
 
 class IcebergSink:
     def __init__(self, table_ident: str) -> None:
-        # TODO: move to injection
         self.table_ident = table_ident
         self.last_written: list[RawRecord] = []
         self.last_written_rows: list[dict[str, object]] = []
@@ -41,7 +40,6 @@ class IcebergSink:
         arrow_table = self._to_arrow_table(self.last_written_rows)
         catalog = self._load_catalog()
         table = self._ensure_table(catalog, arrow_table.schema)
-        # append style in bronze
         table.append(
             arrow_table,
             snapshot_properties={
@@ -54,7 +52,7 @@ class IcebergSink:
         return len(records)
 
     def _serialize_record(self, record: RawRecord) -> dict[str, object]:
-        row = {
+        return {
             "source_name": record.source_name,
             "entity_name": record.entity_name,
             "natural_key": record.natural_key,
@@ -64,8 +62,6 @@ class IcebergSink:
             "http_status": record.http_status,
             "payload": json.dumps(record.payload, sort_keys=True),
         }
-
-        return row
 
     def _to_arrow_table(self, rows: list[dict[str, object]]) -> pa.Table:
         return pa.Table.from_pylist(rows, schema=self._get_arrow_schema())
@@ -109,7 +105,6 @@ class IcebergSink:
 
     def _ensure_table(self, catalog: Catalog, arrow_schema: pa.Schema) -> Table:
         self._ensure_namespace(catalog)
-
         return catalog.create_table_if_not_exists(
             self.table_ident,
             schema=arrow_schema,
