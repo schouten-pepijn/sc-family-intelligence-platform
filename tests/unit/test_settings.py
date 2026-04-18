@@ -59,3 +59,11 @@ def test_settings_reads_postgres_defaults_from_env(monkeypatch) -> None:
     assert settings.postgres_user == "gold-user"
     assert settings.postgres_password == "gold-pass"
     assert settings.postgres_schema == "analytics"
+
+
+def test_settings_defaults_postgres_schema_to_landing(monkeypatch) -> None:
+    monkeypatch.delenv("POSTGRES_SCHEMA", raising=False)
+
+    settings = Settings()
+
+    assert settings.postgres_schema == "landing"
