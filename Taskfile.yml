@@ -20,12 +20,12 @@ tasks:
       - uv sync --dev
 
   infra-up:
-    desc: Start the local MinIO and Trino stack
+    desc: Start the local MinIO, Postgres, and Lakekeeper stack
     cmds:
       - docker compose up -d
 
   infra-down:
-    desc: Stop the local MinIO and Trino stack
+    desc: Stop the local MinIO, Postgres, and Lakekeeper stack
     cmds:
       - docker compose down
 
@@ -33,11 +33,6 @@ tasks:
     desc: Create the local MinIO bucket used by the project
     cmds:
       - docker compose --profile init up minio-init
-
-  trino-cli:
-    desc: Open the Trino CLI in the running container
-    cmds:
-      - docker exec -it fip-trino trino
 
   format:
     desc: Format the codebase
@@ -60,14 +55,27 @@ tasks:
       - uv run mypy src
 
   test:
-    desc: Run the test suite
+    desc: Run the unit test suite
     cmds:
-      - uv run pytest
+      - task: test-unit
 
   test-unit:
     desc: Run unit tests only
     cmds:
       - uv run pytest tests/unit
+
+  test-integration:
+    desc: Run integration tests against the local lakehouse stack
+    env:
+      FIP_RUN_INTEGRATION: "1"
+    cmds:
+      - uv run pytest tests/integration -m integration
+
+  test-all:
+    desc: Run unit and integration tests
+    cmds:
+      - task: test-unit
+      - task: test-integration
 
   check:
     desc: Run the standard local quality gate
