@@ -49,7 +49,3 @@ def flatten_bronze_observation_rows(
     rows: list[dict[str, object]],
 ) -> list[dict[str, object]]:
     return [flatten_bronze_observation(row) for row in rows]
-
-
-# Backwards-compatible alias while the surrounding code catches up.
-flatten_bronze_observations = flatten_bronze_observation
