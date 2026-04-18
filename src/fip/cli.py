@@ -83,8 +83,9 @@ def build_silver_observations(
     ),
 ) -> None:
     bronze_rows = _read_bronze_rows(table_name=table_name, namespace=namespace)
+    silver_namespace = get_settings().silver_namespace
     sink = SilverObservationSink(
-        table_ident="silver.cbs_observations_flat_83625ned",
+        table_ident=f"{silver_namespace}.cbs_observations_flat_83625ned",
     )
 
     written = write_bronze_rows_to_silver_sink(bronze_rows, sink)
