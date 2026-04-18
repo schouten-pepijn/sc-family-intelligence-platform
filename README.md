@@ -8,13 +8,13 @@ The repo is in the first end-to-end data-platform phase. The current direction i
 
 - Docker:
   - MinIO for object storage
-  - Postgres for Lakekeeper persistence and gold serving
+  - Postgres for Lakekeeper persistence and the landing layer
   - Lakekeeper as the Iceberg REST catalog
 - Local:
   - Python ingestion and write scripts
   - DuckDB for validation and ad-hoc analysis against Iceberg data
 
-The near-term goal is now to stabilize the working Bronze -> Silver -> Gold path and prepare the first dbt-backed SQL layer on top of Gold in Postgres.
+The near-term goal is now to stabilize the working Bronze -> Silver -> landing path and prepare the first dbt-backed SQL layer on top of the landing table in Postgres.
 
 The local validation loop is:
 
@@ -28,7 +28,7 @@ The local validation loop is:
 - `src/fip/ingestion`: source adapters and Bronze ingestion flow
 - `src/fip/lakehouse/bronze`: Bronze Iceberg writer, factory, and sink protocols
 - `src/fip/lakehouse/silver`: Silver transforms, orchestration, and writer
-- `src/fip/gold`: Gold Postgres writer, service, and readback helpers
+- `src/fip/gold`: Postgres landing writer, service, and readback helpers
 - `src/fip/readback`: DuckDB validation and inspect helpers
 - `tests`: unit, integration, and fixture-based tests
 - `sql`: dbt models
@@ -42,8 +42,8 @@ The local validation loop is:
 2. Bronze Iceberg writes through Lakekeeper are working, and Bronze is append-only.
 3. DuckDB readback and the `inspect-bronze` CLI path are working.
 4. Silver full refresh, DuckDB readback, and the `inspect-silver` CLI path are working.
-5. Gold full refresh into Postgres and the `inspect-gold` CLI path are working.
-6. The next implementation step is to make the SQL/dbt layer concrete on top of Gold.
+5. The Postgres landing full refresh and the `inspect-gold` CLI path are working.
+6. The next implementation step is to make the SQL/dbt layer concrete on top of the landing table.
 
 ## Current Data Flow
 
@@ -74,7 +74,7 @@ The local infrastructure now consists of:
 
 - `minio`: object storage for raw data and Iceberg table files
 - `minio-init`: creates the configured bucket on startup
-- `postgres`: metadata database for Lakekeeper and future gold store
+- `postgres`: metadata database for Lakekeeper and future landing store
 - `lakekeeper-migrate`: runs catalog migrations once
 - `lakekeeper`: serves the UI, management API, and Iceberg REST catalog
 - `lakekeeper-bootstrap`: bootstraps the catalog in unsecured local mode
