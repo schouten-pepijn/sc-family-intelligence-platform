@@ -75,4 +75,7 @@ def sample_rows(
     if namespace is None:
         namespace = get_settings().bronze_namespace
 
-    return conn.execute(f"SELECT * FROM {alias}.{namespace}.{table_name} LIMIT {limit}").fetchall()
+    arrow_table = conn.execute(
+        f"SELECT * FROM {alias}.{namespace}.{table_name} LIMIT {limit}"
+    ).fetch_arrow_table()
+    return [tuple(row.values()) for row in arrow_table.to_pylist()]
