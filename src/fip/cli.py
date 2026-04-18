@@ -171,7 +171,7 @@ def build_gold_observations(
     table_name: str = typer.Option(
         "cbs_observations_flat_83625ned",
         "--table",
-        help="Silver table name to materialize into Gold.",
+        help="Silver table name to materialize into the Postgres landing layer.",
     ),
     namespace: str | None = typer.Option(
         None,
@@ -194,7 +194,7 @@ def inspect_gold(
     ),
     schema: str | None = typer.Option(
         None,
-        help="Postgres schema to inspect. Defaults to configured gold schema.",
+        help="Postgres schema to inspect. Defaults to configured landing schema.",
     ),
     limit: int = typer.Option(5, help="Number of sample rows to display."),
 ) -> None:
