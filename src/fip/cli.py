@@ -111,5 +111,36 @@ def _read_bronze_rows(
         conn.close()
 
 
+@app.command("inspect-silver")
+def inspect_silver(
+    table_name: str = typer.Option(
+        "cbs_observations_flat_83625ned",
+        "--table",
+        help="Silver table name to inspect.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Iceberg namespace to inspect. Defaults to configured silver namespace.",
+    ),
+    limit: int = typer.Option(5, help="Number of sample rows to display."),
+) -> None:
+    silver_namespace = namespace or get_settings().silver_namespace
+    con = connect_duckdb()
+
+    try:
+        load_extensions(con)
+        attach_lakekeeper_catalog(con)
+
+        row_count = count_rows(con, table_name=table_name, namespace=silver_namespace)
+        rows = sample_rows(con, table_name=table_name, namespace=silver_namespace, limit=limit)
+    finally:
+        con.close()
+
+    typer.echo(f"Row count: {row_count}")
+    typer.echo(f"Sample rows ({len(rows)}):")
+    for row in rows:
+        typer.echo(str(row))
+
+
 def main() -> None:
     app()
