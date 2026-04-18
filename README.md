@@ -19,6 +19,10 @@ The near-term goal is to finish the first Silver Iceberg append on top of the no
 ## Project Structure
 
 - `src/fip`: application code
+- `src/fip/ingestion`: source adapters and Bronze ingestion flow
+- `src/fip/writers`: Bronze Iceberg writers and sink factories
+- `src/fip/silver`: Silver transforms, orchestration, and writer
+- `src/fip/readback`: DuckDB validation and inspect helpers
 - `tests`: unit, integration, and fixture-based tests
 - `sql`: dbt models
 - `ops`: infrastructure configuration
