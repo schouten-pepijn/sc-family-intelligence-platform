@@ -1,5 +1,6 @@
 import pyarrow as pa
 from pyiceberg.catalog import Catalog, load_catalog
+from pyiceberg.exceptions import NoSuchTableError
 from pyiceberg.table import Table
 
 from fip.lakehouse.silver.cbs_observations import to_silver_observation_row
@@ -19,7 +20,7 @@ class SilverObservationSink:
         self.last_written_rows = [self._to_silver_row(row) for row in rows]
         arrow_table = self._to_arrow_table(self.last_written_rows)
         catalog = self._load_catalog()
-        table = self._ensure_table(catalog, arrow_table.schema)
+        table = self._replace_table(catalog, arrow_table.schema)
 
         first_row = self.last_written_rows[0]
         snapshot_properties: dict[str, str] = {
@@ -78,8 +79,14 @@ class SilverObservationSink:
     def _ensure_namespace(self, catalog: Catalog) -> None:
         catalog.create_namespace_if_not_exists(self._namespace())
 
-    def _ensure_table(self, catalog: Catalog, arrow_schema: pa.Schema) -> Table:
+    def _replace_table(self, catalog: Catalog, arrow_schema: pa.Schema) -> Table:
         self._ensure_namespace(catalog)
+
+        try:
+            catalog.drop_table(self.table_ident)
+        except NoSuchTableError:
+            pass
+
         return catalog.create_table_if_not_exists(
             self.table_ident,
             schema=arrow_schema,

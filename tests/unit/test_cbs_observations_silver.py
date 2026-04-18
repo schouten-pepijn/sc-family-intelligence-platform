@@ -95,7 +95,7 @@ def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> No
     assert flattened_rows[1]["natural_key"] == "2"
 
 
-def test_silver_observation_sink_write_loads_catalog_and_ensures_table(
+def test_silver_observation_sink_write_loads_catalog_and_replaces_table(
     monkeypatch,
 ) -> None:
     sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
@@ -112,13 +112,13 @@ def test_silver_observation_sink_write_loads_catalog_and_ensures_table(
         calls["load_catalog_called"] = True
         return fake_catalog
 
-    def fake_ensure_table(catalog, arrow_schema) -> FakeTable:
+    def fake_replace_table(catalog, arrow_schema) -> FakeTable:
         calls["catalog"] = catalog
         calls["arrow_schema"] = arrow_schema
         return FakeTable()
 
     monkeypatch.setattr(sink, "_load_catalog", fake_load_catalog)
-    monkeypatch.setattr(sink, "_ensure_table", fake_ensure_table)
+    monkeypatch.setattr(sink, "_replace_table", fake_replace_table)
 
     written = sink.write(rows)
 

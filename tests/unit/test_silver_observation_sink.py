@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+from typing import cast
+
+from pyiceberg.catalog import Catalog
 
 from fip.lakehouse.silver.writer import SilverObservationSink
 
@@ -37,7 +40,7 @@ def test_silver_observation_sink_write_returns_number_of_rows() -> None:
         def append(self, df, snapshot_properties=None, branch=None) -> None:
             return None
 
-    sink._ensure_table = lambda catalog, arrow_schema: FakeTable()  # type: ignore[method-assign]
+    sink._replace_table = lambda catalog, arrow_schema: FakeTable()  # type: ignore[method-assign]
 
     written = sink.write(rows)
 
@@ -65,7 +68,7 @@ def test_silver_observation_sink_to_arrow_table_uses_expected_schema() -> None:
     assert table.schema == sink._get_arrow_schema()
 
 
-def test_silver_observation_sink_write_appends_arrow_table_with_snapshot_properties(
+def test_silver_observation_sink_write_replaces_table_and_appends_with_snapshot_properties(
     monkeypatch,
 ) -> None:
     sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
@@ -84,13 +87,13 @@ def test_silver_observation_sink_write_appends_arrow_table_with_snapshot_propert
         calls["load_catalog_called"] = True
         return fake_catalog
 
-    def fake_ensure_table(catalog: object, arrow_schema) -> FakeTable:
+    def fake_replace_table(catalog: object, arrow_schema) -> FakeTable:
         calls["catalog"] = catalog
         calls["arrow_schema"] = arrow_schema
         return FakeTable()
 
     monkeypatch.setattr(sink, "_load_catalog", fake_load_catalog)
-    monkeypatch.setattr(sink, "_ensure_table", fake_ensure_table)
+    monkeypatch.setattr(sink, "_replace_table", fake_replace_table)
 
     written = sink.write(rows)
 
@@ -104,3 +107,28 @@ def test_silver_observation_sink_write_appends_arrow_table_with_snapshot_propert
         "fip.schema_version": "v1",
     }
     assert calls["branch"] is None
+
+
+def test_silver_observation_sink_replace_table_drops_existing_table_before_recreating() -> None:
+    sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
+    calls: list[tuple[str, object]] = []
+
+    class FakeCatalog:
+        def create_namespace_if_not_exists(self, namespace: str) -> None:
+            calls.append(("namespace", namespace))
+
+        def drop_table(self, identifier: str) -> None:
+            calls.append(("drop", identifier))
+
+        def create_table_if_not_exists(self, identifier: str, schema) -> str:
+            calls.append(("create", identifier))
+            return "fake-table"
+
+    table = sink._replace_table(cast(Catalog, FakeCatalog()), sink._get_arrow_schema())
+
+    assert table == "fake-table"
+    assert calls == [
+        ("namespace", "silver"),
+        ("drop", "silver.cbs_observations_flat_83625ned"),
+        ("create", "silver.cbs_observations_flat_83625ned"),
+    ]
