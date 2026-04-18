@@ -15,6 +15,11 @@ The repo is in the first end-to-end data-platform phase. The current direction i
   - DuckDB for validation and ad-hoc analysis against Iceberg data
 
 The near-term goal is to finish the first Silver Iceberg append on top of the now-working Bronze write and DuckDB readback path, and only then materialize Gold tables in Postgres.
+The near-term validation loop is now:
+
+- `task test-unit` for fast code-level checks
+- `task test-integration` for the Bronze -> Silver roundtrip against the local lakehouse stack
+- `task check` for the standard local quality gate
 
 ## Project Structure
 
@@ -34,7 +39,8 @@ The near-term goal is to finish the first Silver Iceberg append on top of the no
 1. Keep the local stack focused: MinIO + Postgres + Lakekeeper in Docker, Python + DuckDB locally.
 2. Bronze Iceberg writes through Lakekeeper are working.
 3. DuckDB readback and the `inspect-bronze` CLI path are working.
-4. The next implementation step is the first Silver append and inspect path.
+4. Silver append, DuckDB readback, and the `inspect-silver` CLI path are working.
+5. The next implementation step is Gold materialization in Postgres.
 
 ## Local Infra
 
