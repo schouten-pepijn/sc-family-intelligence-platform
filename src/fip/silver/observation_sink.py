@@ -1,0 +1,43 @@
+import pyarrow as pa
+
+from fip.silver.cbs_observations import to_silver_observation_row
+
+
+class SilverObservationSink:
+    def __init__(self, table_ident: str) -> None:
+        self.table_ident = table_ident
+        self.last_written_rows: list[dict[str, object]] = []
+
+    def write(self, rows: list[dict[str, object]]) -> int:
+        if not rows:
+            self.last_written_rows = []
+            return 0
+
+        self.last_written_rows = [self._to_silver_row(row) for row in rows]
+        arrow_table = self._to_arrow_table(self.last_written_rows)
+        return arrow_table.num_rows
+
+    def _to_silver_row(self, row: dict[str, object]) -> dict[str, object]:
+        return to_silver_observation_row(row)
+
+    def _get_arrow_schema(self) -> pa.Schema:
+        return pa.schema(
+            [
+                pa.field("source_name", pa.string(), nullable=False),
+                pa.field("natural_key", pa.string(), nullable=False),
+                pa.field("retrieved_at", pa.timestamp("us", tz="UTC"), nullable=False),
+                pa.field("run_id", pa.string(), nullable=False),
+                pa.field("schema_version", pa.string(), nullable=False),
+                pa.field("http_status", pa.int32(), nullable=False),
+                pa.field("observation_id", pa.int64(), nullable=False),
+                pa.field("measure_code", pa.string(), nullable=False),
+                pa.field("period_code", pa.string(), nullable=False),
+                pa.field("region_code", pa.string(), nullable=False),
+                pa.field("numeric_value", pa.float64(), nullable=True),
+                pa.field("value_attribute", pa.string(), nullable=True),
+                pa.field("string_value", pa.string(), nullable=True),
+            ]
+        )
+
+    def _to_arrow_table(self, rows: list[dict[str, object]]) -> pa.Table:
+        return pa.Table.from_pylist(rows, schema=self._get_arrow_schema())
