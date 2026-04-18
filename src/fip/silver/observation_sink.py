@@ -1,5 +1,8 @@
 import pyarrow as pa
+from pyiceberg.catalog import Catalog, load_catalog
+from pyiceberg.table import Table
 
+from fip.settings import get_settings
 from fip.silver.cbs_observations import to_silver_observation_row
 
 
@@ -15,6 +18,8 @@ class SilverObservationSink:
 
         self.last_written_rows = [self._to_silver_row(row) for row in rows]
         arrow_table = self._to_arrow_table(self.last_written_rows)
+        catalog = self._load_catalog()
+        self._ensure_table(catalog, arrow_table.schema)
         return arrow_table.num_rows
 
     def _to_silver_row(self, row: dict[str, object]) -> dict[str, object]:
@@ -41,3 +46,34 @@ class SilverObservationSink:
 
     def _to_arrow_table(self, rows: list[dict[str, object]]) -> pa.Table:
         return pa.Table.from_pylist(rows, schema=self._get_arrow_schema())
+
+    def _namespace(self) -> str:
+        return self.table_ident.split(".", maxsplit=1)[0]
+
+    def _load_catalog(self) -> Catalog:
+        settings = get_settings()
+
+        properties: dict[str, str] = {
+            "type": "rest",
+            "uri": settings.lakekeeper_catalog_uri,
+            "warehouse": settings.lakekeeper_warehouse_name,
+            "s3.endpoint": settings.s3_endpoint,
+            "s3.access-key-id": settings.s3_access_key_id,
+            "s3.secret-access-key": settings.s3_secret_access_key,
+            "s3.region": settings.aws_region,
+            "s3.force-virtual-addressing": str(
+                not settings.s3_path_style_access
+            ).lower(),
+        }
+
+        return load_catalog("lakekeeper", **properties)
+
+    def _ensure_namespace(self, catalog: Catalog) -> None:
+        catalog.create_namespace_if_not_exists(self._namespace())
+
+    def _ensure_table(self, catalog: Catalog, arrow_schema: pa.Schema) -> Table:
+        self._ensure_namespace(catalog)
+        return catalog.create_table_if_not_exists(
+            self.table_ident,
+            schema=arrow_schema,
+        )
