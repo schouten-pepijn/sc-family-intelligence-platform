@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 
 from fip.silver.cbs_observations import (
+    SILVER_OBSERVATION_FIELDS,
     flatten_bronze_observation,
     flatten_bronze_observation_rows,
+    to_silver_observation_row,
 )
 
 
@@ -72,3 +74,27 @@ def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> No
     assert flattened_rows[0]["natural_key"] == "1"
     assert flattened_rows[1]["observation_id"] == 2
     assert flattened_rows[1]["natural_key"] == "2"
+
+
+def test_to_silver_observation_row_returns_expected_field_order() -> None:
+    flattened = {
+        "source_name": "cbs_statline",
+        "natural_key": "42",
+        "retrieved_at": datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+        "run_id": "run-001",
+        "schema_version": "v1",
+        "http_status": 200,
+        "observation_id": 42,
+        "measure_code": "M001534",
+        "period_code": "1995JJ00",
+        "region_code": "NL01",
+        "numeric_value": 93750.0,
+        "value_attribute": "None",
+        "string_value": None,
+    }
+
+    row = to_silver_observation_row(flattened)
+
+    assert tuple(row.keys()) == SILVER_OBSERVATION_FIELDS
+    assert row["observation_id"] == 42
+    assert row["measure_code"] == "M001534"
