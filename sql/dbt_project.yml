@@ -1,0 +1,20 @@
+name: fip_sql
+version: 1.0.0
+config-version: 2
+
+profile: fip_sql
+
+model-paths:
+  - models
+
+target-path: target
+clean-targets:
+  - target
+  - dbt_packages
+
+models:
+  fip_sql:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
