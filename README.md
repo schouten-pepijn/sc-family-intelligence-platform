@@ -14,12 +14,12 @@ The repo is in the first end-to-end data-platform phase. The current direction i
   - Python ingestion and write scripts
   - DuckDB for validation and ad-hoc analysis against Iceberg data
 
-The near-term goal is now to move from the working Bronze + Silver lakehouse path into the first Gold tables in Postgres.
+The near-term goal is now to stabilize the working Bronze -> Silver -> Gold path and prepare the first dbt-backed SQL layer on top of Gold in Postgres.
 
 The local validation loop is:
 
 - `task test-unit` for fast code-level checks
-- `task test-integration` for the Bronze -> Silver roundtrip against the local lakehouse stack
+- `task test-integration` for the Bronze -> Silver -> Gold roundtrip against the local stack
 - `task check` for the standard local quality gate
 
 ## Project Structure
