@@ -1,5 +1,10 @@
 import typer
 
+from fip.gold.readback import connect as connect_postgres
+from fip.gold.readback import count_rows as count_gold_rows
+from fip.gold.readback import sample_rows as sample_gold_rows
+from fip.gold.service import write_silver_rows_to_gold_sink
+from fip.gold.writer import GoldObservationWriter
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.factory import IcebergSinkFactory
@@ -154,6 +159,52 @@ def inspect_silver(
         rows = sample_rows(con, table_name=table_name, namespace=silver_namespace, limit=limit)
     finally:
         con.close()
+
+    typer.echo(f"Row count: {row_count}")
+    typer.echo(f"Sample rows ({len(rows)}):")
+    for row in rows:
+        typer.echo(str(row))
+
+
+@app.command("build-gold-observations")
+def build_gold_observations(
+    table_name: str = typer.Option(
+        "cbs_observations_flat_83625ned",
+        "--table",
+        help="Silver table name to materialize into Gold.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Silver Iceberg namespace. Defaults to configured silver namespace.",
+    ),
+) -> None:
+    silver_rows = _read_silver_rows(table_name=table_name, namespace=namespace)
+    sink = GoldObservationWriter(table_name="cbs_observations")
+
+    written = write_silver_rows_to_gold_sink(silver_rows, sink)
+    typer.echo(f"Wrote {written} Gold rows")
+
+
+@app.command("inspect-gold")
+def inspect_gold(
+    table_name: str = typer.Option(
+        "cbs_observations",
+        "--table",
+        help="Gold table name to inspect.",
+    ),
+    schema: str | None = typer.Option(
+        None,
+        help="Postgres schema to inspect. Defaults to configured gold schema.",
+    ),
+    limit: int = typer.Option(5, help="Number of sample rows to display."),
+) -> None:
+    conn = connect_postgres()
+
+    try:
+        row_count = count_gold_rows(conn, table_name=table_name, schema=schema)
+        rows = sample_gold_rows(conn, table_name=table_name, schema=schema, limit=limit)
+    finally:
+        conn.close()
 
     typer.echo(f"Row count: {row_count}")
     typer.echo(f"Sample rows ({len(rows)}):")
