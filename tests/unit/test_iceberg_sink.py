@@ -4,8 +4,8 @@ from typing import cast
 import pyarrow as pa
 
 from fip.ingestion.base import RawRecord
+from fip.lakehouse.bronze.writer import BRONZE_ROW_FIELDS, IcebergSink
 from fip.settings import Settings
-from fip.writers.iceberg import BRONZE_ROW_FIELDS, IcebergSink
 
 
 def make_raw_record(natural_key: str) -> RawRecord:
@@ -141,7 +141,7 @@ def test_iceberg_sink_load_catalog_uses_expected_lakekeeper_and_s3_settings(
         return object()
 
     monkeypatch.setattr(
-        "fip.writers.iceberg.get_settings",
+        "fip.lakehouse.bronze.writer.get_settings",
         lambda: Settings(
             lakekeeper_catalog_uri="http://localhost:8181/catalog",
             lakekeeper_warehouse_name="local-host",
@@ -152,7 +152,7 @@ def test_iceberg_sink_load_catalog_uses_expected_lakekeeper_and_s3_settings(
             s3_path_style_access=True,
         ),
     )
-    monkeypatch.setattr("fip.writers.iceberg.load_catalog", fake_load_catalog)
+    monkeypatch.setattr("fip.lakehouse.bronze.writer.load_catalog", fake_load_catalog)
 
     sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
 

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fip.silver.service import write_bronze_rows_to_silver_sink
+from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
 
 
 def make_bronze_row(natural_key: str, observation_id: int) -> dict[str, object]:
