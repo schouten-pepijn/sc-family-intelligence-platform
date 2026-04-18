@@ -104,14 +104,18 @@ def test_silver_observation_sink_write_loads_catalog_and_ensures_table(
     fake_catalog = object()
     calls: dict[str, object] = {}
 
+    class FakeTable:
+        def append(self, df, snapshot_properties=None, branch=None) -> None:
+            return None
+
     def fake_load_catalog() -> object:
         calls["load_catalog_called"] = True
         return fake_catalog
 
-    def fake_ensure_table(catalog, arrow_schema) -> object:
+    def fake_ensure_table(catalog, arrow_schema) -> FakeTable:
         calls["catalog"] = catalog
         calls["arrow_schema"] = arrow_schema
-        return object()
+        return FakeTable()
 
     monkeypatch.setattr(sink, "_load_catalog", fake_load_catalog)
     monkeypatch.setattr(sink, "_ensure_table", fake_ensure_table)

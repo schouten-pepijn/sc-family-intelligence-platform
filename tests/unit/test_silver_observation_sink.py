@@ -32,7 +32,12 @@ def test_silver_observation_sink_write_returns_number_of_rows() -> None:
     sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
     rows = [make_silver_row("1", 1), make_silver_row("2", 2)]
     sink._load_catalog = lambda: object()  # type: ignore[method-assign]
-    sink._ensure_table = lambda catalog, arrow_schema: object()  # type: ignore[method-assign]
+
+    class FakeTable:
+        def append(self, df, snapshot_properties=None, branch=None) -> None:
+            return None
+
+    sink._ensure_table = lambda catalog, arrow_schema: FakeTable()  # type: ignore[method-assign]
 
     written = sink.write(rows)
 
@@ -60,7 +65,7 @@ def test_silver_observation_sink_to_arrow_table_uses_expected_schema() -> None:
     assert table.schema == sink._get_arrow_schema()
 
 
-def test_silver_observation_sink_write_loads_catalog_and_ensures_table(
+def test_silver_observation_sink_write_appends_arrow_table_with_snapshot_properties(
     monkeypatch,
 ) -> None:
     sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
@@ -69,14 +74,20 @@ def test_silver_observation_sink_write_loads_catalog_and_ensures_table(
     fake_catalog = object()
     calls: dict[str, object] = {}
 
+    class FakeTable:
+        def append(self, df, snapshot_properties=None, branch=None) -> None:
+            calls["df"] = df
+            calls["snapshot_properties"] = snapshot_properties
+            calls["branch"] = branch
+
     def fake_load_catalog() -> object:
         calls["load_catalog_called"] = True
         return fake_catalog
 
-    def fake_ensure_table(catalog: object, arrow_schema) -> object:
+    def fake_ensure_table(catalog: object, arrow_schema) -> FakeTable:
         calls["catalog"] = catalog
         calls["arrow_schema"] = arrow_schema
-        return object()
+        return FakeTable()
 
     monkeypatch.setattr(sink, "_load_catalog", fake_load_catalog)
     monkeypatch.setattr(sink, "_ensure_table", fake_ensure_table)
@@ -87,3 +98,9 @@ def test_silver_observation_sink_write_loads_catalog_and_ensures_table(
     assert calls["load_catalog_called"] is True
     assert calls["catalog"] is fake_catalog
     assert calls["arrow_schema"] == sink._get_arrow_schema()
+    assert calls["snapshot_properties"] == {
+        "fip.source_name": "cbs_statline",
+        "fip.run_id": "run-001",
+        "fip.schema_version": "v1",
+    }
+    assert calls["branch"] is None
