@@ -66,7 +66,7 @@ class Settings(BaseSettings):
         validation_alias="POSTGRES_PASSWORD",
     )
     postgres_schema: str = Field(
-        default="gold",
+        default="landing",
         validation_alias="POSTGRES_SCHEMA",
     )
 
