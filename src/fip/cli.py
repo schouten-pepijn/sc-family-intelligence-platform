@@ -12,6 +12,8 @@ from fip.readback.duckdb import (
     connect as connect_duckdb,
 )
 from fip.settings import get_settings
+from fip.silver.observation_sink import SilverObservationSink
+from fip.silver.service import write_bronze_rows_to_silver_sink
 from fip.sink.factory import IcebergSinkFactory
 
 app = typer.Typer(help="Family Intelligence Platform CLI.")
@@ -66,6 +68,46 @@ def inspect_bronze(
     typer.echo(f"Sample rows ({len(rows)}):")
     for row in rows:
         typer.echo(str(row))
+
+
+@app.command("build-silver-observations")
+def build_silver_observations(
+    table_name: str = typer.Option(
+        "cbs_observations_83625ned",
+        "--table",
+        help="Bronze table name to transform into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+) -> None:
+    bronze_rows = _read_bronze_rows(table_name=table_name, namespace=namespace)
+    sink = SilverObservationSink(
+        table_ident="silver.cbs_observations_flat_83625ned",
+    )
+
+    written = write_bronze_rows_to_silver_sink(bronze_rows, sink)
+    typer.echo(f"Wrote {written} Silver rows")
+
+
+def _read_bronze_rows(
+    table_name: str,
+    namespace: str | None = None,
+) -> list[dict[str, object]]:
+    conn = connect_duckdb()
+
+    try:
+        load_extensions(conn)
+        attach_lakekeeper_catalog(conn)
+
+        query = (
+            "SELECT * "
+            f"FROM lakekeeper_catalog.{namespace or get_settings().bronze_namespace}.{table_name}"
+        )
+        return conn.execute(query).fetch_arrow_table().to_pylist()
+    finally:
+        conn.close()
 
 
 def main() -> None:
