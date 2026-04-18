@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
 
-from fip.silver.cbs_observations import flatten_bronze_observation
+from fip.silver.cbs_observations import (
+    flatten_bronze_observation,
+    flatten_bronze_observation_rows,
+)
 
 
 def test_flatten_bronze_observation_maps_payload_fields_to_silver_columns() -> None:
@@ -30,3 +33,42 @@ def test_flatten_bronze_observation_maps_payload_fields_to_silver_columns() -> N
     assert flattened["numeric_value"] == 93750.0
     assert flattened["value_attribute"] == "None"
     assert flattened["string_value"] is None
+
+
+def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> None:
+    rows = [
+        {
+            "source_name": "cbs_statline",
+            "natural_key": "1",
+            "retrieved_at": datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+            "run_id": "run-001",
+            "schema_version": "v1",
+            "http_status": 200,
+            "payload": (
+                '{"Id": 1, "Measure": "M001534", "Perioden": "1995JJ00", '
+                '"RegioS": "NL01", "StringValue": null, "Value": 93750.0, '
+                '"ValueAttribute": "None"}'
+            ),
+        },
+        {
+            "source_name": "cbs_statline",
+            "natural_key": "2",
+            "retrieved_at": datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+            "run_id": "run-001",
+            "schema_version": "v1",
+            "http_status": 200,
+            "payload": (
+                '{"Id": 2, "Measure": "M001534", "Perioden": "1995JJ00", '
+                '"RegioS": "NL01", "StringValue": null, "Value": 93750.0, '
+                '"ValueAttribute": "None"}'
+            ),
+        },
+    ]
+
+    flattened_rows = flatten_bronze_observation_rows(rows)
+
+    assert len(flattened_rows) == 2
+    assert flattened_rows[0]["observation_id"] == 1
+    assert flattened_rows[0]["natural_key"] == "1"
+    assert flattened_rows[1]["observation_id"] == 2
+    assert flattened_rows[1]["natural_key"] == "2"
