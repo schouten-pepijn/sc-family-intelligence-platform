@@ -106,7 +106,26 @@ def _read_bronze_rows(
             "SELECT * "
             f"FROM lakekeeper_catalog.{namespace or get_settings().bronze_namespace}.{table_name}"
         )
-        return conn.execute(query).fetch_arrow_table().to_pylist()
+        return conn.execute(query).to_arrow_table().to_pylist()
+    finally:
+        conn.close()
+
+
+def _read_silver_rows(
+    table_name: str,
+    namespace: str | None = None,
+) -> list[dict[str, object]]:
+    conn = connect_duckdb()
+
+    try:
+        load_extensions(conn)
+        attach_lakekeeper_catalog(conn)
+
+        query = (
+            "SELECT * "
+            f"FROM lakekeeper_catalog.{namespace or get_settings().silver_namespace}.{table_name}"
+        )
+        return conn.execute(query).to_arrow_table().to_pylist()
     finally:
         conn.close()
 
