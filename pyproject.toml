@@ -50,6 +50,9 @@ select = ["E", "F", "I", "B"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "-ra"
+markers = [
+    "integration: end-to-end tests that require the local lakehouse stack",
+]
 
 [tool.mypy]
 python_version = "3.13"
