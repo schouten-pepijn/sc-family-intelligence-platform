@@ -17,6 +17,14 @@ def test_settings_reads_bronze_namespace_from_fip_prefixed_env(monkeypatch) -> N
     assert settings.bronze_namespace == "silver"
 
 
+def test_settings_reads_silver_namespace_from_fip_prefixed_env(monkeypatch) -> None:
+    monkeypatch.setenv("FIP_SILVER_NAMESPACE", "gold-silver")
+
+    settings = Settings()
+
+    assert settings.silver_namespace == "gold-silver"
+
+
 def test_settings_reads_lakekeeper_warehouse_name_from_env(monkeypatch) -> None:
     monkeypatch.setenv("LAKEKEEPER_WAREHOUSE_NAME", "demo")
 

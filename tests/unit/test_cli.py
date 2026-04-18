@@ -173,3 +173,64 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
     sink = calls["sink"]
     assert isinstance(sink, FakeSilverSink)
     assert sink.table_ident == "silver.cbs_observations_flat_83625ned"
+
+
+def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeConnection:
+        def close(self) -> None:
+            calls["closed"] = True
+
+    def fake_connect_duckdb() -> FakeConnection:
+        calls["connected"] = True
+        return FakeConnection()
+
+    def fake_load_extensions(con: object) -> None:
+        calls["extensions_loaded"] = con
+
+    def fake_attach_lakekeeper_catalog(con: object) -> None:
+        calls["catalog_attached"] = con
+
+    def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
+        calls["count_table_name"] = table_name
+        calls["count_namespace"] = namespace
+        return 42
+
+    def fake_sample_rows(
+        con: object,
+        table_name: str,
+        namespace: str | None,
+        limit: int,
+    ) -> list[tuple[str, str]]:
+        calls["sample_table_name"] = table_name
+        calls["sample_namespace"] = namespace
+        calls["sample_limit"] = limit
+        return [("silver-row-1", "value-1")]
+
+    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
+    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
+    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
+    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-silver",
+            "--table",
+            "cbs_observations_flat_83625ned",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Row count: 42\nSample rows (1):\n('silver-row-1', 'value-1')\n"
+    assert calls["connected"] is True
+    assert calls["count_table_name"] == "cbs_observations_flat_83625ned"
+    assert calls["count_namespace"] == "silver"
+    assert calls["sample_table_name"] == "cbs_observations_flat_83625ned"
+    assert calls["sample_namespace"] == "silver"
+    assert calls["sample_limit"] == 1
+    assert calls["closed"] is True
