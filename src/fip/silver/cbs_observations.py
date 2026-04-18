@@ -1,5 +1,25 @@
 import json
 
+SILVER_OBSERVATION_FIELDS = (
+    "source_name",
+    "natural_key",
+    "retrieved_at",
+    "run_id",
+    "schema_version",
+    "http_status",
+    "observation_id",
+    "measure_code",
+    "period_code",
+    "region_code",
+    "numeric_value",
+    "value_attribute",
+    "string_value",
+)
+
+
+def to_silver_observation_row(row: dict[str, object]) -> dict[str, object]:
+    return {field: row[field] for field in SILVER_OBSERVATION_FIELDS}
+
 
 def flatten_bronze_observation(row: dict[str, object]) -> dict[str, object]:
     payload_raw = row["payload"]
