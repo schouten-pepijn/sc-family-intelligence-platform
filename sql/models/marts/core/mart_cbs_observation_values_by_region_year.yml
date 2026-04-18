@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: mart_cbs_observation_values_by_region_year
+    description: Aggregated numeric CBS observations by region, year, and measure.
+    columns:
+      - name: region_id
+        tests:
+          - not_null
+      - name: period_year
+        tests:
+          - not_null
+      - name: measure_id
+        tests:
+          - not_null
+      - name: observation_count
+        tests:
+          - not_null
+      - name: avg_observation_value
+      - name: min_observation_value
+      - name: max_observation_value
