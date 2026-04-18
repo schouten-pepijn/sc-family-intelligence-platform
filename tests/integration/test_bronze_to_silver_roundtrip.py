@@ -6,6 +6,11 @@ from uuid import uuid4
 
 import pytest
 
+from fip.gold.readback import connect as connect_postgres
+from fip.gold.readback import count_rows as count_gold_rows
+from fip.gold.readback import sample_rows as sample_gold_rows
+from fip.gold.service import write_silver_rows_to_gold_sink
+from fip.gold.writer import GoldObservationWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.factory import IcebergSinkFactory
@@ -60,6 +65,7 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     silver_namespace = f"silver_it_{suffix}"
     bronze_table_name = f"cbs_observations_{table_id.lower()}"
     silver_table_name = f"cbs_observations_flat_{table_id.lower()}"
+    gold_table_name = f"cbs_observations_it_{table_id.lower()}"
 
     source = FakeSource(
         [
