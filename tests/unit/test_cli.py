@@ -1,3 +1,5 @@
+from typing import cast
+
 from typer.testing import CliRunner
 
 from fip import cli
@@ -107,3 +109,67 @@ def test_inspect_bronze_command_prints_row_count_and_rows(monkeypatch) -> None:
     assert calls["sample_namespace"] is None
     assert calls["sample_limit"] == 2
     assert calls["closed"] is True
+
+
+def test_build_silver_observations_command_reads_bronze_and_writes_silver(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSilverSink:
+        def __init__(self, table_ident: str) -> None:
+            self.table_ident = table_ident
+            calls["table_ident"] = table_ident
+
+    def fake_read_bronze_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        return [
+            {
+                "source_name": "cbs_statline",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-18T09:00:00Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "payload": (
+                    '{"Id": 1, "Measure": "M001534", "Perioden": '
+                    '"1995JJ00", "RegioS": "NL01", "StringValue": null, '
+                    '"Value": 93750.0, "ValueAttribute": "None"}'
+                ),
+            }
+        ]
+
+    def fake_write_bronze_rows_to_silver_sink(
+        bronze_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["bronze_rows"] = bronze_rows
+        calls["sink"] = sink
+        return 1
+
+    monkeypatch.setattr(cli, "_read_bronze_rows", fake_read_bronze_rows)
+    monkeypatch.setattr(cli, "SilverObservationSink", FakeSilverSink)
+    monkeypatch.setattr(
+        cli, "write_bronze_rows_to_silver_sink", fake_write_bronze_rows_to_silver_sink
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-silver-observations",
+            "--table",
+            "cbs_observations_83625ned",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 Silver rows\n"
+    assert calls["read_table_name"] == "cbs_observations_83625ned"
+    assert calls["read_namespace"] is None
+    assert calls["table_ident"] == "silver.cbs_observations_flat_83625ned"
+    bronze_rows = cast(list[dict[str, object]], calls["bronze_rows"])
+    assert len(bronze_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeSilverSink)
+    assert sink.table_ident == "silver.cbs_observations_flat_83625ned"
