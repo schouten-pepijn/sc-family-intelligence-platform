@@ -135,11 +135,22 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
             namespace=silver_namespace,
             limit=1,
         )
+        silver_rows_for_gold = (
+            silver_conn.execute(
+                f"""
+            SELECT *
+            FROM lakekeeper_catalog.{silver_namespace}.{silver_table_name}
+            """
+            )
+            .to_arrow_table()
+            .to_pylist()
+        )
     finally:
         silver_conn.close()
 
     assert silver_count == 1
     assert len(silver_rows) == 1
+    assert len(silver_rows_for_gold) == 1
 
     row = silver_rows[0]
     assert row[0] == "cbs_statline"
