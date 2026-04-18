@@ -8,6 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+sql/.venv/
 
 # Tooling caches
 .pytest_cache/
@@ -23,3 +24,11 @@ wheels/
 own_docs/
 .vscode/
 .idea/
+.codex/
+
+# dbt / sql local artifacts
+sql/logs/
+sql/target/
+sql/dbt_packages/
+sql/.user.yml
+sql/profiles.yml
