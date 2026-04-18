@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from fip.silver.cbs_observations import flatten_bronze_observation_rows
+from fip.lakehouse.silver.cbs_observations import flatten_bronze_observation_rows
 
 
 class SilverSink(Protocol):

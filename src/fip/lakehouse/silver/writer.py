@@ -2,8 +2,8 @@ import pyarrow as pa
 from pyiceberg.catalog import Catalog, load_catalog
 from pyiceberg.table import Table
 
+from fip.lakehouse.silver.cbs_observations import to_silver_observation_row
 from fip.settings import get_settings
-from fip.silver.cbs_observations import to_silver_observation_row
 
 
 class SilverObservationSink:
