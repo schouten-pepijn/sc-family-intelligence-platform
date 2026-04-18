@@ -25,6 +25,7 @@ class FakeConnection:
     def __init__(self) -> None:
         self.statements: list[str] = []
         self.execute_calls: list[tuple[str, tuple[object, ...] | None]] = []
+        self.executemany_calls: list[tuple[str, list[tuple[object, ...]]]] = []
         self.committed = False
         self.rolled_back = False
         self.closed = False
@@ -33,6 +34,19 @@ class FakeConnection:
         self.statements.append(str(sql))
         if params is not None:
             self.execute_calls.append((str(sql), params))
+        return object()
+
+    def cursor(self) -> "FakeConnection":
+        return self
+
+    def __enter__(self) -> "FakeConnection":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        return None
+
+    def executemany(self, sql: str, params_seq: list[tuple[object, ...]]) -> object:
+        self.executemany_calls.append((str(sql), params_seq))
         return object()
 
     def commit(self) -> None:
@@ -63,12 +77,13 @@ def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None
     assert any("CREATE SCHEMA IF NOT EXISTS" in statement for statement in conn.statements)
     assert any("CREATE TABLE IF NOT EXISTS" in statement for statement in conn.statements)
     assert any("TRUNCATE TABLE" in statement for statement in conn.statements)
-    assert len(conn.execute_calls) == 2
-    sql, params = conn.execute_calls[0]
+    assert len(conn.execute_calls) == 0
+    assert len(conn.executemany_calls) == 1
+    sql, params_seq = conn.executemany_calls[0]
     assert "INSERT INTO" in sql
-    assert params is not None
-    assert params[0] == "cbs_statline"
-    assert params[6] == 1
+    assert len(params_seq) == 2
+    assert params_seq[0][0] == "cbs_statline"
+    assert params_seq[0][6] == 1
     assert GOLD_OBSERVATION_FIELDS == (
         "source_name",
         "natural_key",
@@ -98,5 +113,6 @@ def test_gold_observation_writer_returns_zero_for_empty_input(monkeypatch) -> No
     assert writer.last_written_rows == []
     assert conn.statements == []
     assert conn.execute_calls == []
+    assert conn.executemany_calls == []
     assert conn.committed is False
     assert conn.closed is False

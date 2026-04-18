@@ -45,7 +45,7 @@ def test_settings_reads_minio_credentials_via_existing_env_names(monkeypatch) ->
 
 def test_settings_reads_postgres_defaults_from_env(monkeypatch) -> None:
     monkeypatch.setenv("POSTGRES_HOST", "db")
-    monkeypatch.setenv("POSTGRES_PORT", "5433")
+    monkeypatch.setenv("POSTGRES_PORT", "55433")
     monkeypatch.setenv("POSTGRES_DB", "gold")
     monkeypatch.setenv("POSTGRES_USER", "gold-user")
     monkeypatch.setenv("POSTGRES_PASSWORD", "gold-pass")
@@ -54,7 +54,7 @@ def test_settings_reads_postgres_defaults_from_env(monkeypatch) -> None:
     settings = Settings()
 
     assert settings.postgres_host == "db"
-    assert settings.postgres_port == 5433
+    assert settings.postgres_port == 55433
     assert settings.postgres_db == "gold"
     assert settings.postgres_user == "gold-user"
     assert settings.postgres_password == "gold-pass"

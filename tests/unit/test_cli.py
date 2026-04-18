@@ -234,3 +234,120 @@ def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
     assert calls["sample_namespace"] == "silver"
     assert calls["sample_limit"] == 1
     assert calls["closed"] is True
+
+
+def test_build_gold_observations_command_reads_silver_and_writes_gold(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeGoldSink:
+        def __init__(self, table_name: str) -> None:
+            self.table_name = table_name
+            calls["table_name"] = table_name
+
+    def fake_read_silver_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        return [
+            {
+                "source_name": "cbs_statline",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-18T09:00:00Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "observation_id": 1,
+                "measure_code": "M001534",
+                "period_code": "1995JJ00",
+                "region_code": "NL01",
+                "numeric_value": 93750.0,
+                "value_attribute": "None",
+                "string_value": None,
+            }
+        ]
+
+    def fake_write_silver_rows_to_gold_sink(
+        silver_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["silver_rows"] = silver_rows
+        calls["sink"] = sink
+        return 1
+
+    monkeypatch.setattr(cli, "_read_silver_rows", fake_read_silver_rows)
+    monkeypatch.setattr(cli, "GoldObservationWriter", FakeGoldSink)
+    monkeypatch.setattr(cli, "write_silver_rows_to_gold_sink", fake_write_silver_rows_to_gold_sink)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-gold-observations",
+            "--table",
+            "cbs_observations_flat_83625ned",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 Gold rows\n"
+    assert calls["read_table_name"] == "cbs_observations_flat_83625ned"
+    assert calls["read_namespace"] is None
+    assert calls["table_name"] == "cbs_observations"
+    silver_rows = cast(list[dict[str, object]], calls["silver_rows"])
+    assert len(silver_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeGoldSink)
+    assert sink.table_name == "cbs_observations"
+
+
+def test_inspect_gold_command_prints_row_count_and_rows(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeConnection:
+        def close(self) -> None:
+            calls["closed"] = True
+
+    def fake_connect_postgres() -> FakeConnection:
+        calls["connected"] = True
+        return FakeConnection()
+
+    def fake_count_gold_rows(conn: object, table_name: str, schema: str | None) -> int:
+        calls["count_table_name"] = table_name
+        calls["count_schema"] = schema
+        return 3
+
+    def fake_sample_gold_rows(
+        conn: object,
+        table_name: str,
+        schema: str | None,
+        limit: int,
+    ) -> list[tuple[str, str]]:
+        calls["sample_table_name"] = table_name
+        calls["sample_schema"] = schema
+        calls["sample_limit"] = limit
+        return [("gold-row-1", "value-1")]
+
+    monkeypatch.setattr(cli, "connect_postgres", fake_connect_postgres)
+    monkeypatch.setattr(cli, "count_gold_rows", fake_count_gold_rows)
+    monkeypatch.setattr(cli, "sample_gold_rows", fake_sample_gold_rows)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-gold",
+            "--table",
+            "cbs_observations",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Row count: 3\nSample rows (1):\n('gold-row-1', 'value-1')\n"
+    assert calls["connected"] is True
+    assert calls["count_table_name"] == "cbs_observations"
+    assert calls["count_schema"] is None
+    assert calls["sample_table_name"] == "cbs_observations"
+    assert calls["sample_schema"] is None
+    assert calls["sample_limit"] == 1
+    assert calls["closed"] is True
