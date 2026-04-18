@@ -73,9 +73,7 @@ class SilverObservationSink:
             "s3.access-key-id": settings.s3_access_key_id,
             "s3.secret-access-key": settings.s3_secret_access_key,
             "s3.region": settings.aws_region,
-            "s3.force-virtual-addressing": str(
-                not settings.s3_path_style_access
-            ).lower(),
+            "s3.force-virtual-addressing": str(not settings.s3_path_style_access).lower(),
         }
 
         return load_catalog("lakekeeper", **properties)
