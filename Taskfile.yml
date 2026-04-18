@@ -19,6 +19,11 @@ tasks:
     cmds:
       - uv sync --dev
 
+  sql-install:
+    desc: Install local dbt dependencies for the sql project
+    cmds:
+      - uv sync --project sql
+
   infra-up:
     desc: Start the local MinIO, Postgres, and Lakekeeper stack
     cmds:
@@ -84,6 +89,21 @@ tasks:
       - task: lint
       - task: typecheck
       - task: test
+
+  dbt-debug:
+    desc: Validate the local dbt profile and connection
+    cmds:
+      - uv run --project sql dbt debug --project-dir sql --profiles-dir sql
+
+  dbt-run:
+    desc: Run dbt models against the local landing schema
+    cmds:
+      - uv run --project sql dbt run --project-dir sql --profiles-dir sql
+
+  dbt-test:
+    desc: Run dbt tests against the local landing schema
+    cmds:
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql
 
   precommit:
     desc: Run pre-commit on all files
