@@ -13,6 +13,10 @@ class Settings(BaseSettings):
         default="bronze",
         validation_alias=AliasChoices("FIP_BRONZE_NAMESPACE", "BRONZE_NAMESPACE"),
     )
+    silver_namespace: str = Field(
+        default="silver",
+        validation_alias=AliasChoices("FIP_SILVER_NAMESPACE", "SILVER_NAMESPACE"),
+    )
     lakekeeper_warehouse_name: str = Field(
         default="local",
         validation_alias="LAKEKEEPER_WAREHOUSE_NAME",
