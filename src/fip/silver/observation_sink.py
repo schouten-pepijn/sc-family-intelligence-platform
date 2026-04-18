@@ -17,9 +17,21 @@ class SilverObservationSink:
             return 0
 
         self.last_written_rows = [self._to_silver_row(row) for row in rows]
+
         arrow_table = self._to_arrow_table(self.last_written_rows)
         catalog = self._load_catalog()
-        self._ensure_table(catalog, arrow_table.schema)
+        table = self._ensure_table(catalog, arrow_table.schema)
+
+        first_row = self.last_written_rows[0]
+        snapshot_properties: dict[str, str] = {
+            "fip.source_name": str(first_row["source_name"]),
+            "fip.run_id": str(first_row["run_id"]),
+            "fip.schema_version": str(first_row["schema_version"]),
+        }
+        table.append(
+            arrow_table,
+            snapshot_properties=snapshot_properties,
+        )
         return arrow_table.num_rows
 
     def _to_silver_row(self, row: dict[str, object]) -> dict[str, object]:
