@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import psycopg
-from psycopg.sql import Identifier, SQL
+from psycopg.sql import SQL, Identifier
 
 from fip.settings import get_settings
 
