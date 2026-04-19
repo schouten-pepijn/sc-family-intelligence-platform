@@ -53,8 +53,8 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
 
             return FakeSink()
 
-    monkeypatch.setattr(cli, "CBSODataSource", FakeSource)
-    monkeypatch.setattr(cli, "CBSIcebergSinkFactory", FakeSinkFactory)
+    monkeypatch.setattr("fip.commands.cbs.CBSODataSource", FakeSource)
+    monkeypatch.setattr("fip.commands.cbs.CBSIcebergSinkFactory", FakeSinkFactory)
 
     result = runner.invoke(
         cli.app,
@@ -124,8 +124,8 @@ def test_ingest_bag_command_invokes_service_and_prints_result(monkeypatch) -> No
 
             return FakeSink()
 
-    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
-    monkeypatch.setattr(cli, "BAGIcebergSinkFactory", FakeSinkFactory)
+    monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
+    monkeypatch.setattr("fip.commands.pdok_bag.BAGIcebergSinkFactory", FakeSinkFactory)
 
     result = runner.invoke(
         cli.app,
@@ -186,8 +186,8 @@ def test_ingest_bag_command_supports_pand_collection(monkeypatch) -> None:
 
             return FakeSink()
 
-    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
-    monkeypatch.setattr(cli, "BAGIcebergSinkFactory", FakeSinkFactory)
+    monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
+    monkeypatch.setattr("fip.commands.pdok_bag.BAGIcebergSinkFactory", FakeSinkFactory)
 
     result = runner.invoke(
         cli.app,
@@ -239,7 +239,7 @@ def test_inspect_cbs_raw_command_prints_filtered_payloads(monkeypatch) -> None:
                 schema_version="v1",
             )
 
-    monkeypatch.setattr(cli, "CBSODataSource", FakeSource)
+    monkeypatch.setattr("fip.commands.inspection.CBSODataSource", FakeSource)
 
     result = runner.invoke(
         cli.app,
@@ -275,7 +275,7 @@ def test_inspect_bag_raw_command_prints_filtered_payloads(monkeypatch) -> None:
                 schema_version="v1",
             )
 
-    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
+    monkeypatch.setattr("fip.commands.inspection.PDOKBAGSource", FakeSource)
 
     result = runner.invoke(
         cli.app,
@@ -310,7 +310,7 @@ def test_inspect_bag_raw_command_supports_pand_collection(monkeypatch) -> None:
                 schema_version="v1",
             )
 
-    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
+    monkeypatch.setattr("fip.commands.inspection.PDOKBAGSource", FakeSource)
 
     result = runner.invoke(
         cli.app,
@@ -378,9 +378,9 @@ def test_archive_cbs_raw_command_selects_target_writer(
             calls["rows"] = rows
             return len(rows)
 
-    monkeypatch.setattr(cli, "CBSODataSource", FakeSource)
-    monkeypatch.setattr(cli, "RawSnapshotWriter", FakeLocalWriter)
-    monkeypatch.setattr(cli, "MinioRawSnapshotWriter", FakeMinioWriter)
+    monkeypatch.setattr("fip.commands.cbs.CBSODataSource", FakeSource)
+    monkeypatch.setattr("fip.commands.cbs.RawSnapshotWriter", FakeLocalWriter)
+    monkeypatch.setattr("fip.commands.cbs.MinioRawSnapshotWriter", FakeMinioWriter)
 
     result = runner.invoke(
         cli.app,
@@ -467,9 +467,9 @@ def test_archive_bag_raw_command_selects_target_writer(
             calls["rows"] = rows
             return len(rows)
 
-    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
-    monkeypatch.setattr(cli, "RawSnapshotWriter", FakeLocalWriter)
-    monkeypatch.setattr(cli, "MinioRawSnapshotWriter", FakeMinioWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
+    monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotWriter", FakeLocalWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.MinioRawSnapshotWriter", FakeMinioWriter)
 
     result = runner.invoke(
         cli.app,
@@ -546,9 +546,9 @@ def test_archive_bag_raw_command_supports_pand_collection(
             calls["rows"] = rows
             return len(rows)
 
-    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
-    monkeypatch.setattr(cli, "RawSnapshotWriter", FakeLocalWriter)
-    monkeypatch.setattr(cli, "MinioRawSnapshotWriter", FakeMinioWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
+    monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotWriter", FakeLocalWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.MinioRawSnapshotWriter", FakeMinioWriter)
 
     result = runner.invoke(
         cli.app,
@@ -645,8 +645,8 @@ def test_build_gold_reference_commands_filter_records_and_write(
             calls["rows"] = self.rows
             return len(self.rows)
 
-    monkeypatch.setattr(cli, "CBSODataSource", FakeSource)
-    monkeypatch.setattr(cli, "CBSReferenceCodeWriter", FakeWriter)
+    monkeypatch.setattr("fip.commands._helpers.CBSODataSource", FakeSource)
+    monkeypatch.setattr("fip.commands._helpers.CBSReferenceCodeWriter", FakeWriter)
 
     result = runner.invoke(
         cli.app,
@@ -704,11 +704,13 @@ def test_inspect_bronze_command_prints_row_count_and_rows(monkeypatch) -> None:
         calls["sample_limit"] = limit
         return [("row-1", "value-1"), ("row-2", "value-2")]
 
-    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
-    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
-    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
-    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
-    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+    monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
+    monkeypatch.setattr(
+        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+    )
+    monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
+    monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
 
     result = runner.invoke(
         cli.app,
@@ -767,11 +769,13 @@ def test_inspect_bag_bronze_command_prints_row_count_and_rows(monkeypatch) -> No
         calls["sample_limit"] = limit
         return [("bag-row-1", "value-1")]
 
-    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
-    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
-    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
-    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
-    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+    monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
+    monkeypatch.setattr(
+        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+    )
+    monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
+    monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
 
     result = runner.invoke(
         cli.app,
@@ -826,11 +830,13 @@ def test_inspect_bag_bronze_command_supports_pand_collection(monkeypatch) -> Non
         calls["sample_limit"] = limit
         return [("pand-row-1", "value-1")]
 
-    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
-    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
-    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
-    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
-    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+    monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
+    monkeypatch.setattr(
+        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+    )
+    monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
+    monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
 
     result = runner.invoke(
         cli.app,
@@ -886,11 +892,10 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
         calls["sink"] = sink
         return 1
 
-    monkeypatch.setattr(cli, "_read_bronze_rows", fake_read_bronze_rows)
-    monkeypatch.setattr(cli, "CBSObservationSink", FakeSilverSink)
+    monkeypatch.setattr("fip.commands.cbs.read_bronze_rows", fake_read_bronze_rows)
+    monkeypatch.setattr("fip.commands.cbs.CBSObservationSink", FakeSilverSink)
     monkeypatch.setattr(
-        cli,
-        "write_bronze_rows_to_cbs_observation_sink",
+        "fip.commands.cbs.write_bronze_rows_to_cbs_observation_sink",
         fake_write_bronze_rows_to_cbs_observation_sink,
     )
 
@@ -948,11 +953,10 @@ def test_build_silver_bag_verblijfsobject_command_reads_bronze_and_writes_silver
         calls["sink"] = sink
         return 1
 
-    monkeypatch.setattr(cli, "_read_bronze_rows", fake_read_bronze_rows)
-    monkeypatch.setattr(cli, "BAGVerblijfsobjectSink", FakeBagSilverSink)
+    monkeypatch.setattr("fip.commands.pdok_bag.read_bronze_rows", fake_read_bronze_rows)
+    monkeypatch.setattr("fip.commands.pdok_bag.BAGVerblijfsobjectSink", FakeBagSilverSink)
     monkeypatch.setattr(
-        cli,
-        "write_bronze_rows_to_bag_verblijfsobject_sink",
+        "fip.commands.pdok_bag.write_bronze_rows_to_bag_verblijfsobject_sink",
         fake_write_bronze_rows_to_bag_verblijfsobject_sink,
     )
 
@@ -1010,11 +1014,10 @@ def test_build_silver_bag_pand_command_reads_bronze_and_writes_silver(
         calls["sink"] = sink
         return 1
 
-    monkeypatch.setattr(cli, "_read_bronze_rows", fake_read_bronze_rows)
-    monkeypatch.setattr(cli, "BAGPandSink", FakeBagPandSilverSink)
+    monkeypatch.setattr("fip.commands.pdok_bag.read_bronze_rows", fake_read_bronze_rows)
+    monkeypatch.setattr("fip.commands.pdok_bag.BAGPandSink", FakeBagPandSilverSink)
     monkeypatch.setattr(
-        cli,
-        "write_bronze_rows_to_bag_pand_sink",
+        "fip.commands.pdok_bag.write_bronze_rows_to_bag_pand_sink",
         fake_write_bronze_rows_to_bag_pand_sink,
     )
 
@@ -1083,9 +1086,11 @@ def test_build_bag_landing_verblijfsobject_command_reads_silver_and_writes_landi
         calls["sink"] = sink
         return len(silver_rows)
 
-    monkeypatch.setattr(cli, "_read_silver_rows", fake_read_silver_rows)
-    monkeypatch.setattr(cli, "BAGVerblijfsobjectLandingWriter", FakeBAGLandingWriter)
-    monkeypatch.setattr(cli, "write_rows_to_sink", fake_write_rows_to_sink)
+    monkeypatch.setattr("fip.commands.pdok_bag.read_silver_rows", fake_read_silver_rows)
+    monkeypatch.setattr(
+        "fip.commands.pdok_bag.BAGVerblijfsobjectLandingWriter", FakeBAGLandingWriter
+    )
+    monkeypatch.setattr("fip.commands.pdok_bag.write_rows_to_sink", fake_write_rows_to_sink)
 
     result = runner.invoke(
         cli.app,
@@ -1148,9 +1153,9 @@ def test_build_bag_landing_pand_command_reads_silver_and_writes_landing(
         calls["sink"] = sink
         return len(silver_rows)
 
-    monkeypatch.setattr(cli, "_read_silver_rows", fake_read_silver_rows)
-    monkeypatch.setattr(cli, "BAGPandLandingWriter", FakeBAGLandingWriter)
-    monkeypatch.setattr(cli, "write_rows_to_sink", fake_write_rows_to_sink)
+    monkeypatch.setattr("fip.commands.pdok_bag.read_silver_rows", fake_read_silver_rows)
+    monkeypatch.setattr("fip.commands.pdok_bag.BAGPandLandingWriter", FakeBAGLandingWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.write_rows_to_sink", fake_write_rows_to_sink)
 
     result = runner.invoke(
         cli.app,
@@ -1206,11 +1211,13 @@ def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
         calls["sample_limit"] = limit
         return [("silver-row-1", "value-1")]
 
-    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
-    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
-    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
-    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
-    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+    monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
+    monkeypatch.setattr(
+        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+    )
+    monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
+    monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
 
     result = runner.invoke(
         cli.app,
@@ -1267,11 +1274,13 @@ def test_inspect_bag_silver_command_prints_row_count_and_rows(monkeypatch) -> No
         calls["sample_limit"] = limit
         return [("silver-row-1", "value-1")]
 
-    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
-    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
-    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
-    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
-    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+    monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
+    monkeypatch.setattr(
+        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+    )
+    monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
+    monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
 
     result = runner.invoke(
         cli.app,
@@ -1326,11 +1335,13 @@ def test_inspect_bag_silver_pand_command_prints_row_count_and_rows(monkeypatch) 
         calls["sample_limit"] = limit
         return [("pand-silver-row-1", "value-1")]
 
-    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
-    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
-    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
-    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
-    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+    monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
+    monkeypatch.setattr(
+        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+    )
+    monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
+    monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
 
     result = runner.invoke(
         cli.app,
@@ -1376,9 +1387,9 @@ def test_inspect_bag_landing_verblijfsobject_command_prints_row_count_and_rows(
         calls["sample_limit"] = limit
         return [("bag-landing-row-1", "value-1")]
 
-    monkeypatch.setattr(cli, "connect_postgres", fake_connect_postgres)
-    monkeypatch.setattr(cli, "count_gold_rows", fake_count_gold_rows)
-    monkeypatch.setattr(cli, "sample_gold_rows", fake_sample_gold_rows)
+    monkeypatch.setattr("fip.commands.inspection.connect_postgres", fake_connect_postgres)
+    monkeypatch.setattr("fip.commands.inspection.count_gold_rows", fake_count_gold_rows)
+    monkeypatch.setattr("fip.commands.inspection.sample_gold_rows", fake_sample_gold_rows)
 
     result = runner.invoke(
         cli.app,
@@ -1427,9 +1438,9 @@ def test_inspect_bag_landing_pand_command_prints_row_count_and_rows(monkeypatch)
         calls["sample_limit"] = limit
         return [("bag-pand-landing-row-1", "value-1")]
 
-    monkeypatch.setattr(cli, "connect_postgres", fake_connect_postgres)
-    monkeypatch.setattr(cli, "count_gold_rows", fake_count_gold_rows)
-    monkeypatch.setattr(cli, "sample_gold_rows", fake_sample_gold_rows)
+    monkeypatch.setattr("fip.commands.inspection.connect_postgres", fake_connect_postgres)
+    monkeypatch.setattr("fip.commands.inspection.count_gold_rows", fake_count_gold_rows)
+    monkeypatch.setattr("fip.commands.inspection.sample_gold_rows", fake_sample_gold_rows)
 
     result = runner.invoke(
         cli.app,
@@ -1492,9 +1503,9 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
         calls["sink"] = sink
         return 1
 
-    monkeypatch.setattr(cli, "_read_silver_rows", fake_read_silver_rows)
-    monkeypatch.setattr(cli, "CBSObservationLandingWriter", FakeGoldSink)
-    monkeypatch.setattr(cli, "write_rows_to_sink", fake_write_rows_to_sink)
+    monkeypatch.setattr("fip.commands.cbs.read_silver_rows", fake_read_silver_rows)
+    monkeypatch.setattr("fip.commands.cbs.CBSObservationLandingWriter", FakeGoldSink)
+    monkeypatch.setattr("fip.commands.cbs.write_rows_to_sink", fake_write_rows_to_sink)
 
     result = runner.invoke(
         cli.app,
@@ -1515,6 +1526,96 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
     sink = calls["sink"]
     assert isinstance(sink, FakeGoldSink)
     assert sink.table_name == "cbs_observations"
+
+
+def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeMappingWriter:
+        def __init__(self, table_name: str) -> None:
+            self.table_name = table_name
+            calls["table_name"] = table_name
+
+    class FakeLocatieserverClient:
+        def lookup(self, query: str, rows: int = 10) -> dict[str, object]:
+            queries = calls.setdefault("queries", [])
+            cast(list[str], queries).append(query)
+            lookup_rows = calls.setdefault("lookup_rows", [])
+            cast(list[int], lookup_rows).append(rows)
+            return {
+                "response": {
+                    "docs": [
+                        {
+                            "id": "GM1883",
+                            "score": 0.92,
+                        }
+                    ]
+                }
+            }
+
+    def fake_read_silver_rows(
+        table_name: str,
+        namespace: str | None,
+    ) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        return [
+            {
+                "bag_id": "80f96ef7-dfa4-5197-b681-cfd92b10757e",
+                "retrieved_at": datetime(2026, 4, 19, 17, 43, 42, 77000, tzinfo=timezone.utc),
+                "postcode": "6131BE",
+                "huisnummer": 32,
+                "openbare_ruimte_naam": "Steenweg",
+                "woonplaats_naam": "Sittard",
+            }
+        ]
+
+    def fake_write_rows_to_sink(
+        rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["rows"] = rows
+        calls["sink"] = sink
+        return len(rows)
+
+    monkeypatch.setattr("fip.commands.geo.read_silver_rows", fake_read_silver_rows)
+    monkeypatch.setattr("fip.commands.geo.write_rows_to_sink", fake_write_rows_to_sink)
+    monkeypatch.setattr("fip.commands.geo.LocatieserverClient", FakeLocatieserverClient)
+    monkeypatch.setattr(
+        "fip.commands.geo.BAGGeoRegionMappingLandingWriter",
+        FakeMappingWriter,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-bag-geo-region-mapping",
+            "--table",
+            "bag_verblijfsobject_flat",
+            "--limit",
+            "1",
+            "--rows",
+            "5",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 BAG geo-region mapping rows\n"
+    assert calls["read_table_name"] == "bag_verblijfsobject_flat"
+    assert calls["read_namespace"] is None
+    assert calls["table_name"] == "bag_geo_region_mapping"
+    queries = cast(list[str], calls["queries"])
+    lookup_rows = cast(list[int], calls["lookup_rows"])
+    assert len(queries) == 1
+    assert queries[0] == "6131BE 32 Steenweg Sittard"
+    assert lookup_rows == [5]
+    mapped_rows = cast(list[dict[str, object]], calls["rows"])
+    assert len(mapped_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeMappingWriter)
+    assert sink.table_name == "bag_geo_region_mapping"
 
 
 def test_inspect_gold_command_prints_row_count_and_rows(monkeypatch) -> None:
@@ -1544,9 +1645,9 @@ def test_inspect_gold_command_prints_row_count_and_rows(monkeypatch) -> None:
         calls["sample_limit"] = limit
         return [("gold-row-1", "value-1")]
 
-    monkeypatch.setattr(cli, "connect_postgres", fake_connect_postgres)
-    monkeypatch.setattr(cli, "count_gold_rows", fake_count_gold_rows)
-    monkeypatch.setattr(cli, "sample_gold_rows", fake_sample_gold_rows)
+    monkeypatch.setattr("fip.commands.inspection.connect_postgres", fake_connect_postgres)
+    monkeypatch.setattr("fip.commands.inspection.count_gold_rows", fake_count_gold_rows)
+    monkeypatch.setattr("fip.commands.inspection.sample_gold_rows", fake_sample_gold_rows)
 
     result = runner.invoke(
         cli.app,
