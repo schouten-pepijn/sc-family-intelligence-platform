@@ -2,7 +2,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from fip.gold.reference_codes import ReferenceCodeWriter, build_reference_row
+from fip.gold.cbs_reference_codes_writer import (
+    CBSReferenceCodeWriter,
+    build_reference_row,
+)
 from fip.ingestion.base import RawRecord
 
 
@@ -104,7 +107,7 @@ def test_build_reference_row_maps_period_payload_and_derives_year() -> None:
 
 
 def test_reference_writer_rejects_mixed_entities(monkeypatch) -> None:
-    writer = ReferenceCodeWriter(table_name="cbs_measure_codes", entity="MeasureCodes")
+    writer = CBSReferenceCodeWriter(table_name="cbs_measure_codes", entity="MeasureCodes")
     rows = [
         make_raw_record(
             "83625NED.MeasureCodes",
@@ -137,7 +140,7 @@ def test_reference_writer_rejects_mixed_entities(monkeypatch) -> None:
 
 def test_reference_writer_writes_measure_rows(monkeypatch) -> None:
     conn = FakeConnection()
-    writer = ReferenceCodeWriter(table_name="cbs_measure_codes", entity="MeasureCodes")
+    writer = CBSReferenceCodeWriter(table_name="cbs_measure_codes", entity="MeasureCodes")
     rows = [
         make_raw_record(
             "83625NED.MeasureCodes",

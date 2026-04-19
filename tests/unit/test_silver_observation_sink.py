@@ -3,7 +3,7 @@ from typing import cast
 
 from pyiceberg.catalog import Catalog
 
-from fip.lakehouse.silver.cbs_observations_sink import CBSObservationSink
+from fip.lakehouse.silver.cbs.cbs_observations_sink import CBSObservationSink
 
 
 def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:

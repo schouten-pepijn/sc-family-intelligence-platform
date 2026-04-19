@@ -67,7 +67,7 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     silver_namespace = f"silver_it_{suffix}"
     bronze_table_name = f"cbs_observations_{table_id.lower()}"
     silver_table_name = f"cbs_observations_flat_{table_id.lower()}"
-    gold_table_name = f"cbs_observations_it_{table_id.lower()}"
+    landing_table_name = f"cbs_observations_it_{table_id.lower()}"
 
     source = FakeSource(
         [
@@ -171,21 +171,21 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     assert row[11] == "None"
     assert row[12] is None
 
-    gold_writer = GoldObservationWriter(table_name=gold_table_name)
-    gold_written = write_silver_rows_to_gold_sink(silver_rows_for_gold, gold_writer)
-    assert gold_written == 1
-    gold_written_again = write_silver_rows_to_gold_sink(silver_rows_for_gold, gold_writer)
-    assert gold_written_again == 1
+    landing_writer = CBSObservationLandingWriter(table_name=landing_table_name)
+    landing_written = write_rows_to_sink(silver_rows_for_gold, landing_writer)
+    assert landing_written == 1
+    landing_written_again = write_rows_to_sink(silver_rows_for_gold, landing_writer)
+    assert landing_written_again == 1
 
     gold_conn = connect_postgres()
     try:
         gold_count = count_gold_rows(
             gold_conn,
-            table_name=gold_table_name,
+            table_name=landing_table_name,
         )
         gold_rows = sample_gold_rows(
             gold_conn,
-            table_name=gold_table_name,
+            table_name=landing_table_name,
             limit=1,
         )
     finally:

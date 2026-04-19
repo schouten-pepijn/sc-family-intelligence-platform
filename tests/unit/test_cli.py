@@ -646,7 +646,7 @@ def test_build_gold_reference_commands_filter_records_and_write(
             return len(self.rows)
 
     monkeypatch.setattr(cli, "CBSODataSource", FakeSource)
-    monkeypatch.setattr(cli, "ReferenceCodeWriter", FakeWriter)
+    monkeypatch.setattr(cli, "CBSReferenceCodeWriter", FakeWriter)
 
     result = runner.invoke(
         cli.app,
@@ -1075,7 +1075,7 @@ def test_build_bag_landing_verblijfsobject_command_reads_silver_and_writes_landi
             }
         ]
 
-    def fake_write_silver_rows_to_bag_landing_sink(
+    def fake_write_rows_to_sink(
         silver_rows: list[dict[str, object]],
         sink: object,
     ) -> int:
@@ -1087,8 +1087,8 @@ def test_build_bag_landing_verblijfsobject_command_reads_silver_and_writes_landi
     monkeypatch.setattr(cli, "BAGVerblijfsobjectLandingWriter", FakeBAGLandingWriter)
     monkeypatch.setattr(
         cli,
-        "write_silver_rows_to_bag_landing_sink",
-        fake_write_silver_rows_to_bag_landing_sink,
+        "write_rows_to_sink",
+        fake_write_rows_to_sink,
     )
 
     result = runner.invoke(
@@ -1144,7 +1144,7 @@ def test_build_bag_landing_pand_command_reads_silver_and_writes_landing(
             }
         ]
 
-    def fake_write_silver_rows_to_bag_landing_sink(
+    def fake_write_rows_to_sink(
         silver_rows: list[dict[str, object]],
         sink: object,
     ) -> int:
@@ -1156,8 +1156,8 @@ def test_build_bag_landing_pand_command_reads_silver_and_writes_landing(
     monkeypatch.setattr(cli, "BAGPandLandingWriter", FakeBAGLandingWriter)
     monkeypatch.setattr(
         cli,
-        "write_silver_rows_to_bag_landing_sink",
-        fake_write_silver_rows_to_bag_landing_sink,
+        "write_rows_to_sink",
+        fake_write_rows_to_sink,
     )
 
     result = runner.invoke(
@@ -1492,7 +1492,7 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
             }
         ]
 
-    def fake_write_silver_rows_to_gold_sink(
+    def fake_write_rows_to_sink(
         silver_rows: list[dict[str, object]],
         sink: object,
     ) -> int:
@@ -1501,8 +1501,8 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
         return 1
 
     monkeypatch.setattr(cli, "_read_silver_rows", fake_read_silver_rows)
-    monkeypatch.setattr(cli, "GoldObservationWriter", FakeGoldSink)
-    monkeypatch.setattr(cli, "write_silver_rows_to_gold_sink", fake_write_silver_rows_to_gold_sink)
+    monkeypatch.setattr(cli, "CBSObservationLandingWriter", FakeGoldSink)
+    monkeypatch.setattr(cli, "write_rows_to_sink", fake_write_rows_to_sink)
 
     result = runner.invoke(
         cli.app,

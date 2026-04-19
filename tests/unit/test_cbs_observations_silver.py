@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
 
-from fip.lakehouse.silver.cbs_observations import (
+from fip.lakehouse.silver.cbs.cbs_observations import (
     SILVER_OBSERVATION_FIELDS,
     flatten_bronze_observation,
     flatten_bronze_observation_rows,
     to_silver_observation_row,
 )
-from fip.lakehouse.silver.cbs_observations_sink import CBSObservationSink
+from fip.lakehouse.silver.cbs.cbs_observations_sink import CBSObservationSink
 
 
 def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:

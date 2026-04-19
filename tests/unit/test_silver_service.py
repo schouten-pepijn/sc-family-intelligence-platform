@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fip.lakehouse.silver.cbs_observations_service import (
+from fip.lakehouse.silver.cbs.cbs_observations_service import (
     write_bronze_rows_to_cbs_observation_sink,
 )
 

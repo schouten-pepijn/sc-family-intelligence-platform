@@ -1,13 +1,13 @@
 import json
 from datetime import datetime, timezone
 
-from fip.lakehouse.silver.bag_pand import (
+from fip.lakehouse.silver.pdok_bag.bag_pand import (
     BAG_PAND_FIELDS,
     flatten_bronze_bag_pand,
     flatten_bronze_bag_pand_rows,
     to_bag_pand_row,
 )
-from fip.lakehouse.silver.bag_pand_sink import BAGPandSink
+from fip.lakehouse.silver.pdok_bag.bag_pand_sink import BAGPandSink
 
 
 def make_bag_pand_bronze_row(natural_key: str, bag_id: str) -> dict[str, object]:

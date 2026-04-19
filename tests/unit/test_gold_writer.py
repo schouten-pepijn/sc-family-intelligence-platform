@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
 
-from fip.gold.writer import GOLD_OBSERVATION_FIELDS, GoldObservationWriter
+from fip.gold.cbs_observations_writer import (
+    CBS_OBSERVATION_FIELDS,
+    CBSObservationLandingWriter,
+)
 
 
 def make_gold_row(natural_key: str, observation_id: int) -> dict[str, object]:
@@ -61,7 +64,7 @@ class FakeConnection:
 
 def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None:
     conn = FakeConnection()
-    writer = GoldObservationWriter(table_name="cbs_observations")
+    writer = CBSObservationLandingWriter(table_name="cbs_observations")
     rows = [make_gold_row("1", 1), make_gold_row("2", 2)]
 
     monkeypatch.setattr(writer, "_connect", lambda: conn)
@@ -84,7 +87,7 @@ def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None
     assert len(params_seq) == 2
     assert params_seq[0][0] == "cbs_statline"
     assert params_seq[0][6] == 1
-    assert GOLD_OBSERVATION_FIELDS == (
+    assert CBS_OBSERVATION_FIELDS == (
         "source_name",
         "natural_key",
         "retrieved_at",
@@ -103,7 +106,7 @@ def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None
 
 def test_gold_observation_writer_returns_zero_for_empty_input(monkeypatch) -> None:
     conn = FakeConnection()
-    writer = GoldObservationWriter(table_name="cbs_observations")
+    writer = CBSObservationLandingWriter(table_name="cbs_observations")
 
     monkeypatch.setattr(writer, "_connect", lambda: conn)
 
