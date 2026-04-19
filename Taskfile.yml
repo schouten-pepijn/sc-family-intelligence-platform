@@ -94,11 +94,50 @@ tasks:
     cmds:
       - uv run pytest tests/integration -m integration
 
+  test-raw:
+    desc: Run the raw landing smoke test against MinIO
+    cmds:
+      - task: infra-init
+      - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-raw --target minio
+      - >-
+        docker compose exec minio sh -lc 'mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+        && mc ls local/fip-lakehouse/raw/cbs/83625NED/smoke-raw/'
+
+  build-gold-measure-codes:
+    desc: Build the Postgres landing table for CBS measure codes
+    cmds:
+      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id smoke-flow
+
+  build-gold-period-codes:
+    desc: Build the Postgres landing table for CBS period codes
+    cmds:
+      - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-flow
+
+  build-gold-region-codes:
+    desc: Build the Postgres landing table for CBS region codes
+    cmds:
+      - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-flow
+
   test-all:
     desc: Run unit and integration tests
     cmds:
       - task: test-unit
       - task: test-integration
+
+  test-flow:
+    desc: "Run the full local flow: raw, bronze, silver, landing, and dbt"
+    cmds:
+      - task: infra-up
+      - task: test-raw
+      - task: build-gold-measure-codes
+      - task: build-gold-period-codes
+      - task: build-gold-region-codes
+      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-flow
+      - uv run fip build-silver-observations --table cbs_observations_83625ned
+      - uv run fip build-gold-observations --table cbs_observations_flat_83625ned
+      - task: dbt-debug
+      - task: dbt-run
+      - task: dbt-test
 
   check:
     desc: Run the standard local quality gate
