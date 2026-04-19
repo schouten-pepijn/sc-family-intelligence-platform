@@ -13,11 +13,16 @@ from fip.gold.writer import GoldObservationWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
-from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
 from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
-from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
-from fip.lakehouse.silver.writer import SilverObservationSink
+from fip.lakehouse.silver.bag_verblijfsobject_service import (
+    write_bronze_rows_to_bag_verblijfsobject_sink,
+)
+from fip.lakehouse.silver.bag_verblijfsobject_sink import BAGVerblijfsobjectSink
+from fip.lakehouse.silver.cbs_observations_service import (
+    write_bronze_rows_to_cbs_observation_sink,
+)
+from fip.lakehouse.silver.cbs_observations_sink import CBSObservationSink
 from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
 from fip.readback.duckdb import (
     attach_lakekeeper_catalog,
@@ -300,8 +305,8 @@ def inspect_bag_bronze(
     )
 
 
-@app.command("build-silver-observations")
-def build_silver_observations(
+@app.command("build-cbs-silver-observations")
+def build_cbs_silver_observations(
     table_name: str = typer.Option(
         "cbs_observations_83625ned",
         "--table",
@@ -314,12 +319,34 @@ def build_silver_observations(
 ) -> None:
     bronze_rows = _read_bronze_rows(table_name=table_name, namespace=namespace)
     silver_namespace = get_settings().silver_namespace
-    sink = SilverObservationSink(
+    sink = CBSObservationSink(
         table_ident=f"{silver_namespace}.cbs_observations_flat_83625ned",
     )
 
-    written = write_bronze_rows_to_silver_sink(bronze_rows, sink)
+    written = write_bronze_rows_to_cbs_observation_sink(bronze_rows, sink)
     typer.echo(f"Wrote {written} Silver rows")
+
+
+@app.command("build-bag-silver-verblijfsobject")
+def build_bag_silver_verblijfsobject(
+    table_name: str = typer.Option(
+        "bag_verblijfsobject",
+        "--table",
+        help="Bronze table name to transform into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+) -> None:
+    bronze_rows = _read_bronze_rows(table_name=table_name, namespace=namespace)
+    silver_namespace = get_settings().silver_namespace
+    sink = BAGVerblijfsobjectSink(
+        table_ident=f"{silver_namespace}.bag_verblijfsobject_flat",
+    )
+
+    written = write_bronze_rows_to_bag_verblijfsobject_sink(bronze_rows, sink)
+    typer.echo(f"Wrote {written} BAG Silver rows")
 
 
 @app.command("build-gold-measure-codes")
@@ -413,8 +440,8 @@ def _read_silver_rows(
         conn.close()
 
 
-@app.command("inspect-silver")
-def inspect_silver(
+@app.command("inspect-cbs-silver")
+def inspect_cbs_silver(
     table_name: str = typer.Option(
         "cbs_observations_flat_83625ned",
         "--table",
@@ -444,8 +471,23 @@ def inspect_silver(
         typer.echo(str(row))
 
 
-@app.command("build-gold-observations")
-def build_gold_observations(
+@app.command("inspect-bag-silver")
+def inspect_bag_silver(
+    namespace: str | None = typer.Option(
+        None,
+        help="Iceberg namespace to inspect. Defaults to configured silver namespace.",
+    ),
+    limit: int = typer.Option(5, help="Number of sample rows to display."),
+) -> None:
+    inspect_cbs_silver(
+        table_name="bag_verblijfsobject_flat",
+        namespace=namespace,
+        limit=limit,
+    )
+
+
+@app.command("build-landing-observations")
+def build_landing_observations(
     table_name: str = typer.Option(
         "cbs_observations_flat_83625ned",
         "--table",
@@ -460,11 +502,11 @@ def build_gold_observations(
     sink = GoldObservationWriter(table_name="cbs_observations")
 
     written = write_silver_rows_to_gold_sink(silver_rows, sink)
-    typer.echo(f"Wrote {written} Gold rows")
+    typer.echo(f"Wrote {written} landing rows")
 
 
-@app.command("inspect-gold")
-def inspect_gold(
+@app.command("inspect-landing")
+def inspect_landing(
     table_name: str = typer.Option(
         "cbs_observations",
         "--table",
