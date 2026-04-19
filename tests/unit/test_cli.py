@@ -50,6 +50,51 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
     assert calls["target_namespace"] == "bronze"
 
 
+def test_inspect_cbs_raw_command_prints_filtered_payloads(monkeypatch) -> None:
+    class FakeSource:
+        def __init__(self, table_id: str, run_id: str) -> None:
+            self.table_id = table_id
+            self.run_id = run_id
+
+        def iter_records(self):
+            yield RawRecord(
+                source_name="cbs_statline",
+                entity_name="83625NED.Observations",
+                natural_key="1",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="debug-raw",
+                payload={"Id": 1, "Measure": "M001534"},
+                schema_version="v1",
+            )
+            yield RawRecord(
+                source_name="cbs_statline",
+                entity_name="83625NED.MeasureCodes",
+                natural_key="10",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="debug-raw",
+                payload={"Id": 10, "Title": "Measure A"},
+                schema_version="v1",
+            )
+
+    monkeypatch.setattr(cli, "CBSODataSource", FakeSource)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-cbs-raw",
+            "--entity",
+            "MeasureCodes",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == (
+        '83625NED.MeasureCodes\nnatural_key=10\n{\n  "Id": 10,\n  "Title": "Measure A"\n}\n\n'
+    )
+
+
 def test_inspect_bronze_command_prints_row_count_and_rows(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
