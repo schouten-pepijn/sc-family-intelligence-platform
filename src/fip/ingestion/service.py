@@ -5,6 +5,11 @@ from fip.lakehouse.bronze.base import SinkFactory
 
 
 def ingest_source_to_sink(source: Source, sink_factory: SinkFactory) -> int:
+    """Ingest all records from a source, grouping by entity type before writing.
+
+    Grouping by entity allows specialized sink handling per entity type
+    and reduces catalog lookups in storage systems like Iceberg.
+    """
     grouped_records = defaultdict(list)
 
     for record in source.iter_records():

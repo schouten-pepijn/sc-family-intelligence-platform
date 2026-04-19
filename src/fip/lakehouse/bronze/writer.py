@@ -20,12 +20,18 @@ BRONZE_ROW_FIELDS = (
 
 
 class IcebergSink:
+    """Writes raw records to Iceberg tables in the Bronze layer.
+
+    Stores raw payloads as JSON strings to preserve source structure,
+    enabling independent schema versioning and auditing of raw data.
+    """
     def __init__(self, table_ident: str) -> None:
         self.table_ident = table_ident
         self.last_written: list[RawRecord] = []
         self.last_written_rows: list[dict[str, object]] = []
 
     def write(self, records: list[RawRecord]) -> int:
+        """Write records to Iceberg, validating single entity per batch."""
         if records:
             first_entity = records[0].entity_name
             if any(record.entity_name != first_entity for record in records):
@@ -52,6 +58,8 @@ class IcebergSink:
         return len(records)
 
     def _serialize_record(self, record: RawRecord) -> dict[str, object]:
+        # Payload is JSON-serialized to preserve original source structure;
+        # sorting keys for deterministic snapshots and auditing purposes.
         return {
             "source_name": record.source_name,
             "entity_name": record.entity_name,
@@ -84,6 +92,8 @@ class IcebergSink:
         return self.table_ident.split(".", maxsplit=1)[0]
 
     def _load_catalog(self) -> Catalog:
+        # Catalog is loaded fresh per write to handle credential rotation and
+        # allow independent connection lifecycle management per sink instance.
         settings = get_settings()
         properties: dict[str, str] = {
             "s3.endpoint": settings.s3_endpoint,
