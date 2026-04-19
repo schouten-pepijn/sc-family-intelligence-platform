@@ -124,8 +124,8 @@ tasks:
       - task: test-unit
       - task: test-integration
 
-  test-flow:
-    desc: "Run the full local flow: raw, bronze, silver, landing, and dbt"
+  cbs-flow:
+    desc: "Run the CBS-only local flow: raw, bronze, silver, landing, and dbt"
     cmds:
       - task: infra-up
       - task: test-raw
