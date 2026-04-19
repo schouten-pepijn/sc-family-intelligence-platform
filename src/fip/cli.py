@@ -1,3 +1,4 @@
+# ruff: noqa: F401
 import json
 from pathlib import Path
 from typing import Iterator
@@ -36,9 +37,7 @@ from fip.readback.duckdb import (
     load_extensions,
     sample_rows,
 )
-from fip.readback.duckdb import (
-    connect as connect_duckdb,
-)
+from fip.readback.duckdb import connect as connect_duckdb
 from fip.settings import get_settings
 
 app = typer.Typer(help="Family Intelligence Platform CLI.")
