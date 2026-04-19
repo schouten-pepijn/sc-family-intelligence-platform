@@ -6,6 +6,7 @@ import typer
 from fip.gold.readback import connect as connect_postgres
 from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
+from fip.gold.reference_codes import ReferenceCodeWriter
 from fip.gold.service import write_silver_rows_to_gold_sink
 from fip.gold.writer import GoldObservationWriter
 from fip.ingestion.base import RawRecord
@@ -66,6 +67,15 @@ def iter_sampled_cbs_raw_records(
         count += 1
         if count >= limit:
             break
+
+
+def _iter_cbs_records_for_entity(
+    source: CBSODataSource,
+    entity: str,
+) -> Iterator[RawRecord]:
+    for record in source.iter_records():
+        if record.entity_name.endswith(f".{entity}"):
+            yield record
 
 
 @app.command("ingest-cbs")
