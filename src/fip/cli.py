@@ -4,32 +4,31 @@ from typing import Iterator
 
 import typer
 
-from fip.gold.bag_landing_service import write_silver_rows_to_bag_landing_sink
 from fip.gold.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
+from fip.gold.cbs_observations_writer import CBSObservationLandingWriter
+from fip.gold.cbs_reference_codes_writer import CBSReferenceCodeWriter
+from fip.gold.core.service import write_rows_to_sink
 from fip.gold.readback import connect as connect_postgres
 from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
-from fip.gold.reference_codes import ReferenceCodeWriter
-from fip.gold.service import write_silver_rows_to_gold_sink
-from fip.gold.writer import GoldObservationWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
 from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
-from fip.lakehouse.silver.bag_pand_service import (
-    write_bronze_rows_to_bag_pand_sink,
-)
-from fip.lakehouse.silver.bag_pand_sink import BAGPandSink
-from fip.lakehouse.silver.bag_verblijfsobject_service import (
-    write_bronze_rows_to_bag_verblijfsobject_sink,
-)
-from fip.lakehouse.silver.bag_verblijfsobject_sink import BAGVerblijfsobjectSink
-from fip.lakehouse.silver.cbs_observations_service import (
+from fip.lakehouse.silver.cbs.cbs_observations_service import (
     write_bronze_rows_to_cbs_observation_sink,
 )
-from fip.lakehouse.silver.cbs_observations_sink import CBSObservationSink
+from fip.lakehouse.silver.cbs.cbs_observations_sink import CBSObservationSink
+from fip.lakehouse.silver.pdok_bag.bag_pand_service import (
+    write_bronze_rows_to_bag_pand_sink,
+)
+from fip.lakehouse.silver.pdok_bag.bag_pand_sink import BAGPandSink
+from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_service import (
+    write_bronze_rows_to_bag_verblijfsobject_sink,
+)
+from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import BAGVerblijfsobjectSink
 from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
 from fip.readback.duckdb import (
     attach_lakekeeper_catalog,
@@ -460,7 +459,7 @@ def _build_gold_reference_codes(
 ) -> None:
     source = CBSODataSource(table_id=table_id, run_id=run_id)
     records = list(_iter_cbs_records_for_entity(source=source, entity=entity))
-    sink = ReferenceCodeWriter(table_name=table_name, entity=entity)
+    sink = CBSReferenceCodeWriter(table_name=table_name, entity=entity)
 
     written = sink.write(records)
     typer.echo(f"Wrote {written} {entity} rows into {table_name}")
@@ -561,7 +560,7 @@ def build_bag_landing_verblijfsobject(
     silver_rows = _read_silver_rows(table_name=table_name, namespace=namespace)
     sink = BAGVerblijfsobjectLandingWriter(table_name="bag_verblijfsobject")
 
-    written = write_silver_rows_to_bag_landing_sink(silver_rows, sink)
+    written = write_rows_to_sink(silver_rows, sink)
     typer.echo(f"Wrote {written} BAG landing rows")
 
 
@@ -580,7 +579,7 @@ def build_bag_landing_pand(
     silver_rows = _read_silver_rows(table_name=table_name, namespace=namespace)
     sink = BAGPandLandingWriter(table_name="bag_pand")
 
-    written = write_silver_rows_to_bag_landing_sink(silver_rows, sink)
+    written = write_rows_to_sink(silver_rows, sink)
     typer.echo(f"Wrote {written} BAG landing rows")
 
 
@@ -627,9 +626,9 @@ def build_landing_observations(
     ),
 ) -> None:
     silver_rows = _read_silver_rows(table_name=table_name, namespace=namespace)
-    sink = GoldObservationWriter(table_name="cbs_observations")
+    sink = CBSObservationLandingWriter(table_name="cbs_observations")
 
-    written = write_silver_rows_to_gold_sink(silver_rows, sink)
+    written = write_rows_to_sink(silver_rows, sink)
     typer.echo(f"Wrote {written} landing rows")
 
 
