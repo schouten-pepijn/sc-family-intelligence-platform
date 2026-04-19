@@ -4,6 +4,9 @@ from typing import Iterator
 
 import typer
 
+from fip.gold.bag_landing_service import write_silver_rows_to_bag_landing_sink
+from fip.gold.bag_pand_writer import BAGPandLandingWriter
+from fip.gold.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
 from fip.gold.readback import connect as connect_postgres
 from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
@@ -539,6 +542,74 @@ def inspect_bag_silver_pand(
     inspect_cbs_silver(
         table_name="bag_pand_flat",
         namespace=namespace,
+        limit=limit,
+    )
+
+
+@app.command("build-bag-landing-verblijfsobject")
+def build_bag_landing_verblijfsobject(
+    table_name: str = typer.Option(
+        "bag_verblijfsobject_flat",
+        "--table",
+        help="Silver table name to materialize into the Postgres landing layer.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Silver Iceberg namespace. Defaults to configured silver namespace.",
+    ),
+) -> None:
+    silver_rows = _read_silver_rows(table_name=table_name, namespace=namespace)
+    sink = BAGVerblijfsobjectLandingWriter(table_name="bag_verblijfsobject")
+
+    written = write_silver_rows_to_bag_landing_sink(silver_rows, sink)
+    typer.echo(f"Wrote {written} BAG landing rows")
+
+
+@app.command("build-bag-landing-pand")
+def build_bag_landing_pand(
+    table_name: str = typer.Option(
+        "bag_pand_flat",
+        "--table",
+        help="Silver table name to materialize into the Postgres landing layer.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Silver Iceberg namespace. Defaults to configured silver namespace.",
+    ),
+) -> None:
+    silver_rows = _read_silver_rows(table_name=table_name, namespace=namespace)
+    sink = BAGPandLandingWriter(table_name="bag_pand")
+
+    written = write_silver_rows_to_bag_landing_sink(silver_rows, sink)
+    typer.echo(f"Wrote {written} BAG landing rows")
+
+
+@app.command("inspect-bag-landing-verblijfsobject")
+def inspect_bag_landing_verblijfsobject(
+    schema: str | None = typer.Option(
+        None,
+        help="Postgres schema to inspect. Defaults to configured landing schema.",
+    ),
+    limit: int = typer.Option(5, help="Number of sample rows to display."),
+) -> None:
+    inspect_landing(
+        table_name="bag_verblijfsobject",
+        schema=schema,
+        limit=limit,
+    )
+
+
+@app.command("inspect-bag-landing-pand")
+def inspect_bag_landing_pand(
+    schema: str | None = typer.Option(
+        None,
+        help="Postgres schema to inspect. Defaults to configured landing schema.",
+    ),
+    limit: int = typer.Option(5, help="Number of sample rows to display."),
+) -> None:
+    inspect_landing(
+        table_name="bag_pand",
+        schema=schema,
         limit=limit,
     )
 
