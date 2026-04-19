@@ -11,6 +11,15 @@ def test_bag_iceberg_sink_factory_routes_verblijfsobject_to_expected_table() -> 
     assert sink.table_ident == "bronze.bag_verblijfsobject"
 
 
+def test_bag_iceberg_sink_factory_routes_pand_to_expected_table() -> None:
+    factory = BAGIcebergSinkFactory()
+
+    sink = factory.for_entity("bag.pand")
+
+    assert isinstance(sink, IcebergSink)
+    assert sink.table_ident == "bronze.bag_pand"
+
+
 def test_bag_iceberg_sink_factory_raises_for_unknown_entity_name() -> None:
     factory = BAGIcebergSinkFactory()
 
