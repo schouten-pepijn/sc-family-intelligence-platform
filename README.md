@@ -40,7 +40,7 @@ The local validation loop is:
 - `src/fip`: application code
 - `src/fip/ingestion`: source adapters and Bronze ingestion flow
 - `src/fip/lakehouse/bronze`: Bronze Iceberg writer, factory, and sink protocols
-- `src/fip/lakehouse/silver`: Silver transforms, orchestration, and writer
+- `src/fip/lakehouse/silver`: shared Silver infra in `core`, plus source-specific transforms and sinks
 - `src/fip/gold`: Postgres landing writer, service, and readback helpers
 - `src/fip/readback`: DuckDB validation and inspect helpers
 - `tests`: unit, integration, and fixture-based tests
@@ -55,6 +55,8 @@ The local validation loop is:
 2. Bronze Iceberg writes through Lakekeeper are working, and Bronze is append-only.
 3. DuckDB readback and the `inspect-bronze` CLI path are working.
 4. CBS Silver full refresh, DuckDB readback, and the `inspect-cbs-silver` CLI path are working.
+   The Silver package now splits shared sink mechanics into `silver/core` and
+   source-specific transforms into `silver/cbs_*` and `silver/bag_*`.
 5. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
 6. The next implementation step is to make the SQL/dbt layer concrete on top of the landing table.
 
