@@ -145,6 +145,45 @@ def build_silver_observations(
     typer.echo(f"Wrote {written} Silver rows")
 
 
+@app.command("build-gold-measure-codes")
+def build_gold_measure_codes(
+    table_id: str = typer.Option("83625NED", help="CBS table id to ingest."),
+    run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
+) -> None:
+    _build_gold_reference_codes(
+        table_id=table_id,
+        run_id=run_id,
+        entity="MeasureCodes",
+        table_name="cbs_measure_codes",
+    )
+
+
+@app.command("build-gold-period-codes")
+def build_gold_period_codes(
+    table_id: str = typer.Option("83625NED", help="CBS table id to ingest."),
+    run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
+) -> None:
+    _build_gold_reference_codes(
+        table_id=table_id,
+        run_id=run_id,
+        entity="PeriodenCodes",
+        table_name="cbs_period_codes",
+    )
+
+
+@app.command("build-gold-region-codes")
+def build_gold_region_codes(
+    table_id: str = typer.Option("83625NED", help="CBS table id to ingest."),
+    run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
+) -> None:
+    _build_gold_reference_codes(
+        table_id=table_id,
+        run_id=run_id,
+        entity="RegioSCodes",
+        table_name="cbs_region_codes",
+    )
+
+
 def _read_bronze_rows(
     table_name: str,
     namespace: str | None = None,
@@ -162,6 +201,20 @@ def _read_bronze_rows(
         return conn.execute(query).to_arrow_table().to_pylist()
     finally:
         conn.close()
+
+
+def _build_gold_reference_codes(
+    table_id: str,
+    run_id: str,
+    entity: str,
+    table_name: str,
+) -> None:
+    source = CBSODataSource(table_id=table_id, run_id=run_id)
+    records = list(_iter_cbs_records_for_entity(source=source, entity=entity))
+    sink = ReferenceCodeWriter(table_name=table_name, entity=entity)
+
+    written = sink.write(records)
+    typer.echo(f"Wrote {written} {entity} rows into {table_name}")
 
 
 def _read_silver_rows(
