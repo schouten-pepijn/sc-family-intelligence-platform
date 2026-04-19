@@ -56,6 +56,11 @@ REFERENCE_FIELDS = {
 
 
 def build_reference_row(record: RawRecord) -> dict[str, object]:
+    """Extract and transform reference code data from raw CBS records.
+
+    Entity-specific logic derives values (e.g., period_year from identifier),
+    compensating for missing fields in the source payload.
+    """
     payload = record.payload
     parts = record.entity_name.split(".", maxsplit=1)
     if len(parts) != 2:
@@ -106,6 +111,11 @@ def build_reference_row(record: RawRecord) -> dict[str, object]:
 
 
 class ReferenceCodeWriter:
+    """Writes reference codes (measures, periods, regions) to Postgres landing tables.
+
+    Entity-specific schema ensures type safety and documents expected fields;
+    truncate-then-insert maintains idempotency across replays.
+    """
     def __init__(
         self,
         table_name: str,
@@ -116,6 +126,7 @@ class ReferenceCodeWriter:
         self.last_written_rows: list[dict[str, object]] = []
 
     def write(self, rows: Sequence[RawRecord]) -> int:
+        """Validate, transform, and write reference codes, truncating first."""
         if not rows:
             self.last_written_rows = []
             return 0
@@ -148,6 +159,8 @@ class ReferenceCodeWriter:
         )
 
     def _validate_rows(self, rows: Sequence[RawRecord]) -> None:
+        # Entity name suffix check prevents silently writing wrong entity type,
+        # catching configuration or pipeline logic errors early.
         expected_suffix = f".{self.entity}"
         for row in rows:
             if not row.entity_name.endswith(expected_suffix):
