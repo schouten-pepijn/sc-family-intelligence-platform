@@ -142,10 +142,7 @@ def test_ingest_bag_command_invokes_service_and_prints_result(monkeypatch) -> No
     )
 
     assert result.exit_code == 0
-    assert result.stdout == (
-        "Read 1 BAG records...\n"
-        "Wrote 1 records using sink namespace bronze\n"
-    )
+    assert result.stdout == ("Read 1 BAG records...\nWrote 1 records using sink namespace bronze\n")
     assert calls["run_id"] == "run-002"
     assert calls["target_namespace"] == "bronze"
     assert calls["entity_name"] == "bag.verblijfsobject"
@@ -643,7 +640,7 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
             }
         ]
 
-    def fake_write_bronze_rows_to_silver_sink(
+    def fake_write_bronze_rows_to_cbs_observation_sink(
         bronze_rows: list[dict[str, object]],
         sink: object,
     ) -> int:
@@ -652,15 +649,17 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
         return 1
 
     monkeypatch.setattr(cli, "_read_bronze_rows", fake_read_bronze_rows)
-    monkeypatch.setattr(cli, "SilverObservationSink", FakeSilverSink)
+    monkeypatch.setattr(cli, "CBSObservationSink", FakeSilverSink)
     monkeypatch.setattr(
-        cli, "write_bronze_rows_to_silver_sink", fake_write_bronze_rows_to_silver_sink
+        cli,
+        "write_bronze_rows_to_cbs_observation_sink",
+        fake_write_bronze_rows_to_cbs_observation_sink,
     )
 
     result = runner.invoke(
         cli.app,
         [
-            "build-silver-observations",
+            "build-cbs-silver-observations",
             "--table",
             "cbs_observations_83625ned",
         ],
@@ -676,6 +675,68 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
     sink = calls["sink"]
     assert isinstance(sink, FakeSilverSink)
     assert sink.table_ident == "silver.cbs_observations_flat_83625ned"
+
+
+def test_build_silver_bag_verblijfsobject_command_reads_bronze_and_writes_silver(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeBagSilverSink:
+        def __init__(self, table_ident: str) -> None:
+            self.table_ident = table_ident
+            calls["table_ident"] = table_ident
+
+    def fake_read_bronze_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        return [
+            {
+                "source_name": "bag_pdok",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-19T17:43:42.077000Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "payload": "{}",
+            }
+        ]
+
+    def fake_write_bronze_rows_to_bag_verblijfsobject_sink(
+        bronze_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["bronze_rows"] = bronze_rows
+        calls["sink"] = sink
+        return 1
+
+    monkeypatch.setattr(cli, "_read_bronze_rows", fake_read_bronze_rows)
+    monkeypatch.setattr(cli, "BAGVerblijfsobjectSink", FakeBagSilverSink)
+    monkeypatch.setattr(
+        cli,
+        "write_bronze_rows_to_bag_verblijfsobject_sink",
+        fake_write_bronze_rows_to_bag_verblijfsobject_sink,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-bag-silver-verblijfsobject",
+            "--table",
+            "bag_verblijfsobject",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 BAG Silver rows\n"
+    assert calls["read_table_name"] == "bag_verblijfsobject"
+    assert calls["read_namespace"] is None
+    assert calls["table_ident"] == "silver.bag_verblijfsobject_flat"
+    bronze_rows = cast(list[dict[str, object]], calls["bronze_rows"])
+    assert len(bronze_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeBagSilverSink)
+    assert sink.table_ident == "silver.bag_verblijfsobject_flat"
 
 
 def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
@@ -720,7 +781,7 @@ def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
     result = runner.invoke(
         cli.app,
         [
-            "inspect-silver",
+            "inspect-cbs-silver",
             "--table",
             "cbs_observations_flat_83625ned",
             "--limit",
@@ -734,6 +795,65 @@ def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
     assert calls["count_table_name"] == "cbs_observations_flat_83625ned"
     assert calls["count_namespace"] == "silver"
     assert calls["sample_table_name"] == "cbs_observations_flat_83625ned"
+    assert calls["sample_namespace"] == "silver"
+    assert calls["sample_limit"] == 1
+    assert calls["closed"] is True
+
+
+def test_inspect_bag_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeConnection:
+        def close(self) -> None:
+            calls["closed"] = True
+
+    def fake_connect_duckdb() -> FakeConnection:
+        calls["connected"] = True
+        return FakeConnection()
+
+    def fake_load_extensions(con: object) -> None:
+        calls["extensions_loaded"] = con
+
+    def fake_attach_lakekeeper_catalog(con: object) -> None:
+        calls["catalog_attached"] = con
+
+    def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
+        calls["count_table_name"] = table_name
+        calls["count_namespace"] = namespace
+        return 42
+
+    def fake_sample_rows(
+        con: object,
+        table_name: str,
+        namespace: str | None,
+        limit: int,
+    ) -> list[tuple[str, str]]:
+        calls["sample_table_name"] = table_name
+        calls["sample_namespace"] = namespace
+        calls["sample_limit"] = limit
+        return [("silver-row-1", "value-1")]
+
+    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
+    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
+    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
+    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-bag-silver",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Row count: 42\nSample rows (1):\n('silver-row-1', 'value-1')\n"
+    assert calls["connected"] is True
+    assert calls["count_table_name"] == "bag_verblijfsobject_flat"
+    assert calls["count_namespace"] == "silver"
+    assert calls["sample_table_name"] == "bag_verblijfsobject_flat"
     assert calls["sample_namespace"] == "silver"
     assert calls["sample_limit"] == 1
     assert calls["closed"] is True
@@ -785,14 +905,14 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
     result = runner.invoke(
         cli.app,
         [
-            "build-gold-observations",
+            "build-landing-observations",
             "--table",
             "cbs_observations_flat_83625ned",
         ],
     )
 
     assert result.exit_code == 0
-    assert result.stdout == "Wrote 1 Gold rows\n"
+    assert result.stdout == "Wrote 1 landing rows\n"
     assert calls["read_table_name"] == "cbs_observations_flat_83625ned"
     assert calls["read_namespace"] is None
     assert calls["table_name"] == "cbs_observations"
@@ -837,7 +957,7 @@ def test_inspect_gold_command_prints_row_count_and_rows(monkeypatch) -> None:
     result = runner.invoke(
         cli.app,
         [
-            "inspect-gold",
+            "inspect-landing",
             "--table",
             "cbs_observations",
             "--limit",

@@ -6,7 +6,7 @@ from fip.lakehouse.silver.cbs_observations import (
     flatten_bronze_observation_rows,
     to_silver_observation_row,
 )
-from fip.lakehouse.silver.writer import SilverObservationSink
+from fip.lakehouse.silver.cbs_observations_sink import CBSObservationSink
 
 
 def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:
@@ -98,7 +98,7 @@ def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> No
 def test_silver_observation_sink_write_loads_catalog_and_replaces_table(
     monkeypatch,
 ) -> None:
-    sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
+    sink = CBSObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
     rows = [make_silver_row("1", 1)]
 
     fake_catalog = object()

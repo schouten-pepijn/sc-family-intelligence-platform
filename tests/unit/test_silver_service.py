@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
-from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
+from fip.lakehouse.silver.cbs_observations_service import (
+    write_bronze_rows_to_cbs_observation_sink,
+)
 
 
 def make_bronze_row(natural_key: str, observation_id: int) -> dict[str, object]:
@@ -30,11 +32,11 @@ class FakeSilverSink:
         return len(rows)
 
 
-def test_write_bronze_rows_to_silver_sink_flattens_and_writes_rows() -> None:
+def test_write_bronze_rows_to_cbs_observation_sink_flattens_and_writes_rows() -> None:
     sink = FakeSilverSink()
     bronze_rows = [make_bronze_row("1", 1), make_bronze_row("2", 2)]
 
-    written = write_bronze_rows_to_silver_sink(bronze_rows, sink)
+    written = write_bronze_rows_to_cbs_observation_sink(bronze_rows, sink)
 
     assert written == 2
     assert len(sink.written_rows) == 2

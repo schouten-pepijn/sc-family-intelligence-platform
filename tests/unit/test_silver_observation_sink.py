@@ -3,7 +3,7 @@ from typing import cast
 
 from pyiceberg.catalog import Catalog
 
-from fip.lakehouse.silver.writer import SilverObservationSink
+from fip.lakehouse.silver.cbs_observations_sink import CBSObservationSink
 
 
 def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:
@@ -25,14 +25,14 @@ def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:
 
 
 def test_silver_observation_sink_initializes_with_table_ident() -> None:
-    sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
+    sink = CBSObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
 
     assert sink.table_ident == "silver.cbs_observations_flat_83625ned"
     assert sink.last_written_rows == []
 
 
 def test_silver_observation_sink_write_returns_number_of_rows() -> None:
-    sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
+    sink = CBSObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
     rows = [make_silver_row("1", 1), make_silver_row("2", 2)]
     sink._load_catalog = lambda: object()  # type: ignore[method-assign]
 
@@ -51,7 +51,7 @@ def test_silver_observation_sink_write_returns_number_of_rows() -> None:
 
 
 def test_silver_observation_sink_write_returns_zero_for_empty_input() -> None:
-    sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
+    sink = CBSObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
 
     written = sink.write([])
 
@@ -60,7 +60,7 @@ def test_silver_observation_sink_write_returns_zero_for_empty_input() -> None:
 
 
 def test_silver_observation_sink_to_arrow_table_uses_expected_schema() -> None:
-    sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
+    sink = CBSObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
     rows = [make_silver_row("1", 1)]
 
     table = sink._to_arrow_table(rows)
@@ -71,7 +71,7 @@ def test_silver_observation_sink_to_arrow_table_uses_expected_schema() -> None:
 def test_silver_observation_sink_write_replaces_table_and_appends_with_snapshot_properties(
     monkeypatch,
 ) -> None:
-    sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
+    sink = CBSObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
     rows = [make_silver_row("1", 1)]
 
     fake_catalog = object()
@@ -110,7 +110,7 @@ def test_silver_observation_sink_write_replaces_table_and_appends_with_snapshot_
 
 
 def test_silver_observation_sink_replace_table_drops_existing_table_before_recreating() -> None:
-    sink = SilverObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
+    sink = CBSObservationSink(table_ident="silver.cbs_observations_flat_83625ned")
     calls: list[tuple[str, object]] = []
 
     class FakeCatalog:

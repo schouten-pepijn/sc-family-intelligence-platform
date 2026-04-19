@@ -14,8 +14,10 @@ from fip.gold.writer import GoldObservationWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
-from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
-from fip.lakehouse.silver.writer import SilverObservationSink
+from fip.lakehouse.silver.cbs_observations_service import (
+    write_bronze_rows_to_cbs_observation_sink,
+)
+from fip.lakehouse.silver.cbs_observations_sink import CBSObservationSink
 from fip.readback.duckdb import (
     attach_lakekeeper_catalog,
     connect,
@@ -112,12 +114,15 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     assert bronze_rows[0]["source_name"] == "cbs_statline"
     assert bronze_rows[0]["natural_key"] == "0"
 
-    silver_sink = SilverObservationSink(
+    silver_sink = CBSObservationSink(
         table_ident=f"{silver_namespace}.{silver_table_name}",
     )
-    silver_written = write_bronze_rows_to_silver_sink(bronze_rows, silver_sink)
+    silver_written = write_bronze_rows_to_cbs_observation_sink(bronze_rows, silver_sink)
     assert silver_written == 1
-    silver_written_again = write_bronze_rows_to_silver_sink(bronze_rows, silver_sink)
+    silver_written_again = write_bronze_rows_to_cbs_observation_sink(
+        bronze_rows,
+        silver_sink,
+    )
     assert silver_written_again == 1
 
     silver_conn = connect()
