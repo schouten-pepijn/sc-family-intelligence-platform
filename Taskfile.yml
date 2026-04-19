@@ -133,8 +133,8 @@ tasks:
       - task: build-gold-period-codes
       - task: build-gold-region-codes
       - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-flow
-      - uv run fip build-silver-observations --table cbs_observations_83625ned
-      - uv run fip build-gold-observations --table cbs_observations_flat_83625ned
+      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
+      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned
       - task: dbt-debug
       - task: dbt-run
       - task: dbt-test
