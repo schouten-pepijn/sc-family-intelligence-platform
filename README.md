@@ -14,13 +14,26 @@ The repo is in the first end-to-end data-platform phase. The current direction i
   - Python ingestion and write scripts
   - DuckDB for validation and ad-hoc analysis against Iceberg data
 
-The near-term goal is now to stabilize the working Bronze -> Silver -> landing path and prepare the first dbt-backed SQL layer on top of the landing table in Postgres.
+The near-term goal is now to stabilize the working raw -> Bronze -> Silver -> landing path and continue expanding the first dbt-backed SQL layer on top of the landing table in Postgres.
 
 The local validation loop is:
 
 - `task test-unit` for fast code-level checks
-- `task test-integration` for the Bronze -> Silver -> Gold roundtrip against the local stack
+- `task test-raw` for the raw landing-pad smoke test against MinIO
+- `task test-integration` for the Bronze -> Silver -> landing roundtrip against the local stack
+- `task test-flow` for the full raw -> Bronze -> Silver -> landing -> dbt flow
 - `task check` for the standard local quality gate
+
+## Quick Start
+
+1. `task setup`
+   Installs dependencies, starts the local stack, and initializes the MinIO bucket.
+2. `task test-raw`
+   Verifies the raw landing-pad in MinIO.
+3. `task test-flow`
+   Runs the full local flow from raw through Bronze, Silver, landing, and dbt.
+4. `task reset-data`
+   Stops the stack, removes volumes, and clears generated local data.
 
 ## Project Structure
 
@@ -58,15 +71,15 @@ The local pipeline currently looks like this:
 4. `inspect-silver`
    DuckDB validation against the Silver Iceberg table.
 5. `build-gold-observations`
-   Read Silver rows and full-refresh the Gold Postgres table.
+   Read Silver rows and full-refresh the Postgres landing table.
 6. `inspect-gold`
-   Postgres readback of the Gold table.
+   Postgres readback of the landing table.
 
 Current write semantics:
 
 - Bronze: append-only
 - Silver: full refresh
-- Gold: full refresh
+- landing: full refresh
 
 ## Local Infra
 
