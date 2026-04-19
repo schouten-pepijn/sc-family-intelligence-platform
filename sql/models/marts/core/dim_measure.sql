@@ -1,5 +1,7 @@
 {{ config(materialized='view') }}
 
+{# Measures dimension provides code mappings and metadata from the CBS data source.
+   Materialized as a view since codes are static and sourced independently. #}
 select
     measure_id,
     identifier,

@@ -1,5 +1,7 @@
 {{ config(materialized='view') }}
 
+{# Periods dimension maps CBS period codes to human-readable labels and includes
+   derived fields (year, granularity, status) to support temporal analysis. #}
 select
     period_id,
     identifier,
