@@ -12,7 +12,9 @@ from fip.gold.service import write_silver_rows_to_gold_sink
 from fip.gold.writer import GoldObservationWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.cbs.adapter import CBSODataSource
+from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.ingestion.service import ingest_source_to_sink
+from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
 from fip.lakehouse.bronze.factory import IcebergSinkFactory
 from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
 from fip.lakehouse.silver.writer import SilverObservationSink
@@ -94,6 +96,24 @@ def ingest_cbs(
 
     source = CBSODataSource(table_id=table_id, run_id=run_id)
     sink_factory = IcebergSinkFactory(namespace=target_namespace)
+
+    written = ingest_source_to_sink(source, sink_factory)
+    typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
+
+
+@app.command("ingest-bag")
+def ingest_bag(
+    run_id: str = typer.Option(..., help="Run identifier for this ingestion."),
+    target_namespace: str | None = typer.Option(
+        None,
+        help="Target Iceberg namespace.",
+    ),
+) -> None:
+    if target_namespace is None:
+        target_namespace = get_settings().bronze_namespace
+
+    source = PDOKBAGSource(run_id=run_id)
+    sink_factory = BAGIcebergSinkFactory(namespace=target_namespace)
 
     written = ingest_source_to_sink(source, sink_factory)
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
