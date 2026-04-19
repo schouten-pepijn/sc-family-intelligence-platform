@@ -105,6 +105,11 @@ def ingest_cbs(
         None,
         help="Target Iceberg namespace.",
     ),
+    limit: int = typer.Option(
+        1000,
+        min=1,
+        help="Maximum number of CBS records to ingest.",
+    ),
 ) -> None:
     if target_namespace is None:
         target_namespace = get_settings().bronze_namespace
@@ -112,7 +117,19 @@ def ingest_cbs(
     source = CBSODataSource(table_id=table_id, run_id=run_id)
     sink_factory = CBSIcebergSinkFactory(namespace=target_namespace)
 
-    written = ingest_source_to_sink(source, sink_factory)
+    grouped_records: dict[str, list[RawRecord]] = {}
+    seen = 0
+    for record in source.iter_records():
+        grouped_records.setdefault(record.entity_name, []).append(record)
+        seen += 1
+        if seen >= limit:
+            break
+
+    written = 0
+    for entity_name, records in grouped_records.items():
+        sink = sink_factory.for_entity(entity_name)
+        written += sink.write(records)
+
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
 
 
@@ -123,6 +140,16 @@ def ingest_bag(
         None,
         help="Target Iceberg namespace.",
     ),
+    limit: int = typer.Option(
+        1000,
+        min=1,
+        help="Maximum number of BAG records to ingest.",
+    ),
+    progress_every: int = typer.Option(
+        1000,
+        min=1,
+        help="Print progress every N records while reading BAG.",
+    ),
 ) -> None:
     if target_namespace is None:
         target_namespace = get_settings().bronze_namespace
@@ -130,7 +157,21 @@ def ingest_bag(
     source = PDOKBAGSource(run_id=run_id)
     sink_factory = BAGIcebergSinkFactory(namespace=target_namespace)
 
-    written = ingest_source_to_sink(source, sink_factory)
+    grouped_records: dict[str, list[RawRecord]] = {}
+    seen = 0
+    for record in source.iter_records():
+        grouped_records.setdefault(record.entity_name, []).append(record)
+        seen += 1
+        if seen % progress_every == 0:
+            typer.echo(f"Read {seen} BAG records...")
+        if seen >= limit:
+            break
+
+    written = 0
+    for entity_name, records in grouped_records.items():
+        sink = sink_factory.for_entity(entity_name)
+        written += sink.write(records)
+
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
 
 
@@ -158,6 +199,7 @@ def inspect_bag_raw(
 @app.command("archive-bag-raw")
 def archive_bag_raw(
     run_id: str = typer.Option("debug-raw"),
+    limit: int = typer.Option(1000, help="Maximum number of raw records to archive."),
     target: str = typer.Option("local", help="Raw storage target: local JSONL files or MinIO."),
     output_dir: Path = Path(".raw"),
 ) -> None:
@@ -172,8 +214,12 @@ def archive_bag_raw(
         raise typer.BadParameter("target must be either 'local' or 'minio'")
 
     grouped: dict[str, list[RawRecord]] = {}
+    archived = 0
     for record in source.iter_records():
         grouped.setdefault(record.entity_name, []).append(record)
+        archived += 1
+        if archived >= limit:
+            break
 
     written = 0
     for records in grouped.values():
@@ -237,6 +283,21 @@ def inspect_bronze(
     typer.echo(f"Sample rows ({len(rows)}):")
     for row in rows:
         typer.echo(str(row))
+
+
+@app.command("inspect-bag-bronze")
+def inspect_bag_bronze(
+    namespace: str | None = typer.Option(
+        None,
+        help="Iceberg namespace to inspect. Defaults to configured bronze namespace.",
+    ),
+    limit: int = typer.Option(5, help="Number of sample rows to display."),
+) -> None:
+    inspect_bronze(
+        table_name="bag_verblijfsobject",
+        namespace=namespace,
+        limit=limit,
+    )
 
 
 @app.command("build-silver-observations")
