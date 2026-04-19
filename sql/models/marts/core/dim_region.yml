@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: dim_region
-    description: Reference dimension for CBS region codes.
+    description: Conformed geo dimension for CBS region codes.
     columns:
       - name: region_id
         tests:

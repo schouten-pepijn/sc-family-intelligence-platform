@@ -20,3 +20,7 @@ models:
     marts:
       +materialized: table
       +schema: marts
+
+seeds:
+  fip_sql:
+    +schema: seeds
