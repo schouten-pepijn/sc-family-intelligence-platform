@@ -43,6 +43,15 @@ tasks:
     cmds:
       - docker compose down
 
+  reset-data:
+    desc: Stop the stack, remove volumes, and clear local generated data
+    cmds:
+      - docker compose down -v --remove-orphans
+      - >-
+        python -c "from pathlib import Path; import shutil;
+        paths = [Path('.raw-smoke'), Path('.duckdb'), Path('sql/target'), Path('sql/logs')];
+        [shutil.rmtree(path, ignore_errors=True) for path in paths]"
+
   infra-init:
     desc: Create the local MinIO bucket used by the project
     cmds:
