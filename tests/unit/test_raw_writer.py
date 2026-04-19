@@ -83,4 +83,6 @@ def test_minio_raw_snapshot_writer_writes_jsonl(monkeypatch) -> None:
     assert written == 2
     path = "s3://fip-lakehouse/raw/cbs/83625NED/debug-raw/MeasureCodes.jsonl"
     assert writer.filesystem.paths == [path]
-    assert writer.filesystem.buffers[path].getvalue().count("\n") == 2
+    content = writer.filesystem.buffers[path].getvalue()
+    assert content.startswith('{"source_name": "cbs_statline"')
+    assert content.count("\n") == 2
