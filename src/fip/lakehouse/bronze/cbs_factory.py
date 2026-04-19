@@ -1,12 +1,8 @@
 from fip.lakehouse.bronze.writer import IcebergSink
 
 
-class IcebergSinkFactory:
-    """Factory for creating entity-specific Iceberg sinks.
-
-    Maps CBS entity names to Iceberg table names; sinks are created on demand
-    to allow independent lifecycle and catalog management per entity.
-    """
+class CBSIcebergSinkFactory:
+    """Factory for creating CBS-specific Bronze Iceberg sinks."""
 
     ENTITY_TABLE_NAMES = {
         "Observations": "observations",
@@ -19,7 +15,7 @@ class IcebergSinkFactory:
         self.namespace = namespace
 
     def for_entity(self, entity_name: str) -> IcebergSink:
-        """Create a sink for a given entity, validating and normalizing the entity name."""
+        """Create a sink for a CBS entity, validating and normalizing the name."""
         table_ident = self._table_ident_for_entity(entity_name)
         return IcebergSink(table_ident=table_ident)
 
