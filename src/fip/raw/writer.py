@@ -45,8 +45,13 @@ class RawSnapshotWriter:
         return len(records)
 
     def _snapshot_path(self, record: RawRecord) -> Path:
-        table_id, entity = record.entity_name.split(".", maxsplit=1)
-        return self.base_dir / "raw" / "cbs" / table_id / record.run_id / f"{entity}.jsonl"
+        if record.source_name == "cbs_statline":
+            table_id, entity = record.entity_name.split(".", maxsplit=1)
+            return self.base_dir / "raw" / "cbs" / table_id / record.run_id / f"{entity}.jsonl"
+        if record.source_name == "bag_pdok":
+            _, entity = record.entity_name.split(".", maxsplit=1)
+            return self.base_dir / "raw" / "bag_pdok" / record.run_id / f"{entity}.jsonl"
+        raise ValueError(f"Unknown raw source '{record.source_name}'")
 
     def _validate_single_entity(self, records: list[RawRecord]) -> None:
         first_entity = records[0].entity_name
@@ -96,8 +101,13 @@ class MinioRawSnapshotWriter:
         )
 
     def _snapshot_path(self, record: RawRecord) -> str:
-        table_id, entity = record.entity_name.split(".", maxsplit=1)
-        return f"s3://{self.bucket}/raw/cbs/{table_id}/{record.run_id}/{entity}.jsonl"
+        if record.source_name == "cbs_statline":
+            table_id, entity = record.entity_name.split(".", maxsplit=1)
+            return f"s3://{self.bucket}/raw/cbs/{table_id}/{record.run_id}/{entity}.jsonl"
+        if record.source_name == "bag_pdok":
+            _, entity = record.entity_name.split(".", maxsplit=1)
+            return f"s3://{self.bucket}/raw/bag_pdok/{record.run_id}/{entity}.jsonl"
+        raise ValueError(f"Unknown raw source '{record.source_name}'")
 
     def _validate_single_entity(self, records: list[RawRecord]) -> None:
         first_entity = records[0].entity_name
