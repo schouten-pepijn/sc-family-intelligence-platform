@@ -37,3 +37,84 @@ sources:
           - name: region_code
             tests:
               - not_null
+      - name: cbs_measure_codes
+        description: Landing table loaded from the CBS MeasureCodes entity.
+        columns:
+          - name: source_name
+            tests:
+              - not_null
+          - name: natural_key
+            tests:
+              - not_null
+          - name: retrieved_at
+            tests:
+              - not_null
+          - name: run_id
+            tests:
+              - not_null
+          - name: schema_version
+            tests:
+              - not_null
+          - name: http_status
+            tests:
+              - not_null
+          - name: identifier
+            tests:
+              - not_null
+          - name: title
+            tests:
+              - not_null
+      - name: cbs_period_codes
+        description: Landing table loaded from the CBS PeriodenCodes entity.
+        columns:
+          - name: source_name
+            tests:
+              - not_null
+          - name: natural_key
+            tests:
+              - not_null
+          - name: retrieved_at
+            tests:
+              - not_null
+          - name: run_id
+            tests:
+              - not_null
+          - name: schema_version
+            tests:
+              - not_null
+          - name: http_status
+            tests:
+              - not_null
+          - name: identifier
+            tests:
+              - not_null
+          - name: title
+            tests:
+              - not_null
+      - name: cbs_region_codes
+        description: Landing table loaded from the CBS RegioSCodes entity.
+        columns:
+          - name: source_name
+            tests:
+              - not_null
+          - name: natural_key
+            tests:
+              - not_null
+          - name: retrieved_at
+            tests:
+              - not_null
+          - name: run_id
+            tests:
+              - not_null
+          - name: schema_version
+            tests:
+              - not_null
+          - name: http_status
+            tests:
+              - not_null
+          - name: identifier
+            tests:
+              - not_null
+          - name: title
+            tests:
+              - not_null

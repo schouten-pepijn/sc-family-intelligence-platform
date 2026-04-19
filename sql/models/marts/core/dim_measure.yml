@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: dim_measure
+    description: Reference dimension for CBS measure codes.
+    columns:
+      - name: measure_id
+        tests:
+          - not_null
+      - name: identifier
+        tests:
+          - not_null
+      - name: measure_title
+        tests:
+          - not_null
+      - name: data_type
+        tests:
+          - not_null
+      - name: unit
+        tests:
+          - not_null
+      - name: decimals
+        tests:
+          - not_null
+      - name: presentation_type
+        tests:
+          - not_null

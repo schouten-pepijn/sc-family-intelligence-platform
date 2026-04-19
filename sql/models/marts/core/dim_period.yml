@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: dim_period
+    description: Reference dimension for CBS period codes.
+    columns:
+      - name: period_id
+        tests:
+          - not_null
+      - name: identifier
+        tests:
+          - not_null
+      - name: period_title
+        tests:
+          - not_null
+      - name: status
+        tests:
+          - not_null
+      - name: period_granularity
+        tests:
+          - not_null

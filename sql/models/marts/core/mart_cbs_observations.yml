@@ -22,14 +22,26 @@ models:
       - name: measure_id
         tests:
           - not_null
+      - name: measure_title
+        tests:
+          - not_null
       - name: period_id
+        tests:
+          - not_null
+      - name: period_title
         tests:
           - not_null
       - name: period_year
       - name: period_granularity
         tests:
           - not_null
+      - name: period_status
+        tests:
+          - not_null
       - name: region_id
+        tests:
+          - not_null
+      - name: region_title
         tests:
           - not_null
       - name: observation_value

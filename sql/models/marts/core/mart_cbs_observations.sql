@@ -1,28 +1,38 @@
 with staged as (
     select *
     from {{ ref('stg_cbs_observations') }}
+),
+enriched as (
+    select
+        staged.source_name,
+        staged.run_id,
+        staged.retrieved_at,
+        staged.natural_key as observation_key,
+        staged.observation_id,
+        staged.measure_code as measure_id,
+        measure.measure_title,
+        measure.measure_description,
+        staged.period_code as period_id,
+        period.period_title,
+        period.period_description,
+        period.period_year,
+        period.period_granularity,
+        period.status as period_status,
+        staged.region_code as region_id,
+        region.region_title,
+        region.region_description,
+        region.dimension_group_id as region_dimension_group_id,
+        staged.numeric_value as observation_value,
+        staged.value_attribute,
+        staged.string_value
+    from staged
+    left join {{ ref('dim_measure') }} as measure
+        on staged.measure_code = measure.measure_id
+    left join {{ ref('dim_period') }} as period
+        on staged.period_code = period.period_id
+    left join {{ ref('dim_region') }} as region
+        on staged.region_code = region.region_id
 )
 
-select
-    source_name,
-    run_id,
-    retrieved_at,
-    natural_key as observation_key,
-    observation_id,
-    measure_code as measure_id,
-    period_code as period_id,
-    case
-        when period_code ~ '^[0-9]{4}' then cast(substring(period_code from 1 for 4) as integer)
-        else null
-    end as period_year,
-    case
-        when substring(period_code from 5 for 2) = 'JJ' then 'year'
-        when substring(period_code from 5 for 2) = 'KW' then 'quarter'
-        when substring(period_code from 5 for 2) = 'MM' then 'month'
-        else 'other'
-    end as period_granularity,
-    region_code as region_id,
-    numeric_value as observation_value,
-    value_attribute,
-    string_value
-from staged
+select *
+from enriched

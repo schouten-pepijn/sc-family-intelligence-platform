@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: dim_region
+    description: Reference dimension for CBS region codes.
+    columns:
+      - name: region_id
+        tests:
+          - not_null
+      - name: identifier
+        tests:
+          - not_null
+      - name: region_title
+        tests:
+          - not_null
+      - name: dimension_group_id
+        tests:
+          - not_null
