@@ -13,6 +13,7 @@ class SilverObservationSink:
     Replaces existing table on each write to avoid handling duplicate detection
     upstream (delegating to source deduplication and snapshot semantics).
     """
+
     def __init__(self, table_ident: str) -> None:
         self.table_ident = table_ident
         self.last_written_rows: list[dict[str, object]] = []

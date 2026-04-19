@@ -25,6 +25,7 @@ class IcebergSink:
     Stores raw payloads as JSON strings to preserve source structure,
     enabling independent schema versioning and auditing of raw data.
     """
+
     def __init__(self, table_ident: str) -> None:
         self.table_ident = table_ident
         self.last_written: list[RawRecord] = []

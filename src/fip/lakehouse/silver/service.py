@@ -5,6 +5,7 @@ from fip.lakehouse.silver.cbs_observations import flatten_bronze_observation_row
 
 class SilverSink(Protocol):
     """Interface for Silver layer sinks."""
+
     def write(self, rows: list[dict[str, object]]) -> int: ...
 
 

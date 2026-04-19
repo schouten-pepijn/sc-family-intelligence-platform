@@ -3,6 +3,7 @@ from typing import Protocol
 
 class GoldSink(Protocol):
     """Interface for Gold layer sinks."""
+
     def write(self, rows: list[dict[str, object]]) -> int: ...
 
 

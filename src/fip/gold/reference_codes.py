@@ -116,6 +116,7 @@ class ReferenceCodeWriter:
     Entity-specific schema ensures type safety and documents expected fields;
     truncate-then-insert maintains idempotency across replays.
     """
+
     def __init__(
         self,
         table_name: str,

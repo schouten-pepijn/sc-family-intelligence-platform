@@ -7,6 +7,7 @@ class IcebergSinkFactory:
     Maps CBS entity names to Iceberg table names; sinks are created on demand
     to allow independent lifecycle and catalog management per entity.
     """
+
     ENTITY_TABLE_NAMES = {
         "Observations": "observations",
         "MeasureCodes": "measure_codes",
@@ -23,8 +24,7 @@ class IcebergSinkFactory:
         return IcebergSink(table_ident=table_ident)
 
     def _table_ident_for_entity(self, entity_name: str) -> str:
-        # Entity names from CBS API follow "table_id.entity_type" format (e.g., "83625NED.Observations").
-        # We normalize and combine them to create table identifiers like "bronze.cbs_observations_83625ned".
+        # Normalize CBS entity names into bronze table identifiers.
         try:
             table_id, entity = entity_name.split(".", maxsplit=1)
         except ValueError as exc:

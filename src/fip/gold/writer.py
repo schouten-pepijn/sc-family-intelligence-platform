@@ -30,6 +30,7 @@ class GoldObservationWriter:
     Truncates before insert to maintain idempotency; Postgres is the
     application-facing landing zone and doesn't maintain history like Iceberg.
     """
+
     def __init__(self, table_name: str) -> None:
         self.table_name = table_name
         self.last_written_rows: list[dict[str, object]] = []
