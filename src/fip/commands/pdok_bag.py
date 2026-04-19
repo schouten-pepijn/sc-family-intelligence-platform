@@ -2,37 +2,53 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import fip.cli as cli
+import typer
+
+from fip.cli import app
+from fip.commands._helpers import read_bronze_rows, read_silver_rows
+from fip.gold.core.service import write_rows_to_sink
+from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
+from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
 from fip.ingestion.base import RawRecord
+from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
+from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
+from fip.lakehouse.silver.pdok_bag.bag_pand_service import write_bronze_rows_to_bag_pand_sink
+from fip.lakehouse.silver.pdok_bag.bag_pand_sink import BAGPandSink
+from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_service import (
+    write_bronze_rows_to_bag_verblijfsobject_sink,
+)
+from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import BAGVerblijfsobjectSink
+from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
+from fip.settings import get_settings
 
 
-@cli.app.command("ingest-bag")
+@app.command("ingest-bag")
 def ingest_bag(
-    run_id: str = cli.typer.Option(..., help="Run identifier for this ingestion."),
-    collection: str = cli.typer.Option(
+    run_id: str = typer.Option(..., help="Run identifier for this ingestion."),
+    collection: str = typer.Option(
         "verblijfsobject",
         help="BAG collection to ingest, for example verblijfsobject or pand.",
     ),
-    target_namespace: str | None = cli.typer.Option(
+    target_namespace: str | None = typer.Option(
         None,
         help="Target Iceberg namespace.",
     ),
-    limit: int = cli.typer.Option(
+    limit: int = typer.Option(
         1000,
         min=1,
         help="Maximum number of BAG records to ingest.",
     ),
-    progress_every: int = cli.typer.Option(
+    progress_every: int = typer.Option(
         1000,
         min=1,
         help="Print progress every N records while reading BAG.",
     ),
 ) -> None:
     if target_namespace is None:
-        target_namespace = cli.get_settings().bronze_namespace
+        target_namespace = get_settings().bronze_namespace
 
-    source = cli.PDOKBAGSource(run_id=run_id, collection=collection)
-    sink_factory = cli.BAGIcebergSinkFactory(namespace=target_namespace)
+    source = PDOKBAGSource(run_id=run_id, collection=collection)
+    sink_factory = BAGIcebergSinkFactory(namespace=target_namespace)
 
     grouped_records: dict[str, list[RawRecord]] = {}
     seen = 0
@@ -40,7 +56,7 @@ def ingest_bag(
         grouped_records.setdefault(record.entity_name, []).append(record)
         seen += 1
         if seen % progress_every == 0:
-            cli.typer.echo(f"Read {seen} BAG records...")
+            typer.echo(f"Read {seen} BAG records...")
         if seen >= limit:
             break
 
@@ -49,32 +65,32 @@ def ingest_bag(
         sink = sink_factory.for_entity(entity_name)
         written += sink.write(records)
 
-    cli.typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
+    typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
 
 
-@cli.app.command("archive-bag-raw")
+@app.command("archive-bag-raw")
 def archive_bag_raw(
-    run_id: str = cli.typer.Option("debug-raw"),
-    collection: str = cli.typer.Option(
+    run_id: str = typer.Option("debug-raw"),
+    collection: str = typer.Option(
         "verblijfsobject",
         help="BAG collection to archive, for example verblijfsobject or pand.",
     ),
-    limit: int | None = cli.typer.Option(
+    limit: int | None = typer.Option(
         None,
         help="Maximum number of raw records to archive. Leave unset for a full pull.",
     ),
-    target: str = cli.typer.Option("local", help="Raw storage target: local JSONL files or MinIO."),
+    target: str = typer.Option("local", help="Raw storage target: local JSONL files or MinIO."),
     output_dir: Path = Path(".raw"),
 ) -> None:
-    source = cli.PDOKBAGSource(run_id=run_id, collection=collection)
+    source = PDOKBAGSource(run_id=run_id, collection=collection)
 
-    writer: cli.RawSnapshotWriter | cli.MinioRawSnapshotWriter
+    writer: RawSnapshotWriter | MinioRawSnapshotWriter
     if target == "local":
-        writer = cli.RawSnapshotWriter(base_dir=str(output_dir))
+        writer = RawSnapshotWriter(base_dir=str(output_dir))
     elif target == "minio":
-        writer = cli.MinioRawSnapshotWriter()
+        writer = MinioRawSnapshotWriter()
     else:
-        raise cli.typer.BadParameter("target must be either 'local' or 'minio'")
+        raise typer.BadParameter("target must be either 'local' or 'minio'")
 
     grouped: dict[str, list[RawRecord]] = {}
     archived = 0
@@ -88,86 +104,82 @@ def archive_bag_raw(
     for records in grouped.values():
         written += writer.write(records)
 
-    cli.typer.echo(f"Wrote {written} raw records")
+    typer.echo(f"Wrote {written} raw records")
 
 
-@cli.app.command("build-bag-silver-verblijfsobject")
+@app.command("build-bag-silver-verblijfsobject")
 def build_bag_silver_verblijfsobject(
-    table_name: str = cli.typer.Option(
+    table_name: str = typer.Option(
         "bag_verblijfsobject",
         "--table",
         help="Bronze table name to transform into Silver.",
     ),
-    namespace: str | None = cli.typer.Option(
+    namespace: str | None = typer.Option(
         None,
         help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
     ),
 ) -> None:
-    bronze_rows = cli._read_bronze_rows(table_name=table_name, namespace=namespace)
-    silver_namespace = cli.get_settings().silver_namespace
-    sink = cli.BAGVerblijfsobjectSink(
-        table_ident=f"{silver_namespace}.bag_verblijfsobject_flat",
-    )
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace)
+    silver_namespace = get_settings().silver_namespace
+    sink = BAGVerblijfsobjectSink(table_ident=f"{silver_namespace}.bag_verblijfsobject_flat")
 
-    written = cli.write_bronze_rows_to_bag_verblijfsobject_sink(bronze_rows, sink)
-    cli.typer.echo(f"Wrote {written} BAG Silver rows")
+    written = write_bronze_rows_to_bag_verblijfsobject_sink(bronze_rows, sink)
+    typer.echo(f"Wrote {written} BAG Silver rows")
 
 
-@cli.app.command("build-bag-silver-pand")
+@app.command("build-bag-silver-pand")
 def build_bag_silver_pand(
-    table_name: str = cli.typer.Option(
+    table_name: str = typer.Option(
         "bag_pand",
         "--table",
         help="Bronze table name to transform into Silver.",
     ),
-    namespace: str | None = cli.typer.Option(
+    namespace: str | None = typer.Option(
         None,
         help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
     ),
 ) -> None:
-    bronze_rows = cli._read_bronze_rows(table_name=table_name, namespace=namespace)
-    silver_namespace = cli.get_settings().silver_namespace
-    sink = cli.BAGPandSink(
-        table_ident=f"{silver_namespace}.bag_pand_flat",
-    )
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace)
+    silver_namespace = get_settings().silver_namespace
+    sink = BAGPandSink(table_ident=f"{silver_namespace}.bag_pand_flat")
 
-    written = cli.write_bronze_rows_to_bag_pand_sink(bronze_rows, sink)
-    cli.typer.echo(f"Wrote {written} BAG Silver rows")
+    written = write_bronze_rows_to_bag_pand_sink(bronze_rows, sink)
+    typer.echo(f"Wrote {written} BAG Silver rows")
 
 
-@cli.app.command("build-bag-landing-verblijfsobject")
+@app.command("build-bag-landing-verblijfsobject")
 def build_bag_landing_verblijfsobject(
-    table_name: str = cli.typer.Option(
+    table_name: str = typer.Option(
         "bag_verblijfsobject_flat",
         "--table",
         help="Silver table name to materialize into the Postgres landing layer.",
     ),
-    namespace: str | None = cli.typer.Option(
+    namespace: str | None = typer.Option(
         None,
         help="Silver Iceberg namespace. Defaults to configured silver namespace.",
     ),
 ) -> None:
-    silver_rows = cli._read_silver_rows(table_name=table_name, namespace=namespace)
-    sink = cli.BAGVerblijfsobjectLandingWriter(table_name="bag_verblijfsobject")
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace)
+    sink = BAGVerblijfsobjectLandingWriter(table_name="bag_verblijfsobject")
 
-    written = cli.write_rows_to_sink(silver_rows, sink)
-    cli.typer.echo(f"Wrote {written} BAG landing rows")
+    written = write_rows_to_sink(silver_rows, sink)
+    typer.echo(f"Wrote {written} BAG landing rows")
 
 
-@cli.app.command("build-bag-landing-pand")
+@app.command("build-bag-landing-pand")
 def build_bag_landing_pand(
-    table_name: str = cli.typer.Option(
+    table_name: str = typer.Option(
         "bag_pand_flat",
         "--table",
         help="Silver table name to materialize into the Postgres landing layer.",
     ),
-    namespace: str | None = cli.typer.Option(
+    namespace: str | None = typer.Option(
         None,
         help="Silver Iceberg namespace. Defaults to configured silver namespace.",
     ),
 ) -> None:
-    silver_rows = cli._read_silver_rows(table_name=table_name, namespace=namespace)
-    sink = cli.BAGPandLandingWriter(table_name="bag_pand")
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace)
+    sink = BAGPandLandingWriter(table_name="bag_pand")
 
-    written = cli.write_rows_to_sink(silver_rows, sink)
-    cli.typer.echo(f"Wrote {written} BAG landing rows")
+    written = write_rows_to_sink(silver_rows, sink)
+    typer.echo(f"Wrote {written} BAG landing rows")
