@@ -73,6 +73,21 @@ def iter_sampled_cbs_raw_records(
             break
 
 
+def iter_sampled_bag_raw_records(
+    source: PDOKBAGSource,
+    entity: str | None,
+    limit: int,
+) -> Iterator[RawRecord]:
+    count = 0
+    for record in source.iter_records():
+        if entity is not None and not record.entity_name.endswith(f".{entity}"):
+            continue
+        yield record
+        count += 1
+        if count >= limit:
+            break
+
+
 def _iter_cbs_records_for_entity(
     source: CBSODataSource,
     entity: str,
@@ -117,6 +132,54 @@ def ingest_bag(
 
     written = ingest_source_to_sink(source, sink_factory)
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
+
+
+@app.command("inspect-bag-raw")
+def inspect_bag_raw(
+    run_id: str = typer.Option("debug-raw", help="Run id for the inspection session."),
+    limit: int = typer.Option(5, help="Number of records to print."),
+    entity: str | None = typer.Option(
+        None,
+        help="Optional entity filter: verblijfsobject.",
+    ),
+) -> None:
+    source = PDOKBAGSource(run_id=run_id)
+    for record in iter_sampled_bag_raw_records(
+        source=source,
+        entity=entity,
+        limit=limit,
+    ):
+        typer.echo(record.entity_name)
+        typer.echo(f"natural_key={record.natural_key}")
+        typer.echo(json.dumps(record.payload, indent=2, ensure_ascii=False))
+        typer.echo("")
+
+
+@app.command("archive-bag-raw")
+def archive_bag_raw(
+    run_id: str = typer.Option("debug-raw"),
+    target: str = typer.Option("local", help="Raw storage target: local JSONL files or MinIO."),
+    output_dir: Path = Path(".raw"),
+) -> None:
+    source = PDOKBAGSource(run_id=run_id)
+
+    writer: RawSnapshotWriter | MinioRawSnapshotWriter
+    if target == "local":
+        writer = RawSnapshotWriter(base_dir=str(output_dir))
+    elif target == "minio":
+        writer = MinioRawSnapshotWriter()
+    else:
+        raise typer.BadParameter("target must be either 'local' or 'minio'")
+
+    grouped: dict[str, list[RawRecord]] = {}
+    for record in source.iter_records():
+        grouped.setdefault(record.entity_name, []).append(record)
+
+    written = 0
+    for records in grouped.values():
+        written += writer.write(records)
+
+    typer.echo(f"Wrote {written} raw records")
 
 
 @app.command("archive-cbs-raw")
