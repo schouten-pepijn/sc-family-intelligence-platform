@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from typing import cast
 
+import pytest
 from typer.testing import CliRunner
 
 from fip import cli
@@ -93,6 +94,100 @@ def test_inspect_cbs_raw_command_prints_filtered_payloads(monkeypatch) -> None:
     assert result.stdout == (
         '83625NED.MeasureCodes\nnatural_key=10\n{\n  "Id": 10,\n  "Title": "Measure A"\n}\n\n'
     )
+
+
+@pytest.mark.parametrize(
+    ("command", "expected_entity", "expected_table_name", "expected_natural_key"),
+    [
+        (
+            "build-gold-measure-codes",
+            "MeasureCodes",
+            "cbs_measure_codes",
+            "M001534",
+        ),
+        (
+            "build-gold-period-codes",
+            "PeriodenCodes",
+            "cbs_period_codes",
+            "1995JJ00",
+        ),
+        (
+            "build-gold-region-codes",
+            "RegioSCodes",
+            "cbs_region_codes",
+            "NL01",
+        ),
+    ],
+)
+def test_build_gold_reference_commands_filter_records_and_write(
+    monkeypatch,
+    command: str,
+    expected_entity: str,
+    expected_table_name: str,
+    expected_natural_key: str,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSource:
+        def __init__(self, table_id: str, run_id: str) -> None:
+            calls["table_id"] = table_id
+            calls["run_id"] = run_id
+
+        def iter_records(self):
+            yield RawRecord(
+                source_name="cbs_statline",
+                entity_name="83625NED.Observations",
+                natural_key="1",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="debug-raw",
+                payload={"Identifier": "IGNORED", "Title": "Ignored"},
+                schema_version="v1",
+            )
+            yield RawRecord(
+                source_name="cbs_statline",
+                entity_name=f"83625NED.{expected_entity}",
+                natural_key=expected_natural_key,
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="debug-raw",
+                payload={"Identifier": expected_natural_key, "Title": "Matched"},
+                schema_version="v1",
+            )
+
+    class FakeWriter:
+        def __init__(self, table_name: str, entity: str) -> None:
+            calls["table_name"] = table_name
+            calls["entity"] = entity
+            self.rows: list[RawRecord] = []
+
+        def write(self, rows):
+            self.rows = list(rows)
+            calls["rows"] = self.rows
+            return len(self.rows)
+
+    monkeypatch.setattr(cli, "CBSODataSource", FakeSource)
+    monkeypatch.setattr(cli, "ReferenceCodeWriter", FakeWriter)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            command,
+            "--table-id",
+            "83625NED",
+            "--run-id",
+            "debug-raw",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == f"Wrote 1 {expected_entity} rows into {expected_table_name}\n"
+    assert calls["table_id"] == "83625NED"
+    assert calls["run_id"] == "debug-raw"
+    assert calls["table_name"] == expected_table_name
+    assert calls["entity"] == expected_entity
+    rows = cast(list[RawRecord], calls["rows"])
+    assert len(rows) == 1
+    assert rows[0].entity_name == f"83625NED.{expected_entity}"
+    assert rows[0].natural_key == expected_natural_key
 
 
 def test_inspect_bronze_command_prints_row_count_and_rows(monkeypatch) -> None:
