@@ -51,6 +51,43 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
     assert calls["target_namespace"] == "bronze"
 
 
+def test_ingest_bag_command_invokes_service_and_prints_result(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSource:
+        def __init__(self, run_id: str) -> None:
+            calls["run_id"] = run_id
+
+    class FakeSinkFactory:
+        def __init__(self, namespace: str) -> None:
+            calls["target_namespace"] = namespace
+
+    def fake_ingest_source_to_sink(source, sink_factory) -> int:
+        calls["source"] = source
+        calls["sink_factory"] = sink_factory
+        return 5
+
+    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
+    monkeypatch.setattr(cli, "BAGIcebergSinkFactory", FakeSinkFactory)
+    monkeypatch.setattr(cli, "ingest_source_to_sink", fake_ingest_source_to_sink)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "ingest-bag",
+            "--run-id",
+            "run-002",
+            "--target-namespace",
+            "bronze",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 5 records using sink namespace bronze\n"
+    assert calls["run_id"] == "run-002"
+    assert calls["target_namespace"] == "bronze"
+
+
 def test_inspect_cbs_raw_command_prints_filtered_payloads(monkeypatch) -> None:
     class FakeSource:
         def __init__(self, table_id: str, run_id: str) -> None:
