@@ -1,9 +1,9 @@
-from fip.lakehouse.bronze.factory import IcebergSinkFactory
+from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
 from fip.lakehouse.bronze.writer import IcebergSink
 
 
-def test_iceberg_sink_factory_routes_observations_entity_to_expected_table() -> None:
-    factory = IcebergSinkFactory()
+def test_cbs_iceberg_sink_factory_routes_observations_entity_to_expected_table() -> None:
+    factory = CBSIcebergSinkFactory()
 
     sink = factory.for_entity("83625NED.Observations")
 
@@ -11,8 +11,8 @@ def test_iceberg_sink_factory_routes_observations_entity_to_expected_table() -> 
     assert sink.table_ident == "bronze.cbs_observations_83625ned"
 
 
-def test_iceberg_sink_factory_routes_measure_codes_entity_to_expected_table() -> None:
-    factory = IcebergSinkFactory()
+def test_cbs_iceberg_sink_factory_routes_measure_codes_entity_to_expected_table() -> None:
+    factory = CBSIcebergSinkFactory()
 
     sink = factory.for_entity("83625NED.MeasureCodes")
 
@@ -20,8 +20,8 @@ def test_iceberg_sink_factory_routes_measure_codes_entity_to_expected_table() ->
     assert sink.table_ident == "bronze.cbs_measure_codes_83625ned"
 
 
-def test_iceberg_sink_factory_raises_for_invalid_entity_name_format() -> None:
-    factory = IcebergSinkFactory()
+def test_cbs_iceberg_sink_factory_raises_for_invalid_entity_name_format() -> None:
+    factory = CBSIcebergSinkFactory()
 
     try:
         factory.for_entity("invalid-entity-name")
@@ -34,8 +34,8 @@ def test_iceberg_sink_factory_raises_for_invalid_entity_name_format() -> None:
         raise AssertionError("Expected ValueError for invalid entity name format")
 
 
-def test_iceberg_sink_factory_raises_for_unknown_entity_name() -> None:
-    factory = IcebergSinkFactory()
+def test_cbs_iceberg_sink_factory_raises_for_unknown_entity_name() -> None:
+    factory = CBSIcebergSinkFactory()
 
     try:
         factory.for_entity("83625NED.UnknownEntity")

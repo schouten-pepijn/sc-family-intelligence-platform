@@ -13,7 +13,7 @@ from fip.gold.service import write_silver_rows_to_gold_sink
 from fip.gold.writer import GoldObservationWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.service import ingest_source_to_sink
-from fip.lakehouse.bronze.factory import IcebergSinkFactory
+from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
 from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
 from fip.lakehouse.silver.writer import SilverObservationSink
 from fip.readback.duckdb import (
@@ -87,7 +87,7 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
 
     bronze_written = ingest_source_to_sink(
         source=source,
-        sink_factory=IcebergSinkFactory(namespace=bronze_namespace),
+        sink_factory=CBSIcebergSinkFactory(namespace=bronze_namespace),
     )
     assert bronze_written == 1
 

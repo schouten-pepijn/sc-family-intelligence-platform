@@ -28,7 +28,7 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
         return 7
 
     monkeypatch.setattr(cli, "CBSODataSource", FakeSource)
-    monkeypatch.setattr(cli, "IcebergSinkFactory", FakeSinkFactory)
+    monkeypatch.setattr(cli, "CBSIcebergSinkFactory", FakeSinkFactory)
     monkeypatch.setattr(cli, "ingest_source_to_sink", fake_ingest_source_to_sink)
 
     result = runner.invoke(

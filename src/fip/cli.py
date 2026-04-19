@@ -15,7 +15,7 @@ from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
-from fip.lakehouse.bronze.factory import IcebergSinkFactory
+from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
 from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
 from fip.lakehouse.silver.writer import SilverObservationSink
 from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
@@ -95,7 +95,7 @@ def ingest_cbs(
         target_namespace = get_settings().bronze_namespace
 
     source = CBSODataSource(table_id=table_id, run_id=run_id)
-    sink_factory = IcebergSinkFactory(namespace=target_namespace)
+    sink_factory = CBSIcebergSinkFactory(namespace=target_namespace)
 
     written = ingest_source_to_sink(source, sink_factory)
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
