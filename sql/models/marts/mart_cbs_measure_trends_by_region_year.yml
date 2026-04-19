@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: mart_cbs_measure_trends_by_region_year
+    description: Trend mart with observation aggregations by measure, region, and year.
+    columns:
+      - name: measure_id
+        tests:
+          - not_null
+      - name: region_id
+        tests:
+          - not_null
+      - name: period_year
+        tests:
+          - not_null
+      - name: observation_count
+        tests:
+          - not_null
+      - name: average_measure_value
+      - name: min_measure_value
+      - name: max_measure_value
