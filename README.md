@@ -54,8 +54,8 @@ The local validation loop is:
 1. Keep the local stack focused: MinIO + Postgres + Lakekeeper in Docker, Python + DuckDB locally.
 2. Bronze Iceberg writes through Lakekeeper are working, and Bronze is append-only.
 3. DuckDB readback and the `inspect-bronze` CLI path are working.
-4. Silver full refresh, DuckDB readback, and the `inspect-silver` CLI path are working.
-5. The Postgres landing full refresh and the `inspect-gold` CLI path are working.
+4. CBS Silver full refresh, DuckDB readback, and the `inspect-cbs-silver` CLI path are working.
+5. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
 6. The next implementation step is to make the SQL/dbt layer concrete on top of the landing table.
 
 ## Current Data Flow
@@ -66,13 +66,13 @@ The local pipeline currently looks like this:
    Bronze ingest from the CBS API into Iceberg through Lakekeeper.
 2. `inspect-bronze`
    DuckDB validation against the Bronze Iceberg tables.
-3. `build-silver-observations`
+3. `build-cbs-silver-observations`
    Read Bronze rows, flatten them into Silver observations, and full-refresh the Silver Iceberg table.
-4. `inspect-silver`
+4. `inspect-cbs-silver`
    DuckDB validation against the Silver Iceberg table.
-5. `build-gold-observations`
+5. `build-landing-observations`
    Read Silver rows and full-refresh the Postgres landing table.
-6. `inspect-gold`
+6. `inspect-landing`
    Postgres readback of the landing table.
 
 Current write semantics:
