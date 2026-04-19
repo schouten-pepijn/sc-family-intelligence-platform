@@ -72,9 +72,19 @@ The local pipeline currently looks like this:
    Read Bronze rows, flatten them into Silver observations, and full-refresh the Silver Iceberg table.
 4. `inspect-cbs-silver`
    DuckDB validation against the Silver Iceberg table.
-5. `build-landing-observations`
+5. `build-bag-silver-verblijfsobject`
+   Build the first BAG Silver slice from `bag_verblijfsobject`.
+6. `build-bag-silver-pand`
+   Build the first BAG `pand` Silver slice from `bag_pand`.
+7. `build-bag-landing-verblijfsobject`
+   Read BAG `verblijfsobject` Silver rows and full-refresh the Postgres landing table.
+8. `build-bag-landing-pand`
+   Read BAG `pand` Silver rows and full-refresh the Postgres landing table.
+9. `build-landing-observations`
    Read Silver rows and full-refresh the Postgres landing table.
-6. `inspect-landing`
+10. `inspect-bag-landing-verblijfsobject` / `inspect-bag-landing-pand`
+    Postgres readback of the BAG landing tables.
+11. `inspect-landing`
    Postgres readback of the landing table.
 
 Current write semantics:
