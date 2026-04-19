@@ -1,5 +1,7 @@
 {{ config(materialized='view') }}
 
+{# Renames source fields to match domain terminology; dimension_group_id supports
+   hierarchical filtering (e.g., by provincial/municipal groupings). #}
 select
     natural_key as region_id,
     identifier,

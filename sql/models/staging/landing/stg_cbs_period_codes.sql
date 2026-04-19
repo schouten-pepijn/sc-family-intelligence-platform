@@ -1,5 +1,8 @@
 {{ config(materialized='view') }}
 
+{# Derives period_year from CBS date format (e.g., 2023JJ for 2023 annual) to enable
+   temporal aggregation. Period_granularity classifies by CBS code suffix (JJ/KW/MM)
+   for hierarchical filtering in applications. #}
 select
     natural_key as period_id,
     identifier,

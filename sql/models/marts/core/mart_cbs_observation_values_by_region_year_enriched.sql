@@ -1,3 +1,6 @@
+{# Enriches the region-period-measure aggregation with full dimension attributes
+   (titles, descriptions, units) for export to BI tools or report generation without
+   requiring downstream dimensions lookups. #}
 with observations as (
     select *
     from {{ ref('mart_cbs_observations') }}

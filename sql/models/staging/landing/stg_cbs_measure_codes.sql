@@ -1,5 +1,7 @@
 {{ config(materialized='view') }}
 
+{# Renames source fields to match domain terminology; natural_key is the stable
+   identifier from CBS and retained as measure_id. #}
 select
     natural_key as measure_id,
     identifier,

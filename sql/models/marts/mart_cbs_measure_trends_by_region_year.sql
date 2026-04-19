@@ -1,3 +1,6 @@
+{# Aggregates observations to region-measure-year granularity for trend analysis.
+   Filters null values to avoid skewed aggregates; year granularity supports
+   historical comparison and year-over-year analysis patterns. #}
 select
     measure_id,
     region_id,

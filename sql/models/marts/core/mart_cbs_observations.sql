@@ -1,3 +1,5 @@
+{# Enriches observations with dimension tables (measure, period, region) to denormalize
+   commonly-queried attributes and reduce join overhead in downstream consumers. #}
 with staged as (
     select *
     from {{ ref('stg_cbs_observations') }}

@@ -1,3 +1,6 @@
+{# Aggregates observations at region-period-measure grain for basic trend analysis.
+   Null values filtered to avoid distorting averages; supports queries like
+   "show me average measure X by region and year". #}
 select
     region_id,
     period_year,

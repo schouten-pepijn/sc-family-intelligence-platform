@@ -1,5 +1,7 @@
 {{ config(materialized='view') }}
 
+{# Staging layer provides a single source of truth for observations from landing layer,
+   enabling downstream models to depend on a consistent schema. #}
 select
     source_name,
     natural_key,
