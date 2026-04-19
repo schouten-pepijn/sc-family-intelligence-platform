@@ -25,11 +25,17 @@ GOLD_OBSERVATION_FIELDS = (
 
 
 class GoldObservationWriter:
+    """Writes denormalized observations to Postgres in the Gold layer.
+
+    Truncates before insert to maintain idempotency; Postgres is the
+    application-facing landing zone and doesn't maintain history like Iceberg.
+    """
     def __init__(self, table_name: str) -> None:
         self.table_name = table_name
         self.last_written_rows: list[dict[str, object]] = []
 
     def write(self, rows: list[dict[str, object]]) -> int:
+        """Write rows to Postgres, truncating first for idempotent snapshots."""
         if not rows:
             self.last_written_rows = []
             return 0
@@ -51,6 +57,7 @@ class GoldObservationWriter:
         return len(self.last_written_rows)
 
     def _to_gold_row(self, row: dict[str, object]) -> dict[str, object]:
+        # Field selection filters to the agreed contract, catching schema mismatches early.
         return {field: row[field] for field in GOLD_OBSERVATION_FIELDS}
 
     def _connect(self) -> psycopg.Connection:
@@ -68,6 +75,8 @@ class GoldObservationWriter:
         return f"{settings.postgres_schema}.{self.table_name}"
 
     def _ensure_table(self, conn: psycopg.Connection) -> None:
+        # Schema and table are created idempotently on first write; allows offline schema
+        # design in dbt without duplicating schema definitions here.
         schema_name = get_settings().postgres_schema
         table_name = self.table_name
         conn.execute(SQL("CREATE SCHEMA IF NOT EXISTS {}").format(Identifier(schema_name)))
