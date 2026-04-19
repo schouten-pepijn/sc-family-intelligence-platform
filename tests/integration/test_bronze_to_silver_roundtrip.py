@@ -6,18 +6,18 @@ from uuid import uuid4
 
 import pytest
 
+from fip.gold.cbs_observations_writer import CBSObservationLandingWriter
+from fip.gold.core.service import write_rows_to_sink
 from fip.gold.readback import connect as connect_postgres
 from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
-from fip.gold.service import write_silver_rows_to_gold_sink
-from fip.gold.writer import GoldObservationWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
-from fip.lakehouse.silver.cbs_observations_service import (
+from fip.lakehouse.silver.cbs.cbs_observations_service import (
     write_bronze_rows_to_cbs_observation_sink,
 )
-from fip.lakehouse.silver.cbs_observations_sink import CBSObservationSink
+from fip.lakehouse.silver.cbs.cbs_observations_sink import CBSObservationSink
 from fip.readback.duckdb import (
     attach_lakekeeper_catalog,
     connect,

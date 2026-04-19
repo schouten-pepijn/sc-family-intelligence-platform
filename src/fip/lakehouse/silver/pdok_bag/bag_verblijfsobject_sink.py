@@ -1,7 +1,7 @@
 import pyarrow as pa
 
-from fip.lakehouse.silver.bag_verblijfsobject import to_bag_verblijfsobject_row
 from fip.lakehouse.silver.core.sink import SilverIcebergSink
+from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject import to_bag_verblijfsobject_row
 
 
 class BAGVerblijfsobjectSink(SilverIcebergSink):

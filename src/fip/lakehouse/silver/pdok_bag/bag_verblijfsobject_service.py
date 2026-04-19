@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from fip.lakehouse.silver.bag_verblijfsobject import (
+from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject import (
     flatten_bronze_bag_verblijfsobject_rows,
 )
 

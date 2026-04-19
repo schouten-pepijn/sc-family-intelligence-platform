@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from fip.lakehouse.silver.bag_pand import flatten_bronze_bag_pand_rows
+from fip.lakehouse.silver.pdok_bag.bag_pand import flatten_bronze_bag_pand_rows
 
 
 class BAGPandSilverSink(Protocol):

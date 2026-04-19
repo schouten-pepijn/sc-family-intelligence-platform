@@ -1,6 +1,6 @@
 import pyarrow as pa
 
-from fip.lakehouse.silver.cbs_observations import to_silver_observation_row
+from fip.lakehouse.silver.cbs.cbs_observations import to_silver_observation_row
 from fip.lakehouse.silver.core.sink import SilverIcebergSink
 
 

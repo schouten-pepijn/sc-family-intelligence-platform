@@ -1,7 +1,7 @@
 import pyarrow as pa
 
-from fip.lakehouse.silver.bag_pand import to_bag_pand_row
 from fip.lakehouse.silver.core.sink import SilverIcebergSink
+from fip.lakehouse.silver.pdok_bag.bag_pand import to_bag_pand_row
 
 
 class BAGPandSink(SilverIcebergSink):
