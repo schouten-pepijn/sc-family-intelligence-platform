@@ -17,7 +17,7 @@ class LocatieserverClient:
 
     def lookup(self, query: str, rows: int = 10) -> dict[str, object]:
         return self._get(
-            "lookup",
+            "free",
             params={"q": query, "rows": rows},
         )
 

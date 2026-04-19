@@ -31,6 +31,6 @@ def test_lookup_calls_lookup_endpoint(monkeypatch) -> None:
     client = LocatieserverClient()
     result = client.lookup("6131BE 32 Steenweg Sittard")
 
-    assert calls["url"] == "https://api.pdok.nl/bzk/locatieserver/search/v3_1/lookup"
+    assert calls["url"] == "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
     assert calls["params"] == {"q": "6131BE 32 Steenweg Sittard", "rows": 10}
     assert result == {"features": [{"id": "x"}]}
