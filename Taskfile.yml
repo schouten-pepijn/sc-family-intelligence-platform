@@ -136,6 +136,55 @@ tasks:
       - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned
       - task: dbt-debug
+      - task: dbt-seed
+      - task: dbt-run
+      - task: dbt-test
+
+  load-all:
+    desc: "Load the full CBS + BAG data flow, including bridge and dbt models"
+    cmds:
+      - task: infra-up
+      - task: infra-init
+      - uv run fip archive-cbs-raw --table-id 83625NED --run-id load-all --target minio
+      - uv run fip archive-bag-raw --run-id load-all --collection verblijfsobject --target minio
+      - uv run fip archive-bag-raw --run-id load-all --collection pand --target minio
+      - task: build-gold-measure-codes
+      - task: build-gold-period-codes
+      - task: build-gold-region-codes
+      - uv run fip ingest-cbs --table-id 83625NED --run-id load-all
+      - uv run fip ingest-bag --collection verblijfsobject --run-id load-all
+      - uv run fip ingest-bag --collection pand --run-id load-all
+      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
+      - uv run fip build-bag-silver-verblijfsobject
+      - uv run fip build-bag-silver-pand
+      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned
+      - uv run fip build-bag-landing-verblijfsobject
+      - uv run fip build-bag-landing-pand
+      - task: dbt-seed
+      - task: dbt-run
+      - task: dbt-test
+
+  load-smoke:
+    desc: "Load the full CBS + BAG data flow with small limits"
+    cmds:
+      - task: infra-up
+      - task: infra-init
+      - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-load --target minio --limit 1
+      - uv run fip archive-bag-raw --run-id smoke-load --collection verblijfsobject --target minio --limit 1
+      - uv run fip archive-bag-raw --run-id smoke-load --collection pand --target minio --limit 1
+      - task: build-gold-measure-codes
+      - task: build-gold-period-codes
+      - task: build-gold-region-codes
+      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-load --limit 1
+      - uv run fip ingest-bag --collection verblijfsobject --run-id smoke-load --limit 1 --progress-every 1
+      - uv run fip ingest-bag --collection pand --run-id smoke-load --limit 1 --progress-every 1
+      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
+      - uv run fip build-bag-silver-verblijfsobject
+      - uv run fip build-bag-silver-pand
+      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned
+      - uv run fip build-bag-landing-verblijfsobject
+      - uv run fip build-bag-landing-pand
+      - task: dbt-seed
       - task: dbt-run
       - task: dbt-test
 
