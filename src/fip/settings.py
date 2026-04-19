@@ -41,6 +41,10 @@ class Settings(BaseSettings):
         default=True,
         validation_alias="S3_PATH_STYLE_ACCESS",
     )
+    s3_bucket: str = Field(
+        default="fip-lakehouse",
+        validation_alias="S3_BUCKET",
+    )
     duckdb_path: str = Field(
         default=".duckdb/fip.duckdb",
         validation_alias="DUCKDB_PATH",
