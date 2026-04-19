@@ -16,7 +16,7 @@ from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.factory import IcebergSinkFactory
 from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
 from fip.lakehouse.silver.writer import SilverObservationSink
-from fip.raw.writer import RawSnapshotWriter
+from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
 from fip.readback.duckdb import (
     attach_lakekeeper_catalog,
     count_rows,
@@ -103,10 +103,21 @@ def ingest_cbs(
 def archive_cbs_raw(
     table_id: str = typer.Option("83625NED"),
     run_id: str = typer.Option("debug-raw"),
+    target: str = typer.Option(
+        "local",
+        help="Raw storage target: local JSONL files or MinIO object storage.",
+    ),
     output_dir: Path = Path(".raw"),
 ) -> None:
     source = CBSODataSource(table_id=table_id, run_id=run_id)
-    writer = RawSnapshotWriter(base_dir=str(output_dir))
+
+    writer: RawSnapshotWriter | MinioRawSnapshotWriter
+    if target == "local":
+        writer = RawSnapshotWriter(base_dir=str(output_dir))
+    elif target == "minio":
+        writer = MinioRawSnapshotWriter()
+    else:
+        raise typer.BadParameter("target must be either 'local' or 'minio'")
 
     grouped: dict[str, list[RawRecord]] = {}
     for record in source.iter_records():
