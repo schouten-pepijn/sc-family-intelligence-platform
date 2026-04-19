@@ -247,6 +247,81 @@ def test_archive_cbs_raw_command_selects_target_writer(
 
 
 @pytest.mark.parametrize(
+    ("target", "expected_writer"),
+    [
+        ("local", "local"),
+        ("minio", "minio"),
+    ],
+)
+def test_archive_bag_raw_command_selects_target_writer(
+    monkeypatch, target: str, expected_writer: str
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSource:
+        def __init__(self, run_id: str) -> None:
+            calls["run_id"] = run_id
+
+        def iter_records(self):
+            yield RawRecord(
+                source_name="bag_pdok",
+                entity_name="bag.verblijfsobject",
+                natural_key="0003010000126809",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="debug-raw",
+                payload={"identificatie": "0003010000126809", "postcode": "9901CP"},
+                schema_version="v1",
+                http_status=200,
+            )
+
+    class FakeLocalWriter:
+        def __init__(self, base_dir: str) -> None:
+            calls["writer"] = "local"
+            calls["base_dir"] = base_dir
+
+        def write(self, records) -> int:
+            rows = list(records)
+            calls["rows"] = rows
+            return len(rows)
+
+    class FakeMinioWriter:
+        def __init__(self) -> None:
+            calls["writer"] = "minio"
+
+        def write(self, records) -> int:
+            rows = list(records)
+            calls["rows"] = rows
+            return len(rows)
+
+    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
+    monkeypatch.setattr(cli, "RawSnapshotWriter", FakeLocalWriter)
+    monkeypatch.setattr(cli, "MinioRawSnapshotWriter", FakeMinioWriter)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "archive-bag-raw",
+            "--run-id",
+            "debug-raw",
+            "--target",
+            target,
+            "--output-dir",
+            ".raw-smoke",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 raw records\n"
+    assert calls["run_id"] == "debug-raw"
+    assert calls["writer"] == expected_writer
+    rows = cast(list[RawRecord], calls["rows"])
+    assert len(rows) == 1
+    assert rows[0].entity_name == "bag.verblijfsobject"
+    if target == "local":
+        assert calls["base_dir"] == ".raw-smoke"
+
+
+@pytest.mark.parametrize(
     ("command", "expected_entity", "expected_table_name", "expected_natural_key"),
     [
         (
