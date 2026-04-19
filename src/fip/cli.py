@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import Iterator
 
 import typer
@@ -15,6 +16,7 @@ from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.factory import IcebergSinkFactory
 from fip.lakehouse.silver.service import write_bronze_rows_to_silver_sink
 from fip.lakehouse.silver.writer import SilverObservationSink
+from fip.raw.writer import RawSnapshotWriter
 from fip.readback.duckdb import (
     attach_lakekeeper_catalog,
     count_rows,
