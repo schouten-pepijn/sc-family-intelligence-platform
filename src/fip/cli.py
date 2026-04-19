@@ -99,6 +99,26 @@ def ingest_cbs(
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
 
 
+@app.command("archive-cbs-raw")
+def archive_cbs_raw(
+    table_id: str = typer.Option("83625NED"),
+    run_id: str = typer.Option("debug-raw"),
+    output_dir: Path = Path(".raw"),
+) -> None:
+    source = CBSODataSource(table_id=table_id, run_id=run_id)
+    writer = RawSnapshotWriter(base_dir=str(output_dir))
+
+    grouped: dict[str, list[RawRecord]] = {}
+    for record in source.iter_records():
+        grouped.setdefault(record.entity_name, []).append(record)
+
+    written = 0
+    for records in grouped.values():
+        written += writer.write(records)
+
+    typer.echo(f"Wrote {written} raw records")
+
+
 @app.command("inspect-bronze")
 def inspect_bronze(
     table_name: str = typer.Option(..., "--table", help="Bronze table name to inspect."),
