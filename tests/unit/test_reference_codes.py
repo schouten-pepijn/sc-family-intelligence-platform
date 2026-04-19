@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from fip.gold.cbs_reference_codes_writer import (
+from fip.gold.cbs.cbs_reference_codes_writer import (
     CBSReferenceCodeWriter,
     build_reference_row,
 )

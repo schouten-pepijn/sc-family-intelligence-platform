@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from fip.gold.bag_pand_writer import BAGPandLandingWriter
-from fip.gold.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
+from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
+from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
 
 
 def make_bag_verblijfsobject_row(natural_key: str, bag_id: str) -> dict[str, object]:

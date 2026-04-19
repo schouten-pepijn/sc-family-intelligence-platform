@@ -4,11 +4,11 @@ from typing import Iterator
 
 import typer
 
-from fip.gold.bag_pand_writer import BAGPandLandingWriter
-from fip.gold.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
-from fip.gold.cbs_observations_writer import CBSObservationLandingWriter
-from fip.gold.cbs_reference_codes_writer import CBSReferenceCodeWriter
+from fip.gold.cbs.cbs_observations_writer import CBSObservationLandingWriter
+from fip.gold.cbs.cbs_reference_codes_writer import CBSReferenceCodeWriter
 from fip.gold.core.service import write_rows_to_sink
+from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
+from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
 from fip.gold.readback import connect as connect_postgres
 from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows

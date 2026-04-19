@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fip.gold.cbs_observations_writer import (
+from fip.gold.cbs.cbs_observations_writer import (
     CBS_OBSERVATION_FIELDS,
     CBSObservationLandingWriter,
 )

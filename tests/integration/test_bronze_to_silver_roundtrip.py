@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import pytest
 
-from fip.gold.cbs_observations_writer import CBSObservationLandingWriter
+from fip.gold.cbs.cbs_observations_writer import CBSObservationLandingWriter
 from fip.gold.core.service import write_rows_to_sink
 from fip.gold.readback import connect as connect_postgres
 from fip.gold.readback import count_rows as count_gold_rows
