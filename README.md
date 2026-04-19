@@ -22,6 +22,8 @@ The local validation loop is:
 - `task test-raw` for the raw landing-pad smoke test against MinIO
 - `task test-integration` for the Bronze -> Silver -> landing roundtrip against the local stack
 - `task test-flow` for the full raw -> Bronze -> Silver -> landing -> dbt flow
+- `task load-all` for the full CBS + BAG data load
+- `task load-smoke` for the full CBS + BAG data load with small limits
 - `task check` for the standard local quality gate
 
 ## Quick Start
@@ -32,7 +34,11 @@ The local validation loop is:
    Verifies the raw landing-pad in MinIO.
 3. `task test-flow`
    Runs the full local flow from raw through Bronze, Silver, landing, and dbt.
-4. `task reset-data`
+4. `task load-all`
+   Runs the full CBS + BAG data load, including the geo-bridge seed and dbt.
+5. `task load-smoke`
+   Runs the full CBS + BAG data load with small limits.
+6. `task reset-data`
    Stops the stack, removes volumes, and clears generated local data.
 
 ## Project Structure
