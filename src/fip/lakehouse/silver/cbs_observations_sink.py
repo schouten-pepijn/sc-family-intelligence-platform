@@ -7,12 +7,8 @@ from fip.lakehouse.silver.cbs_observations import to_silver_observation_row
 from fip.settings import get_settings
 
 
-class SilverObservationSink:
-    """Writes transformed observations to Iceberg tables in the Silver layer.
-
-    Replaces existing table on each write to avoid handling duplicate detection
-    upstream (delegating to source deduplication and snapshot semantics).
-    """
+class CBSObservationSink:
+    """Writes transformed CBS observations to Iceberg tables in Silver."""
 
     def __init__(self, table_ident: str) -> None:
         self.table_ident = table_ident
