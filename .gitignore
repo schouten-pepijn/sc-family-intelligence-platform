@@ -27,7 +27,7 @@ own_docs/
 .codex/
 
 # dbt / sql local artifacts
-sql/logs/
+sql/logs/*.log
 sql/target/
 sql/dbt_packages/
 sql/.user.yml
