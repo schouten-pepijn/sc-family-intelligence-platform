@@ -43,6 +43,14 @@ def test_settings_reads_minio_credentials_via_existing_env_names(monkeypatch) ->
     assert settings.s3_secret_access_key == "test-pass"
 
 
+def test_settings_reads_s3_bucket_from_env(monkeypatch) -> None:
+    monkeypatch.setenv("S3_BUCKET", "raw-bucket")
+
+    settings = Settings()
+
+    assert settings.s3_bucket == "raw-bucket"
+
+
 def test_settings_reads_postgres_defaults_from_env(monkeypatch) -> None:
     monkeypatch.setenv("POSTGRES_HOST", "db")
     monkeypatch.setenv("POSTGRES_PORT", "55433")
