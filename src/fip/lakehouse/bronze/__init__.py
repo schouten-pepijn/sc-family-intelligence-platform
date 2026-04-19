@@ -1,4 +1,10 @@
-from fip.lakehouse.bronze.factory import IcebergSinkFactory
+from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
+from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
 from fip.lakehouse.bronze.writer import BRONZE_ROW_FIELDS, IcebergSink
 
-__all__ = ["BRONZE_ROW_FIELDS", "IcebergSink", "IcebergSinkFactory"]
+__all__ = [
+    "BAGIcebergSinkFactory",
+    "BRONZE_ROW_FIELDS",
+    "CBSIcebergSinkFactory",
+    "IcebergSink",
+]
