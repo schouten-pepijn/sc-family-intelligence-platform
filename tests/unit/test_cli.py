@@ -133,6 +133,40 @@ def test_inspect_cbs_raw_command_prints_filtered_payloads(monkeypatch) -> None:
     )
 
 
+def test_inspect_bag_raw_command_prints_filtered_payloads(monkeypatch) -> None:
+    class FakeSource:
+        def __init__(self, run_id: str) -> None:
+            self.run_id = run_id
+
+        def iter_records(self):
+            yield RawRecord(
+                source_name="bag_pdok",
+                entity_name="bag.verblijfsobject",
+                natural_key="0003010000126809",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="debug-raw",
+                payload={"identificatie": "0003010000126809", "postcode": "9901CP"},
+                schema_version="v1",
+            )
+
+    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-bag-raw",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == (
+        "bag.verblijfsobject\nnatural_key=0003010000126809\n{\n"
+        '  "identificatie": "0003010000126809",\n  "postcode": "9901CP"\n}\n\n'
+    )
+
+
 @pytest.mark.parametrize(
     ("target", "expected_writer"),
     [
