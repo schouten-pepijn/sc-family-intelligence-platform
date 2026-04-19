@@ -1085,11 +1085,7 @@ def test_build_bag_landing_verblijfsobject_command_reads_silver_and_writes_landi
 
     monkeypatch.setattr(cli, "_read_silver_rows", fake_read_silver_rows)
     monkeypatch.setattr(cli, "BAGVerblijfsobjectLandingWriter", FakeBAGLandingWriter)
-    monkeypatch.setattr(
-        cli,
-        "write_rows_to_sink",
-        fake_write_rows_to_sink,
-    )
+    monkeypatch.setattr(cli, "write_rows_to_sink", fake_write_rows_to_sink)
 
     result = runner.invoke(
         cli.app,
@@ -1154,11 +1150,7 @@ def test_build_bag_landing_pand_command_reads_silver_and_writes_landing(
 
     monkeypatch.setattr(cli, "_read_silver_rows", fake_read_silver_rows)
     monkeypatch.setattr(cli, "BAGPandLandingWriter", FakeBAGLandingWriter)
-    monkeypatch.setattr(
-        cli,
-        "write_rows_to_sink",
-        fake_write_rows_to_sink,
-    )
+    monkeypatch.setattr(cli, "write_rows_to_sink", fake_write_rows_to_sink)
 
     result = runner.invoke(
         cli.app,
