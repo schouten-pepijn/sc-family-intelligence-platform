@@ -222,7 +222,10 @@ def archive_bag_raw(
         "verblijfsobject",
         help="BAG collection to archive, for example verblijfsobject or pand.",
     ),
-    limit: int = typer.Option(1000, help="Maximum number of raw records to archive."),
+    limit: int | None = typer.Option(
+        None,
+        help="Maximum number of raw records to archive. Leave unset for a full pull.",
+    ),
     target: str = typer.Option("local", help="Raw storage target: local JSONL files or MinIO."),
     output_dir: Path = Path(".raw"),
 ) -> None:
@@ -241,7 +244,7 @@ def archive_bag_raw(
     for record in source.iter_records():
         grouped.setdefault(record.entity_name, []).append(record)
         archived += 1
-        if archived >= limit:
+        if limit is not None and archived >= limit:
             break
 
     written = 0
@@ -255,6 +258,10 @@ def archive_bag_raw(
 def archive_cbs_raw(
     table_id: str = typer.Option("83625NED"),
     run_id: str = typer.Option("debug-raw"),
+    limit: int | None = typer.Option(
+        None,
+        help="Maximum number of raw records to archive. Leave unset for a full pull.",
+    ),
     target: str = typer.Option(
         "local",
         help="Raw storage target: local JSONL files or MinIO object storage.",
@@ -272,8 +279,12 @@ def archive_cbs_raw(
         raise typer.BadParameter("target must be either 'local' or 'minio'")
 
     grouped: dict[str, list[RawRecord]] = {}
+    archived = 0
     for record in source.iter_records():
         grouped.setdefault(record.entity_name, []).append(record)
+        archived += 1
+        if limit is not None and archived >= limit:
+            break
 
     written = 0
     for records in grouped.values():
