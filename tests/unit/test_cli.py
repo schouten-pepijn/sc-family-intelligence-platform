@@ -1,8 +1,10 @@
+from datetime import datetime, timezone
 from typing import cast
 
 from typer.testing import CliRunner
 
 from fip import cli
+from fip.ingestion.base import RawRecord
 
 runner = CliRunner()
 

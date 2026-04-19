@@ -1,3 +1,6 @@
+import json
+from typing import Iterator
+
 import typer
 
 from fip.gold.readback import connect as connect_postgres
@@ -5,6 +8,7 @@ from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
 from fip.gold.service import write_silver_rows_to_gold_sink
 from fip.gold.writer import GoldObservationWriter
+from fip.ingestion.base import RawRecord
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.factory import IcebergSinkFactory
@@ -28,6 +32,40 @@ app = typer.Typer(help="Family Intelligence Platform CLI.")
 def main_callback() -> None:
     """Family Intelligence Platform command group."""
     return None
+
+
+@app.command("inspect-cbs-raw")
+def inspect_cbs_raw(
+    table_id: str = typer.Option("83625NED", help="CBS table id to inspect."),
+    run_id: str = typer.Option("debug-raw", help="Run id for the inspection session."),
+    limit: int = typer.Option(5, help="Number of records to print per entity."),
+    entity: str | None = typer.Option(
+        None,
+        help="Optional entity filter: Observations, MeasureCodes, PeriodenCodes, or RegioSCodes.",
+    ),
+) -> None:
+    source = CBSODataSource(table_id=table_id, run_id=run_id)
+
+    for record in iter_sampled_cbs_raw_records(source=source, entity=entity, limit=limit):
+        typer.echo(record.entity_name)
+        typer.echo(f"natural_key={record.natural_key}")
+        typer.echo(json.dumps(record.payload, indent=2, ensure_ascii=False))
+        typer.echo("")
+
+
+def iter_sampled_cbs_raw_records(
+    source: CBSODataSource,
+    entity: str | None,
+    limit: int,
+) -> Iterator[RawRecord]:
+    count = 0
+    for record in source.iter_records():
+        if entity is not None and not record.entity_name.endswith(f".{entity}"):
+            continue
+        yield record
+        count += 1
+        if count >= limit:
+            break
 
 
 @app.command("ingest-cbs")
