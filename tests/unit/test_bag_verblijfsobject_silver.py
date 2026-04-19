@@ -1,5 +1,8 @@
 import json
 from datetime import datetime, timezone
+from typing import Any, cast
+
+from pyiceberg.table import Table
 
 from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject import (
     BAG_VERBLIJFSOBJECT_FIELDS,
@@ -92,7 +95,10 @@ def test_bag_verblijfsobject_sink_write_returns_number_of_rows() -> None:
         def append(self, df, snapshot_properties=None, branch=None) -> None:
             return None
 
-    sink._replace_table = lambda catalog, arrow_schema: FakeTable()  # type: ignore[method-assign]
+    def fake_replace_table(catalog: object, arrow_schema: object) -> Table:
+        return cast(Table, FakeTable())
+
+    sink._replace_table = fake_replace_table  # type: ignore[method-assign]
 
     written = sink.write(rows)
 
@@ -108,7 +114,7 @@ def test_bag_verblijfsobject_sink_write_replaces_table_and_appends_with_snapshot
     rows = [flatten_bronze_bag_verblijfsobject(make_bag_bronze_row("1", "bag-1"))]
 
     fake_catalog = object()
-    calls: dict[str, object] = {}
+    calls: dict[str, Any] = {}
 
     class FakeTable:
         def append(self, df, snapshot_properties=None, branch=None) -> None:
@@ -120,10 +126,10 @@ def test_bag_verblijfsobject_sink_write_replaces_table_and_appends_with_snapshot
         calls["load_catalog_called"] = True
         return fake_catalog
 
-    def fake_replace_table(catalog: object, arrow_schema) -> FakeTable:
+    def fake_replace_table(catalog: object, arrow_schema: object) -> Table:
         calls["catalog"] = catalog
         calls["arrow_schema"] = arrow_schema
-        return FakeTable()
+        return cast(Table, FakeTable())
 
     monkeypatch.setattr(sink, "_load_catalog", fake_load_catalog)
     monkeypatch.setattr(sink, "_replace_table", fake_replace_table)
