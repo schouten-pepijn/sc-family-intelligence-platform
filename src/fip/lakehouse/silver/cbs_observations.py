@@ -22,6 +22,11 @@ def to_silver_observation_row(row: dict[str, object]) -> dict[str, object]:
 
 
 def flatten_bronze_observation(row: dict[str, object]) -> dict[str, object]:
+    """Flatten a bronze observation record by extracting and renaming nested payload fields.
+
+    Maps CBS source field names (Id, Measure, Perioden, RegioS) to domain-level
+    names for downstream consumers, decoupling them from API schema changes.
+    """
     payload_raw = row["payload"]
     if not isinstance(payload_raw, str):
         raise ValueError("Expected 'payload' field to be a string")

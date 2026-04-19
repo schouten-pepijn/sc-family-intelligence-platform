@@ -8,11 +8,17 @@ from fip.settings import get_settings
 
 
 class SilverObservationSink:
+    """Writes transformed observations to Iceberg tables in the Silver layer.
+
+    Replaces existing table on each write to avoid handling duplicate detection
+    upstream (delegating to source deduplication and snapshot semantics).
+    """
     def __init__(self, table_ident: str) -> None:
         self.table_ident = table_ident
         self.last_written_rows: list[dict[str, object]] = []
 
     def write(self, rows: list[dict[str, object]]) -> int:
+        """Transform and write rows, replacing the table atomically."""
         if not rows:
             self.last_written_rows = []
             return 0
@@ -80,6 +86,8 @@ class SilverObservationSink:
         catalog.create_namespace_if_not_exists(self._namespace())
 
     def _replace_table(self, catalog: Catalog, arrow_schema: pa.Schema) -> Table:
+        # Drop-then-create allows atomic schema updates when payload fields change;
+        # NoSuchTableError on first run is expected and handled gracefully.
         self._ensure_namespace(catalog)
 
         try:
