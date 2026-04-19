@@ -1039,6 +1039,148 @@ def test_build_silver_bag_pand_command_reads_bronze_and_writes_silver(
     assert sink.table_ident == "silver.bag_pand_flat"
 
 
+def test_build_bag_landing_verblijfsobject_command_reads_silver_and_writes_landing(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeBAGLandingWriter:
+        def __init__(self, table_name: str) -> None:
+            self.table_name = table_name
+            calls["table_name"] = table_name
+
+    def fake_read_silver_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        return [
+            {
+                "source_name": "bag_pdok",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-19T17:43:42.077000Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "bag_id": "bag-1",
+                "verblijfsobject_identificatie": "0000010000057469",
+                "hoofdadres_identificatie": "0000200000057534",
+                "postcode": "6131BE",
+                "huisnummer": 32,
+                "huisletter": "A",
+                "toevoeging": None,
+                "woonplaats_naam": "Sittard",
+                "openbare_ruimte_naam": "Steenweg",
+                "gebruiksdoel": "woonfunctie",
+                "oppervlakte": 72,
+                "geometry": '{"type": "Point"}',
+            }
+        ]
+
+    def fake_write_silver_rows_to_bag_landing_sink(
+        silver_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["silver_rows"] = silver_rows
+        calls["sink"] = sink
+        return len(silver_rows)
+
+    monkeypatch.setattr(cli, "_read_silver_rows", fake_read_silver_rows)
+    monkeypatch.setattr(cli, "BAGVerblijfsobjectLandingWriter", FakeBAGLandingWriter)
+    monkeypatch.setattr(
+        cli,
+        "write_silver_rows_to_bag_landing_sink",
+        fake_write_silver_rows_to_bag_landing_sink,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-bag-landing-verblijfsobject",
+            "--table",
+            "bag_verblijfsobject_flat",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 BAG landing rows\n"
+    assert calls["read_table_name"] == "bag_verblijfsobject_flat"
+    assert calls["read_namespace"] is None
+    assert calls["table_name"] == "bag_verblijfsobject"
+    silver_rows = cast(list[dict[str, object]], calls["silver_rows"])
+    assert len(silver_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeBAGLandingWriter)
+    assert sink.table_name == "bag_verblijfsobject"
+
+
+def test_build_bag_landing_pand_command_reads_silver_and_writes_landing(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeBAGLandingWriter:
+        def __init__(self, table_name: str) -> None:
+            self.table_name = table_name
+            calls["table_name"] = table_name
+
+    def fake_read_silver_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        return [
+            {
+                "source_name": "bag_pdok",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-19T17:43:42.077000Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "bag_id": "pand-1",
+                "pand_identificatie": "1960100000000001",
+                "pand_status": "Pand in gebruik",
+                "oorspronkelijk_bouwjaar": 1974,
+                "geconstateerd": "N",
+                "documentdatum": "2023-03-01",
+                "documentnummer": "doc-123",
+                "geometry": '{"type": "Polygon"}',
+            }
+        ]
+
+    def fake_write_silver_rows_to_bag_landing_sink(
+        silver_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["silver_rows"] = silver_rows
+        calls["sink"] = sink
+        return len(silver_rows)
+
+    monkeypatch.setattr(cli, "_read_silver_rows", fake_read_silver_rows)
+    monkeypatch.setattr(cli, "BAGPandLandingWriter", FakeBAGLandingWriter)
+    monkeypatch.setattr(
+        cli,
+        "write_silver_rows_to_bag_landing_sink",
+        fake_write_silver_rows_to_bag_landing_sink,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-bag-landing-pand",
+            "--table",
+            "bag_pand_flat",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 BAG landing rows\n"
+    assert calls["read_table_name"] == "bag_pand_flat"
+    assert calls["read_namespace"] is None
+    assert calls["table_name"] == "bag_pand"
+    silver_rows = cast(list[dict[str, object]], calls["silver_rows"])
+    assert len(silver_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeBAGLandingWriter)
+    assert sink.table_name == "bag_pand"
+
+
 def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
@@ -1211,6 +1353,112 @@ def test_inspect_bag_silver_pand_command_prints_row_count_and_rows(monkeypatch) 
     assert result.stdout == ("Row count: 9\nSample rows (1):\n('pand-silver-row-1', 'value-1')\n")
     assert calls["count_table_name"] == "bag_pand_flat"
     assert calls["sample_table_name"] == "bag_pand_flat"
+
+
+def test_inspect_bag_landing_verblijfsobject_command_prints_row_count_and_rows(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeConnection:
+        def close(self) -> None:
+            calls["closed"] = True
+
+    def fake_connect_postgres() -> FakeConnection:
+        calls["connected"] = True
+        return FakeConnection()
+
+    def fake_count_gold_rows(conn: object, table_name: str, schema: str | None) -> int:
+        calls["count_table_name"] = table_name
+        calls["count_schema"] = schema
+        return 4
+
+    def fake_sample_gold_rows(
+        conn: object,
+        table_name: str,
+        schema: str | None,
+        limit: int,
+    ) -> list[tuple[str, str]]:
+        calls["sample_table_name"] = table_name
+        calls["sample_schema"] = schema
+        calls["sample_limit"] = limit
+        return [("bag-landing-row-1", "value-1")]
+
+    monkeypatch.setattr(cli, "connect_postgres", fake_connect_postgres)
+    monkeypatch.setattr(cli, "count_gold_rows", fake_count_gold_rows)
+    monkeypatch.setattr(cli, "sample_gold_rows", fake_sample_gold_rows)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-bag-landing-verblijfsobject",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Row count: 4\nSample rows (1):\n('bag-landing-row-1', 'value-1')\n"
+    assert calls["connected"] is True
+    assert calls["count_table_name"] == "bag_verblijfsobject"
+    assert calls["count_schema"] is None
+    assert calls["sample_table_name"] == "bag_verblijfsobject"
+    assert calls["sample_schema"] is None
+    assert calls["sample_limit"] == 1
+    assert calls["closed"] is True
+
+
+def test_inspect_bag_landing_pand_command_prints_row_count_and_rows(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeConnection:
+        def close(self) -> None:
+            calls["closed"] = True
+
+    def fake_connect_postgres() -> FakeConnection:
+        calls["connected"] = True
+        return FakeConnection()
+
+    def fake_count_gold_rows(conn: object, table_name: str, schema: str | None) -> int:
+        calls["count_table_name"] = table_name
+        calls["count_schema"] = schema
+        return 5
+
+    def fake_sample_gold_rows(
+        conn: object,
+        table_name: str,
+        schema: str | None,
+        limit: int,
+    ) -> list[tuple[str, str]]:
+        calls["sample_table_name"] = table_name
+        calls["sample_schema"] = schema
+        calls["sample_limit"] = limit
+        return [("bag-pand-landing-row-1", "value-1")]
+
+    monkeypatch.setattr(cli, "connect_postgres", fake_connect_postgres)
+    monkeypatch.setattr(cli, "count_gold_rows", fake_count_gold_rows)
+    monkeypatch.setattr(cli, "sample_gold_rows", fake_sample_gold_rows)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-bag-landing-pand",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == (
+        "Row count: 5\nSample rows (1):\n('bag-pand-landing-row-1', 'value-1')\n"
+    )
+    assert calls["connected"] is True
+    assert calls["count_table_name"] == "bag_pand"
+    assert calls["count_schema"] is None
+    assert calls["sample_table_name"] == "bag_pand"
+    assert calls["sample_schema"] is None
+    assert calls["sample_limit"] == 1
+    assert calls["closed"] is True
 
 
 def test_build_gold_observations_command_reads_silver_and_writes_gold(
