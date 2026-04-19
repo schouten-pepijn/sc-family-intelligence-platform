@@ -211,6 +211,11 @@ tasks:
     cmds:
       - uv run --project sql dbt test --project-dir sql --profiles-dir sql
 
+  dbt-seed:
+    desc: Seed dbt lookup tables in the local SQL project
+    cmds:
+      - uv run --project sql dbt seed --project-dir sql --profiles-dir sql
+
   precommit:
     desc: Run pre-commit on all files
     cmds:
