@@ -85,3 +85,33 @@ def test_pdok_bag_healthcheck_uses_collection_endpoint(monkeypatch) -> None:
     monkeypatch.setattr(source, "_get", fake_get)
 
     assert source.healthcheck() is True
+
+
+def test_pdok_bag_source_supports_pand_collection(monkeypatch) -> None:
+    source = PDOKBAGSource(run_id="run-001", collection="pand")
+
+    def fake_get(url: str) -> dict:
+        assert url.endswith("/collections/pand/items?limit=1000")
+        return {
+            "features": [
+                {
+                    "id": "4c396a25-0e16-586f-a298-3252f8795942",
+                    "properties": {
+                        "identificatie": "1960100000000001",
+                        "status": "Pand in gebruik",
+                    },
+                    "geometry": None,
+                }
+            ],
+            "links": [],
+        }
+
+    monkeypatch.setattr(source, "_get", fake_get)
+
+    records = list(source.iter_records())
+
+    assert len(records) == 1
+    record = records[0]
+    assert record.source_name == "bag_pdok"
+    assert record.entity_name == "bag.pand"
+    assert record.natural_key == "4c396a25-0e16-586f-a298-3252f8795942"

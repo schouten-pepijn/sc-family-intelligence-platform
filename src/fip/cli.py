@@ -15,6 +15,10 @@ from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
 from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
+from fip.lakehouse.silver.bag_pand_service import (
+    write_bronze_rows_to_bag_pand_sink,
+)
+from fip.lakehouse.silver.bag_pand_sink import BAGPandSink
 from fip.lakehouse.silver.bag_verblijfsobject_service import (
     write_bronze_rows_to_bag_verblijfsobject_sink,
 )
@@ -141,6 +145,10 @@ def ingest_cbs(
 @app.command("ingest-bag")
 def ingest_bag(
     run_id: str = typer.Option(..., help="Run identifier for this ingestion."),
+    collection: str = typer.Option(
+        "verblijfsobject",
+        help="BAG collection to ingest, for example verblijfsobject or pand.",
+    ),
     target_namespace: str | None = typer.Option(
         None,
         help="Target Iceberg namespace.",
@@ -159,7 +167,7 @@ def ingest_bag(
     if target_namespace is None:
         target_namespace = get_settings().bronze_namespace
 
-    source = PDOKBAGSource(run_id=run_id)
+    source = PDOKBAGSource(run_id=run_id, collection=collection)
     sink_factory = BAGIcebergSinkFactory(namespace=target_namespace)
 
     grouped_records: dict[str, list[RawRecord]] = {}
@@ -183,13 +191,17 @@ def ingest_bag(
 @app.command("inspect-bag-raw")
 def inspect_bag_raw(
     run_id: str = typer.Option("debug-raw", help="Run id for the inspection session."),
+    collection: str = typer.Option(
+        "verblijfsobject",
+        help="BAG collection to inspect, for example verblijfsobject or pand.",
+    ),
     limit: int = typer.Option(5, help="Number of records to print."),
     entity: str | None = typer.Option(
         None,
-        help="Optional entity filter: verblijfsobject.",
+        help="Optional entity filter, for example verblijfsobject or pand.",
     ),
 ) -> None:
-    source = PDOKBAGSource(run_id=run_id)
+    source = PDOKBAGSource(run_id=run_id, collection=collection)
     for record in iter_sampled_bag_raw_records(
         source=source,
         entity=entity,
@@ -204,11 +216,15 @@ def inspect_bag_raw(
 @app.command("archive-bag-raw")
 def archive_bag_raw(
     run_id: str = typer.Option("debug-raw"),
+    collection: str = typer.Option(
+        "verblijfsobject",
+        help="BAG collection to archive, for example verblijfsobject or pand.",
+    ),
     limit: int = typer.Option(1000, help="Maximum number of raw records to archive."),
     target: str = typer.Option("local", help="Raw storage target: local JSONL files or MinIO."),
     output_dir: Path = Path(".raw"),
 ) -> None:
-    source = PDOKBAGSource(run_id=run_id)
+    source = PDOKBAGSource(run_id=run_id, collection=collection)
 
     writer: RawSnapshotWriter | MinioRawSnapshotWriter
     if target == "local":
@@ -292,6 +308,10 @@ def inspect_bronze(
 
 @app.command("inspect-bag-bronze")
 def inspect_bag_bronze(
+    collection: str = typer.Option(
+        "verblijfsobject",
+        help="BAG collection to inspect, for example verblijfsobject or pand.",
+    ),
     namespace: str | None = typer.Option(
         None,
         help="Iceberg namespace to inspect. Defaults to configured bronze namespace.",
@@ -299,7 +319,7 @@ def inspect_bag_bronze(
     limit: int = typer.Option(5, help="Number of sample rows to display."),
 ) -> None:
     inspect_bronze(
-        table_name="bag_verblijfsobject",
+        table_name=f"bag_{collection}",
         namespace=namespace,
         limit=limit,
     )
@@ -346,6 +366,28 @@ def build_bag_silver_verblijfsobject(
     )
 
     written = write_bronze_rows_to_bag_verblijfsobject_sink(bronze_rows, sink)
+    typer.echo(f"Wrote {written} BAG Silver rows")
+
+
+@app.command("build-bag-silver-pand")
+def build_bag_silver_pand(
+    table_name: str = typer.Option(
+        "bag_pand",
+        "--table",
+        help="Bronze table name to transform into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+) -> None:
+    bronze_rows = _read_bronze_rows(table_name=table_name, namespace=namespace)
+    silver_namespace = get_settings().silver_namespace
+    sink = BAGPandSink(
+        table_ident=f"{silver_namespace}.bag_pand_flat",
+    )
+
+    written = write_bronze_rows_to_bag_pand_sink(bronze_rows, sink)
     typer.echo(f"Wrote {written} BAG Silver rows")
 
 
@@ -481,6 +523,21 @@ def inspect_bag_silver(
 ) -> None:
     inspect_cbs_silver(
         table_name="bag_verblijfsobject_flat",
+        namespace=namespace,
+        limit=limit,
+    )
+
+
+@app.command("inspect-bag-silver-pand")
+def inspect_bag_silver_pand(
+    namespace: str | None = typer.Option(
+        None,
+        help="Iceberg namespace to inspect. Defaults to configured silver namespace.",
+    ),
+    limit: int = typer.Option(5, help="Number of sample rows to display."),
+) -> None:
+    inspect_cbs_silver(
+        table_name="bag_pand_flat",
         namespace=namespace,
         limit=limit,
     )

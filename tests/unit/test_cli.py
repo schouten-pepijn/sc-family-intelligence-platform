@@ -85,8 +85,9 @@ def test_ingest_bag_command_invokes_service_and_prints_result(monkeypatch) -> No
     calls: dict[str, object] = {}
 
     class FakeSource:
-        def __init__(self, run_id: str) -> None:
+        def __init__(self, run_id: str, collection: str = "verblijfsobject") -> None:
             calls["run_id"] = run_id
+            calls["collection"] = collection
 
         def iter_records(self):
             yield RawRecord(
@@ -144,10 +145,72 @@ def test_ingest_bag_command_invokes_service_and_prints_result(monkeypatch) -> No
     assert result.exit_code == 0
     assert result.stdout == ("Read 1 BAG records...\nWrote 1 records using sink namespace bronze\n")
     assert calls["run_id"] == "run-002"
+    assert calls["collection"] == "verblijfsobject"
     assert calls["target_namespace"] == "bronze"
     assert calls["entity_name"] == "bag.verblijfsobject"
     rows = cast(list[RawRecord], calls["rows"])
     assert len(rows) == 1
+
+
+def test_ingest_bag_command_supports_pand_collection(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSource:
+        def __init__(self, run_id: str, collection: str = "verblijfsobject") -> None:
+            calls["run_id"] = run_id
+            calls["collection"] = collection
+
+        def iter_records(self):
+            yield RawRecord(
+                source_name="bag_pdok",
+                entity_name="bag.pand",
+                natural_key="4c396a25-0e16-586f-a298-3252f8795942",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="run-002",
+                payload={"identificatie": "1960100000000001"},
+                schema_version="v1",
+            )
+
+    class FakeSinkFactory:
+        def __init__(self, namespace: str) -> None:
+            calls["target_namespace"] = namespace
+
+        def for_entity(self, entity_name: str):
+            calls["entity_name"] = entity_name
+
+            class FakeSink:
+                def write(self, records) -> int:
+                    rows = list(records)
+                    calls["rows"] = rows
+                    return len(rows)
+
+            return FakeSink()
+
+    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
+    monkeypatch.setattr(cli, "BAGIcebergSinkFactory", FakeSinkFactory)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "ingest-bag",
+            "--run-id",
+            "run-002",
+            "--collection",
+            "pand",
+            "--target-namespace",
+            "bronze",
+            "--limit",
+            "1",
+            "--progress-every",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == ("Read 1 BAG records...\nWrote 1 records using sink namespace bronze\n")
+    assert calls["run_id"] == "run-002"
+    assert calls["collection"] == "pand"
+    assert calls["entity_name"] == "bag.pand"
 
 
 def test_inspect_cbs_raw_command_prints_filtered_payloads(monkeypatch) -> None:
@@ -197,8 +260,9 @@ def test_inspect_cbs_raw_command_prints_filtered_payloads(monkeypatch) -> None:
 
 def test_inspect_bag_raw_command_prints_filtered_payloads(monkeypatch) -> None:
     class FakeSource:
-        def __init__(self, run_id: str) -> None:
+        def __init__(self, run_id: str, collection: str = "verblijfsobject") -> None:
             self.run_id = run_id
+            self.collection = collection
 
         def iter_records(self):
             yield RawRecord(
@@ -226,6 +290,43 @@ def test_inspect_bag_raw_command_prints_filtered_payloads(monkeypatch) -> None:
     assert result.stdout == (
         "bag.verblijfsobject\nnatural_key=0003010000126809\n{\n"
         '  "identificatie": "0003010000126809",\n  "postcode": "9901CP"\n}\n\n'
+    )
+
+
+def test_inspect_bag_raw_command_supports_pand_collection(monkeypatch) -> None:
+    class FakeSource:
+        def __init__(self, run_id: str, collection: str = "verblijfsobject") -> None:
+            self.run_id = run_id
+            self.collection = collection
+
+        def iter_records(self):
+            yield RawRecord(
+                source_name="bag_pdok",
+                entity_name="bag.pand",
+                natural_key="4c396a25-0e16-586f-a298-3252f8795942",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="debug-raw",
+                payload={"identificatie": "1960100000000001", "status": "Pand in gebruik"},
+                schema_version="v1",
+            )
+
+    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-bag-raw",
+            "--collection",
+            "pand",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == (
+        "bag.pand\nnatural_key=4c396a25-0e16-586f-a298-3252f8795942\n{\n"
+        '  "identificatie": "1960100000000001",\n  "status": "Pand in gebruik"\n}\n\n'
     )
 
 
@@ -321,8 +422,9 @@ def test_archive_bag_raw_command_selects_target_writer(
     calls: dict[str, object] = {}
 
     class FakeSource:
-        def __init__(self, run_id: str) -> None:
+        def __init__(self, run_id: str, collection: str = "verblijfsobject") -> None:
             calls["run_id"] = run_id
+            calls["collection"] = collection
 
         def iter_records(self):
             yield RawRecord(
@@ -387,12 +489,92 @@ def test_archive_bag_raw_command_selects_target_writer(
     assert result.exit_code == 0
     assert result.stdout == "Wrote 1 raw records\n"
     assert calls["run_id"] == "debug-raw"
+    assert calls["collection"] == "verblijfsobject"
     assert calls["writer"] == expected_writer
     rows = cast(list[RawRecord], calls["rows"])
     assert len(rows) == 1
     assert rows[0].entity_name == "bag.verblijfsobject"
     if target == "local":
         assert calls["base_dir"] == ".raw-smoke"
+
+
+@pytest.mark.parametrize(
+    ("target", "expected_writer"),
+    [
+        ("local", "local"),
+        ("minio", "minio"),
+    ],
+)
+def test_archive_bag_raw_command_supports_pand_collection(
+    monkeypatch, target: str, expected_writer: str
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSource:
+        def __init__(self, run_id: str, collection: str = "verblijfsobject") -> None:
+            calls["run_id"] = run_id
+            calls["collection"] = collection
+
+        def iter_records(self):
+            yield RawRecord(
+                source_name="bag_pdok",
+                entity_name="bag.pand",
+                natural_key="4c396a25-0e16-586f-a298-3252f8795942",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="debug-raw",
+                payload={"identificatie": "1960100000000001", "status": "Pand in gebruik"},
+                schema_version="v1",
+                http_status=200,
+            )
+
+    class FakeLocalWriter:
+        def __init__(self, base_dir: str) -> None:
+            calls["writer"] = "local"
+            calls["base_dir"] = base_dir
+
+        def write(self, records) -> int:
+            rows = list(records)
+            calls["rows"] = rows
+            return len(rows)
+
+    class FakeMinioWriter:
+        def __init__(self) -> None:
+            calls["writer"] = "minio"
+
+        def write(self, records) -> int:
+            rows = list(records)
+            calls["rows"] = rows
+            return len(rows)
+
+    monkeypatch.setattr(cli, "PDOKBAGSource", FakeSource)
+    monkeypatch.setattr(cli, "RawSnapshotWriter", FakeLocalWriter)
+    monkeypatch.setattr(cli, "MinioRawSnapshotWriter", FakeMinioWriter)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "archive-bag-raw",
+            "--run-id",
+            "debug-raw",
+            "--collection",
+            "pand",
+            "--target",
+            target,
+            "--limit",
+            "1",
+            "--output-dir",
+            ".raw-smoke",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 raw records\n"
+    assert calls["run_id"] == "debug-raw"
+    assert calls["collection"] == "pand"
+    assert calls["writer"] == expected_writer
+    rows = cast(list[RawRecord], calls["rows"])
+    assert len(rows) == 1
+    assert rows[0].entity_name == "bag.pand"
 
 
 @pytest.mark.parametrize(
@@ -611,6 +793,62 @@ def test_inspect_bag_bronze_command_prints_row_count_and_rows(monkeypatch) -> No
     assert calls["closed"] is True
 
 
+def test_inspect_bag_bronze_command_supports_pand_collection(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeConnection:
+        def close(self) -> None:
+            calls["closed"] = True
+
+    def fake_connect_duckdb() -> FakeConnection:
+        calls["connected"] = True
+        return FakeConnection()
+
+    def fake_load_extensions(con: object) -> None:
+        calls["extensions_loaded"] = con
+
+    def fake_attach_lakekeeper_catalog(con: object) -> None:
+        calls["catalog_attached"] = con
+
+    def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
+        calls["count_table_name"] = table_name
+        calls["count_namespace"] = namespace
+        return 8
+
+    def fake_sample_rows(
+        con: object,
+        table_name: str,
+        namespace: str | None,
+        limit: int,
+    ) -> list[tuple[str, str]]:
+        calls["sample_table_name"] = table_name
+        calls["sample_namespace"] = namespace
+        calls["sample_limit"] = limit
+        return [("pand-row-1", "value-1")]
+
+    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
+    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
+    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
+    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-bag-bronze",
+            "--collection",
+            "pand",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Row count: 8\nSample rows (1):\n('pand-row-1', 'value-1')\n"
+    assert calls["count_table_name"] == "bag_pand"
+    assert calls["sample_table_name"] == "bag_pand"
+
+
 def test_build_silver_observations_command_reads_bronze_and_writes_silver(
     monkeypatch,
 ) -> None:
@@ -739,6 +977,68 @@ def test_build_silver_bag_verblijfsobject_command_reads_bronze_and_writes_silver
     assert sink.table_ident == "silver.bag_verblijfsobject_flat"
 
 
+def test_build_silver_bag_pand_command_reads_bronze_and_writes_silver(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeBagPandSilverSink:
+        def __init__(self, table_ident: str) -> None:
+            self.table_ident = table_ident
+            calls["table_ident"] = table_ident
+
+    def fake_read_bronze_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        return [
+            {
+                "source_name": "bag_pdok",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-19T17:43:42.077000Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "payload": "{}",
+            }
+        ]
+
+    def fake_write_bronze_rows_to_bag_pand_sink(
+        bronze_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["bronze_rows"] = bronze_rows
+        calls["sink"] = sink
+        return 1
+
+    monkeypatch.setattr(cli, "_read_bronze_rows", fake_read_bronze_rows)
+    monkeypatch.setattr(cli, "BAGPandSink", FakeBagPandSilverSink)
+    monkeypatch.setattr(
+        cli,
+        "write_bronze_rows_to_bag_pand_sink",
+        fake_write_bronze_rows_to_bag_pand_sink,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-bag-silver-pand",
+            "--table",
+            "bag_pand",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 BAG Silver rows\n"
+    assert calls["read_table_name"] == "bag_pand"
+    assert calls["read_namespace"] is None
+    assert calls["table_ident"] == "silver.bag_pand_flat"
+    bronze_rows = cast(list[dict[str, object]], calls["bronze_rows"])
+    assert len(bronze_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeBagPandSilverSink)
+    assert sink.table_ident == "silver.bag_pand_flat"
+
+
 def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
@@ -857,6 +1157,60 @@ def test_inspect_bag_silver_command_prints_row_count_and_rows(monkeypatch) -> No
     assert calls["sample_namespace"] == "silver"
     assert calls["sample_limit"] == 1
     assert calls["closed"] is True
+
+
+def test_inspect_bag_silver_pand_command_prints_row_count_and_rows(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeConnection:
+        def close(self) -> None:
+            calls["closed"] = True
+
+    def fake_connect_duckdb() -> FakeConnection:
+        calls["connected"] = True
+        return FakeConnection()
+
+    def fake_load_extensions(con: object) -> None:
+        calls["extensions_loaded"] = con
+
+    def fake_attach_lakekeeper_catalog(con: object) -> None:
+        calls["catalog_attached"] = con
+
+    def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
+        calls["count_table_name"] = table_name
+        calls["count_namespace"] = namespace
+        return 9
+
+    def fake_sample_rows(
+        con: object,
+        table_name: str,
+        namespace: str | None,
+        limit: int,
+    ) -> list[tuple[str, str]]:
+        calls["sample_table_name"] = table_name
+        calls["sample_namespace"] = namespace
+        calls["sample_limit"] = limit
+        return [("pand-silver-row-1", "value-1")]
+
+    monkeypatch.setattr(cli, "connect_duckdb", fake_connect_duckdb)
+    monkeypatch.setattr(cli, "load_extensions", fake_load_extensions)
+    monkeypatch.setattr(cli, "attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog)
+    monkeypatch.setattr(cli, "count_rows", fake_count_rows)
+    monkeypatch.setattr(cli, "sample_rows", fake_sample_rows)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "inspect-bag-silver-pand",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == ("Row count: 9\nSample rows (1):\n('pand-silver-row-1', 'value-1')\n")
+    assert calls["count_table_name"] == "bag_pand_flat"
+    assert calls["sample_table_name"] == "bag_pand_flat"
 
 
 def test_build_gold_observations_command_reads_silver_and_writes_gold(
