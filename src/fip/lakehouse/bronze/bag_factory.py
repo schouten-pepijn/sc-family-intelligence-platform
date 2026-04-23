@@ -3,6 +3,8 @@ from fip.lakehouse.bronze.writer import IcebergSink
 
 class BAGIcebergSinkFactory:
     ENTITY_TABLE_NAMES = {
+        "bag.adres": "bag_adressen",
+        "bag.adressen": "bag_adressen",
         "bag.pand": "bag_pand",
         "bag.verblijfsobject": "bag_verblijfsobject",
     }

@@ -9,7 +9,7 @@ from fip.ingestion.base import RawRecord
 
 class PDOKBAGSource:
     # Adapter for the PDOK BAG OGC API (Dutch national address registry)
-    COLLECTION = "verblijfsobject"
+    COLLECTION = ("verblijfsobject", "pand", "adres", "adressen")
 
     name = "bag_pdok"
     schema_version = "v1"
@@ -17,11 +17,12 @@ class PDOKBAGSource:
     def __init__(
         self,
         run_id: str,
-        collection: str = COLLECTION,
+        collection: str = "verblijfsobject",
     ) -> None:
+        if collection not in self.COLLECTION:
+            raise ValueError(f"Invalid collection '{collection}'. Must be one of {self.COLLECTION}")
         self.run_id = run_id
-        self.collection = collection
-        # self.base_url = f"https://api.pdok.nl/bzk/ogc/v1/{collection}"
+        self.collection = "adres" if collection == "adressen" else collection
         self.base_url = "https://api.pdok.nl/kadaster/bag/ogc/v2"
 
     def iter_records(
