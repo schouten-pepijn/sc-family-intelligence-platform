@@ -58,5 +58,7 @@ def flatten_bronze_bag_pand(row: dict[str, object]) -> dict[str, object]:
     }
 
 
-def flatten_bronze_bag_pand_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+def flatten_bronze_bag_pand_rows(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
     return [flatten_bronze_bag_pand(row) for row in rows]

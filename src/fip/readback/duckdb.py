@@ -26,15 +26,13 @@ def attach_lakekeeper_catalog(
 ) -> None:
     settings = get_settings()
 
-    conn.execute(
-        f"""
+    conn.execute(f"""
         ATTACH '{settings.lakekeeper_warehouse_name}' AS {alias} (
             TYPE iceberg,
             ENDPOINT '{settings.lakekeeper_catalog_uri}',
             AUTHORIZATION_TYPE 'none'
         )
-        """
-    )
+        """)
 
 
 def show_tables(

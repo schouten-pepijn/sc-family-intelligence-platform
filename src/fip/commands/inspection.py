@@ -13,7 +13,12 @@ from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
-from fip.readback.duckdb import attach_lakekeeper_catalog, count_rows, load_extensions, sample_rows
+from fip.readback.duckdb import (
+    attach_lakekeeper_catalog,
+    count_rows,
+    load_extensions,
+    sample_rows,
+)
 from fip.readback.duckdb import connect as connect_duckdb
 from fip.settings import get_settings
 
