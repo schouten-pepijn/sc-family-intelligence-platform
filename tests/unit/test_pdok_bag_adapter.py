@@ -115,3 +115,60 @@ def test_pdok_bag_source_supports_pand_collection(monkeypatch) -> None:
     assert record.source_name == "bag_pdok"
     assert record.entity_name == "bag.pand"
     assert record.natural_key == "4c396a25-0e16-586f-a298-3252f8795942"
+
+
+def test_pdok_bag_source_supports_adres_collection(monkeypatch) -> None:
+    source = PDOKBAGSource(run_id="run-001", collection="adres")
+
+    def fake_get(url: str) -> dict:
+        assert url.endswith("/collections/adres/items?limit=1000")
+        return {
+            "features": [
+                {
+                    "id": "adres-1",
+                    "properties": {
+                        "identificatie": "0003010000126809",
+                        "gemeentecode": "GM1883",
+                    },
+                    "geometry": None,
+                }
+            ],
+            "links": [],
+        }
+
+    monkeypatch.setattr(source, "_get", fake_get)
+
+    records = list(source.iter_records())
+
+    assert len(records) == 1
+    record = records[0]
+    assert record.source_name == "bag_pdok"
+    assert record.entity_name == "bag.adres"
+    assert record.natural_key == "adres-1"
+
+
+def test_pdok_bag_source_normalizes_legacy_adressen_collection(monkeypatch) -> None:
+    source = PDOKBAGSource(run_id="run-001", collection="adressen")
+
+    def fake_get(url: str) -> dict:
+        assert url.endswith("/collections/adres/items?limit=1000")
+        return {
+            "features": [
+                {
+                    "id": "adres-1",
+                    "properties": {
+                        "identificatie": "0003010000126809",
+                        "gemeentecode": "GM1883",
+                    },
+                    "geometry": None,
+                }
+            ],
+            "links": [],
+        }
+
+    monkeypatch.setattr(source, "_get", fake_get)
+
+    records = list(source.iter_records())
+
+    assert len(records) == 1
+    assert records[0].entity_name == "bag.adres"
