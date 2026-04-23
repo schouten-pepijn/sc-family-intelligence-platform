@@ -21,11 +21,7 @@ The local validation loop is:
 - `task test-unit` for fast code-level checks
 - `task test-raw` for the raw landing-pad smoke test against MinIO
 - `task test-integration` for the Bronze -> Silver -> landing roundtrip against the local stack
-<<<<<<< Updated upstream
-- `task test-flow` for the full raw -> Bronze -> Silver -> landing -> dbt flow
-=======
 - `task cbs-flow` for the CBS-only raw -> Bronze -> Silver -> landing -> dbt flow
->>>>>>> Stashed changes
 - `task load-all` for the full CBS + BAG data load
 - `task load-smoke` for the full CBS + BAG data load with small limits
 - `task check` for the standard local quality gate
@@ -66,9 +62,11 @@ The local validation loop is:
 3. DuckDB readback and the `inspect-bronze` CLI path are working.
 4. CBS Silver full refresh, DuckDB readback, and the `inspect-cbs-silver` CLI path are working.
    The Silver package now splits shared sink mechanics into `silver/core` and
-   source-specific transforms into `silver/cbs_*` and `silver/bag_*`.
-5. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
-6. The next implementation step is to make the SQL/dbt layer concrete on top of the landing table.
+   source-specific transforms into `silver/cbs/...` and `silver/pdok_bag/...`.
+5. BAG raw, Bronze, Silver, and landing slices are present for `verblijfsobject` and `pand`.
+6. The first Locatieserver-backed BAG geo bridge is present as an MVP mapping layer.
+7. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
+8. The next implementation steps are streaming ingest, stronger BAG end-to-end validation, and more marts on top of the current reference dims.
 
 ## Current Data Flow
 
