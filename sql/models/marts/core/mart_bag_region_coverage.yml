@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: mart_bag_region_coverage
+    description: Cross-source mart summarizing BAG address mappings by CBS region.
+    columns:
+      - name: region_id
+        tests:
+          - not_null
+          - unique
+      - name: region_title
+        tests:
+          - not_null
+      - name: region_dimension_group_id
+        tests:
+          - not_null
+      - name: mapped_address_count
+        tests:
+          - not_null
+      - name: bag_adres_mapped_count
+        tests:
+          - not_null
+      - name: locatieserver_mapped_count
+        tests:
+          - not_null
+      - name: first_mapped_at
+        tests:
+          - not_null
+      - name: last_mapped_at
+        tests:
+          - not_null
