@@ -1411,7 +1411,9 @@ def test_inspect_bag_landing_verblijfsobject_command_prints_row_count_and_rows(
     assert calls["closed"] is True
 
 
-def test_inspect_bag_landing_pand_command_prints_row_count_and_rows(monkeypatch) -> None:
+def test_inspect_bag_landing_pand_command_prints_row_count_and_rows(
+    monkeypatch,
+) -> None:
     calls: dict[str, object] = {}
 
     class FakeConnection:
