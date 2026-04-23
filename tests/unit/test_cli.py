@@ -1538,23 +1538,6 @@ def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
             self.table_name = table_name
             calls["table_name"] = table_name
 
-    class FakeLocatieserverClient:
-        def lookup(self, query: str, rows: int = 10) -> dict[str, object]:
-            queries = calls.setdefault("queries", [])
-            cast(list[str], queries).append(query)
-            lookup_rows = calls.setdefault("lookup_rows", [])
-            cast(list[int], lookup_rows).append(rows)
-            return {
-                "response": {
-                    "docs": [
-                        {
-                            "id": "GM1883",
-                            "score": 0.92,
-                        }
-                    ]
-                }
-            }
-
     def fake_read_silver_rows(
         table_name: str,
         namespace: str | None,
@@ -1565,10 +1548,7 @@ def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
             {
                 "bag_id": "80f96ef7-dfa4-5197-b681-cfd92b10757e",
                 "retrieved_at": datetime(2026, 4, 19, 17, 43, 42, 77000, tzinfo=timezone.utc),
-                "postcode": "6131BE",
-                "huisnummer": 32,
-                "openbare_ruimte_naam": "Steenweg",
-                "woonplaats_naam": "Sittard",
+                "bronhouder_identificatie": "1883",
             }
         ]
 
@@ -1582,7 +1562,10 @@ def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
 
     monkeypatch.setattr("fip.commands.geo.read_silver_rows", fake_read_silver_rows)
     monkeypatch.setattr("fip.commands.geo.write_rows_to_sink", fake_write_rows_to_sink)
-    monkeypatch.setattr("fip.commands.geo.LocatieserverClient", FakeLocatieserverClient)
+    monkeypatch.setattr(
+        "fip.commands.geo.LocatieserverClient",
+        lambda: (_ for _ in ()).throw(AssertionError("Locatieserver should not be used")),
+    )
     monkeypatch.setattr(
         "fip.commands.geo.BAGGeoRegionMappingLandingWriter",
         FakeMappingWriter,
@@ -1593,26 +1576,21 @@ def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
         [
             "build-bag-geo-region-mapping",
             "--table",
-            "bag_verblijfsobject_flat",
+            "bag_adressen_flat",
             "--limit",
             "1",
-            "--rows",
-            "5",
         ],
     )
 
     assert result.exit_code == 0
     assert result.stdout == "Wrote 1 BAG geo-region mapping rows\n"
-    assert calls["read_table_name"] == "bag_verblijfsobject_flat"
+    assert calls["read_table_name"] == "bag_adressen_flat"
     assert calls["read_namespace"] is None
     assert calls["table_name"] == "bag_geo_region_mapping"
-    queries = cast(list[str], calls["queries"])
-    lookup_rows = cast(list[int], calls["lookup_rows"])
-    assert len(queries) == 1
-    assert queries[0] == "6131BE 32 Steenweg Sittard"
-    assert lookup_rows == [5]
     mapped_rows = cast(list[dict[str, object]], calls["rows"])
     assert len(mapped_rows) == 1
+    assert mapped_rows[0]["region_id"] == "GM1883"
+    assert mapped_rows[0]["mapping_method"] == "bag_ogc_v2_adres"
     sink = calls["sink"]
     assert isinstance(sink, FakeMappingWriter)
     assert sink.table_name == "bag_geo_region_mapping"

@@ -46,6 +46,29 @@ def make_bag_pand_row(natural_key: str, bag_id: str) -> dict[str, object]:
     }
 
 
+def make_bag_adressen_row(natural_key: str, bag_id: str) -> dict[str, object]:
+    return {
+        "source_name": "bag_pdok",
+        "natural_key": natural_key,
+        "retrieved_at": datetime(2026, 4, 19, 17, 43, 42, 77000, tzinfo=timezone.utc),
+        "run_id": "run-001",
+        "schema_version": "v1",
+        "http_status": 200,
+        "bag_id": bag_id,
+        "adres_identificatie": "0003010000126809",
+        "postcode": "9901CP",
+        "huisnummer": 32,
+        "huisletter": "A",
+        "toevoeging": None,
+        "openbare_ruimte_naam": "Steenweg",
+        "woonplaats_naam": "Sittard",
+        "bronhouder_identificatie": "1883",
+        "gemeentecode": "GM1883",
+        "gemeentenaam": "Sittard-Geleen",
+        "geometry": '{"type": "Point"}',
+    }
+
+
 class FakeConnection:
     def __init__(self) -> None:
         self.statements: list[str] = []
@@ -81,10 +104,15 @@ class FakeConnection:
         self.closed = True
 
 
-def test_bag_verblijfsobject_landing_writer_truncates_and_inserts_rows(monkeypatch) -> None:
+def test_bag_verblijfsobject_landing_writer_truncates_and_inserts_rows(
+    monkeypatch,
+) -> None:
     conn = FakeConnection()
     writer = BAGVerblijfsobjectLandingWriter(table_name="bag_verblijfsobject")
-    rows = [make_bag_verblijfsobject_row("1", "bag-1"), make_bag_verblijfsobject_row("2", "bag-2")]
+    rows = [
+        make_bag_verblijfsobject_row("1", "bag-1"),
+        make_bag_verblijfsobject_row("2", "bag-2"),
+    ]
 
     monkeypatch.setattr(writer, "_connect", lambda: conn)
 
@@ -150,6 +178,49 @@ def test_bag_pand_landing_writer_truncates_and_inserts_rows(monkeypatch) -> None
 def test_bag_pand_landing_writer_returns_zero_for_empty_input(monkeypatch) -> None:
     conn = FakeConnection()
     writer = BAGPandLandingWriter(table_name="bag_pand")
+
+    monkeypatch.setattr(writer, "_connect", lambda: conn)
+
+    written = writer.write([])
+
+    assert written == 0
+    assert writer.last_written_rows == []
+    assert conn.statements == []
+    assert conn.executemany_calls == []
+    assert conn.committed is False
+    assert conn.closed is False
+
+
+def test_bag_adressen_landing_writer_truncates_and_inserts_rows(monkeypatch) -> None:
+    conn = FakeConnection()
+    writer = BAGAdressenLandingWriter(table_name="bag_adressen")
+    rows = [
+        make_bag_adressen_row("1", "adres-1"),
+        make_bag_adressen_row("2", "adres-2"),
+    ]
+
+    monkeypatch.setattr(writer, "_connect", lambda: conn)
+
+    written = writer.write(rows)
+
+    assert written == 2
+    assert writer.last_written_rows[0]["bag_id"] == "adres-1"
+    assert conn.committed is True
+    assert conn.rolled_back is False
+    assert conn.closed is True
+    assert any("CREATE SCHEMA IF NOT EXISTS" in statement for statement in conn.statements)
+    assert any("CREATE TABLE IF NOT EXISTS" in statement for statement in conn.statements)
+    assert any("TRUNCATE TABLE" in statement for statement in conn.statements)
+    assert len(conn.executemany_calls) == 1
+    sql, params_seq = conn.executemany_calls[0]
+    assert "INSERT INTO" in sql
+    assert len(params_seq) == 2
+    assert params_seq[0][0] == "bag_pdok"
+
+
+def test_bag_adressen_landing_writer_returns_zero_for_empty_input(monkeypatch) -> None:
+    conn = FakeConnection()
+    writer = BAGAdressenLandingWriter(table_name="bag_adressen")
 
     monkeypatch.setattr(writer, "_connect", lambda: conn)
 

@@ -98,12 +98,10 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
         load_extensions(bronze_conn)
         attach_lakekeeper_catalog(bronze_conn)
         bronze_rows = (
-            bronze_conn.execute(
-                f"""
+            bronze_conn.execute(f"""
             SELECT *
             FROM lakekeeper_catalog.{bronze_namespace}.{bronze_table_name}
-            """
-            )
+            """)
             .to_arrow_table()
             .to_pylist()
         )
@@ -141,12 +139,10 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
             limit=1,
         )
         silver_rows_for_gold = (
-            silver_conn.execute(
-                f"""
+            silver_conn.execute(f"""
             SELECT *
             FROM lakekeeper_catalog.{silver_namespace}.{silver_table_name}
-            """
-            )
+            """)
             .to_arrow_table()
             .to_pylist()
         )
