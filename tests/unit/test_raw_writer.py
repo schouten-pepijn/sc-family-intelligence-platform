@@ -3,7 +3,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fip.ingestion.base import RawRecord
-from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter, serialize_raw_record
+from fip.raw.writer import (
+    MinioRawSnapshotWriter,
+    RawSnapshotWriter,
+    serialize_raw_record,
+)
 
 
 def make_record(
