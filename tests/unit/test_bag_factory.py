@@ -20,6 +20,24 @@ def test_bag_iceberg_sink_factory_routes_pand_to_expected_table() -> None:
     assert sink.table_ident == "bronze.bag_pand"
 
 
+def test_bag_iceberg_sink_factory_routes_adres_to_expected_table() -> None:
+    factory = BAGIcebergSinkFactory()
+
+    sink = factory.for_entity("bag.adres")
+
+    assert isinstance(sink, IcebergSink)
+    assert sink.table_ident == "bronze.bag_adressen"
+
+
+def test_bag_iceberg_sink_factory_routes_legacy_adressen_to_expected_table() -> None:
+    factory = BAGIcebergSinkFactory()
+
+    sink = factory.for_entity("bag.adressen")
+
+    assert isinstance(sink, IcebergSink)
+    assert sink.table_ident == "bronze.bag_adressen"
+
+
 def test_bag_iceberg_sink_factory_raises_for_unknown_entity_name() -> None:
     factory = BAGIcebergSinkFactory()
 
