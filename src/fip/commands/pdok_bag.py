@@ -7,17 +7,26 @@ import typer
 from fip.cli import app
 from fip.commands._helpers import read_bronze_rows, read_silver_rows
 from fip.gold.core.service import write_rows_to_sink
+from fip.gold.pdok_bag.bag_adressen_writer import BAGAdressenLandingWriter
 from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
-from fip.lakehouse.silver.pdok_bag.bag_pand_service import write_bronze_rows_to_bag_pand_sink
+from fip.lakehouse.silver.pdok_bag.bag_adressen_service import (
+    write_bronze_rows_to_bag_adressen_sink,
+)
+from fip.lakehouse.silver.pdok_bag.bag_adressen_sink import BAGAdressenSink
+from fip.lakehouse.silver.pdok_bag.bag_pand_service import (
+    write_bronze_rows_to_bag_pand_sink,
+)
 from fip.lakehouse.silver.pdok_bag.bag_pand_sink import BAGPandSink
 from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_service import (
     write_bronze_rows_to_bag_verblijfsobject_sink,
 )
-from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import BAGVerblijfsobjectSink
+from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import (
+    BAGVerblijfsobjectSink,
+)
 from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
 from fip.settings import get_settings
 
@@ -27,7 +36,7 @@ def ingest_bag(
     run_id: str = typer.Option(..., help="Run identifier for this ingestion."),
     collection: str = typer.Option(
         "verblijfsobject",
-        help="BAG collection to ingest, for example verblijfsobject or pand.",
+        help="BAG collection to ingest, for example verblijfsobject, pand, or adres.",
     ),
     target_namespace: str | None = typer.Option(
         None,
@@ -73,7 +82,7 @@ def archive_bag_raw(
     run_id: str = typer.Option("debug-raw"),
     collection: str = typer.Option(
         "verblijfsobject",
-        help="BAG collection to archive, for example verblijfsobject or pand.",
+        help="BAG collection to archive, for example verblijfsobject, pand, or adres.",
     ),
     limit: int | None = typer.Option(
         None,
@@ -127,6 +136,26 @@ def build_bag_silver_verblijfsobject(
     typer.echo(f"Wrote {written} BAG Silver rows")
 
 
+@app.command("build-bag-silver-adressen")
+def build_bag_silver_adressen(
+    table_name: str = typer.Option(
+        "bag_adressen",
+        "--table",
+        help="Bronze table name to transform into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+) -> None:
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace)
+    silver_namespace = get_settings().silver_namespace
+    sink = BAGAdressenSink(table_ident=f"{silver_namespace}.bag_adressen_flat")
+
+    written = write_bronze_rows_to_bag_adressen_sink(bronze_rows, sink)
+    typer.echo(f"Wrote {written} BAG Silver rows")
+
+
 @app.command("build-bag-silver-pand")
 def build_bag_silver_pand(
     table_name: str = typer.Option(
@@ -161,6 +190,25 @@ def build_bag_landing_verblijfsobject(
 ) -> None:
     silver_rows = read_silver_rows(table_name=table_name, namespace=namespace)
     sink = BAGVerblijfsobjectLandingWriter(table_name="bag_verblijfsobject")
+
+    written = write_rows_to_sink(silver_rows, sink)
+    typer.echo(f"Wrote {written} BAG landing rows")
+
+
+@app.command("build-bag-landing-adressen")
+def build_bag_landing_adressen(
+    table_name: str = typer.Option(
+        "bag_adressen_flat",
+        "--table",
+        help="Silver table name to materialize into the Postgres landing layer.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Silver Iceberg namespace. Defaults to configured silver namespace.",
+    ),
+) -> None:
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace)
+    sink = BAGAdressenLandingWriter(table_name="bag_adressen")
 
     written = write_rows_to_sink(silver_rows, sink)
     typer.echo(f"Wrote {written} BAG landing rows")
