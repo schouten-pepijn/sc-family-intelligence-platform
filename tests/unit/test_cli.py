@@ -306,7 +306,10 @@ def test_inspect_bag_raw_command_supports_pand_collection(monkeypatch) -> None:
                 natural_key="4c396a25-0e16-586f-a298-3252f8795942",
                 retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
                 run_id="debug-raw",
-                payload={"identificatie": "1960100000000001", "status": "Pand in gebruik"},
+                payload={
+                    "identificatie": "1960100000000001",
+                    "status": "Pand in gebruik",
+                },
                 schema_version="v1",
             )
 
@@ -522,7 +525,10 @@ def test_archive_bag_raw_command_supports_pand_collection(
                 natural_key="4c396a25-0e16-586f-a298-3252f8795942",
                 retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
                 run_id="debug-raw",
-                payload={"identificatie": "1960100000000001", "status": "Pand in gebruik"},
+                payload={
+                    "identificatie": "1960100000000001",
+                    "status": "Pand in gebruik",
+                },
                 schema_version="v1",
                 http_status=200,
             )
@@ -707,7 +713,8 @@ def test_inspect_bronze_command_prints_row_count_and_rows(monkeypatch) -> None:
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+        "fip.commands.inspection.attach_lakekeeper_catalog",
+        fake_attach_lakekeeper_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -772,7 +779,8 @@ def test_inspect_bag_bronze_command_prints_row_count_and_rows(monkeypatch) -> No
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+        "fip.commands.inspection.attach_lakekeeper_catalog",
+        fake_attach_lakekeeper_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -833,7 +841,8 @@ def test_inspect_bag_bronze_command_supports_pand_collection(monkeypatch) -> Non
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+        "fip.commands.inspection.attach_lakekeeper_catalog",
+        fake_attach_lakekeeper_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -1214,7 +1223,8 @@ def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+        "fip.commands.inspection.attach_lakekeeper_catalog",
+        fake_attach_lakekeeper_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -1277,7 +1287,8 @@ def test_inspect_bag_silver_command_prints_row_count_and_rows(monkeypatch) -> No
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+        "fip.commands.inspection.attach_lakekeeper_catalog",
+        fake_attach_lakekeeper_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -1338,7 +1349,8 @@ def test_inspect_bag_silver_pand_command_prints_row_count_and_rows(monkeypatch) 
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog", fake_attach_lakekeeper_catalog
+        "fip.commands.inspection.attach_lakekeeper_catalog",
+        fake_attach_lakekeeper_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
