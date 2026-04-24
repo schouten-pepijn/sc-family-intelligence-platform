@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: mart_municipality_woz_snapshot
-    description: One-row-per-municipality WOZ snapshot built from CBS 85036NED total eigendom observations.
+    description: One-row-per-municipality WOZ snapshot built from CBS 85036NED total eigendom observations, enriched with the latest koopwoningen price signal from CBS 83625NED.
     columns:
       - name: region_id
         tests:
@@ -46,3 +46,8 @@ models:
       - name: avg_woz_value
         tests:
           - not_null
+      - name: koopwoningprijs_period_year
+      - name: koopwoningprijs_period_id
+      - name: koopwoningprijs_measure_id
+      - name: koopwoningprijs_measure_title
+      - name: koopwoningprijs
