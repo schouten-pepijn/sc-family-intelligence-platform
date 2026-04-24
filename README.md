@@ -19,16 +19,16 @@ The first municipality consumable marts now start with:
 
 - `mart_municipality_overview` as the municipality comparison entrypoint
 - `mart_municipality_housing_snapshot` as the first compact housing snapshot
+- `mart_municipality_woz_snapshot` as the separate municipality WOZ snapshot
 
 The housing snapshot is intentionally staged:
 
 1. `83625NED` for the first compact snapshot
-2. `85036NED` for WOZ context and the better municipality fit
-3. `85035NED` for housing stock and typology
+2. `85035NED` for housing stock and typology
 
-`85036NED` is the preferred next step for the municipality snapshot because it
-has municipality and province coverage from 2019 onward, which maps cleanly to
-`GMxxxx`.
+`85036NED` is now modelled separately as a municipality WOZ snapshot because
+it has municipality and province coverage from 2019 onward, which maps cleanly
+to `GMxxxx`.
 
 `85792NED` is not part of the municipality snapshot. It only covers the
 Netherlands, provinces, and the 4 largest municipalities, so it belongs in a
