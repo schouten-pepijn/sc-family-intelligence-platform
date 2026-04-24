@@ -132,12 +132,12 @@ tasks:
       - task: infra-init
       - uv run fip archive-cbs-raw --table-id 85036NED --run-id woz-load --target minio
       - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id woz-load --raw-target minio
-      - uv run fip ingest-cbs --table-id 85036NED --run-id woz-load --raw-target minio
+      - uv run fip ingest-cbs --table-id 85036NED --run-id woz-load --limit 10000 --raw-target minio
       - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id woz-load
       - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id woz-load
       - task: dbt-debug
-      - task: dbt-run
-      - task: dbt-test
+      - task: dbt-run-woz
+      - task: dbt-test-woz
 
   load-all:
     desc: "Load the full CBS + BAG data flow, including bridge and dbt models"
@@ -239,12 +239,22 @@ tasks:
   dbt-run:
     desc: Run dbt models against the local landing schema
     cmds:
-      - uv run --project sql dbt run --project-dir sql --profiles-dir sql
+      - uv run --project sql dbt run --project-dir sql --profiles-dir sql --exclude stg_cbs_eigendom_codes stg_cbs_observations_85036 dim_eigendom mart_municipality_woz_snapshot source:landing.cbs_eigendom_codes source:landing.cbs_observations_85036ned
 
   dbt-test:
     desc: Run dbt tests against the local landing schema
     cmds:
-      - uv run --project sql dbt test --project-dir sql --profiles-dir sql
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --exclude stg_cbs_eigendom_codes stg_cbs_observations_85036 dim_eigendom mart_municipality_woz_snapshot source:landing.cbs_eigendom_codes source:landing.cbs_observations_85036ned
+
+  dbt-run-woz:
+    desc: Run only the 85036NED / WOZ dbt models against the local landing schema
+    cmds:
+      - uv run --project sql dbt run --project-dir sql --profiles-dir sql --select stg_cbs_eigendom_codes stg_cbs_observations_85036 dim_eigendom mart_municipality_woz_snapshot
+
+  dbt-test-woz:
+    desc: Run only the 85036NED / WOZ dbt tests against the local landing schema
+    cmds:
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_eigendom_codes stg_cbs_observations_85036 dim_eigendom mart_municipality_woz_snapshot source:landing.cbs_eigendom_codes source:landing.cbs_observations_85036ned
 
   precommit:
     desc: Run pre-commit on all files
