@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_bag_geo_region_mapping
+    description: Staging view over the BAG geo-region mapping landing table.
+    columns:
+      - name: bag_object_id
+        tests:
+          - not_null
+      - name: bag_object_type
+        tests:
+          - not_null
+      - name: region_id
+        tests:
+          - not_null
+      - name: mapping_method
+        tests:
+          - not_null
+      - name: confidence
+        tests:
+          - not_null
+      - name: active_from
+        tests:
+          - not_null
+      - name: run_id
+        tests:
+          - not_null
