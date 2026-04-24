@@ -50,6 +50,18 @@ REFERENCE_FIELDS = {
         "schema_version",
         "http_status",
     ),
+    "EigendomCodes": (
+        "source_name",
+        "natural_key",
+        "identifier",
+        "title",
+        "description",
+        "dimension_group_id",
+        "retrieved_at",
+        "run_id",
+        "schema_version",
+        "http_status",
+    ),
 }
 
 
@@ -95,6 +107,12 @@ def build_reference_row(record: RawRecord) -> dict[str, object]:
         }
 
     if entity == "RegioSCodes":
+        return {
+            **base,
+            "dimension_group_id": payload.get("DimensionGroupId"),
+        }
+
+    if entity == "EigendomCodes":
         return {
             **base,
             "dimension_group_id": payload.get("DimensionGroupId"),
@@ -186,6 +204,20 @@ class CBSReferenceCodeWriter(PostgresFullRefreshWriter):
                 """
 
         if self.entity == "RegioSCodes":
+            return """
+                    source_name text NOT NULL,
+                    natural_key text NOT NULL,
+                    identifier text NOT NULL,
+                    title text NOT NULL,
+                    description text,
+                    dimension_group_id text,
+                    retrieved_at timestamptz NOT NULL,
+                    run_id text NOT NULL,
+                    schema_version text NOT NULL,
+                    http_status integer NOT NULL
+                """
+
+        if self.entity == "EigendomCodes":
             return """
                     source_name text NOT NULL,
                     natural_key text NOT NULL,
