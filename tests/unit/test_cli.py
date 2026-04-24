@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import cast
 
 import pytest
@@ -13,12 +14,14 @@ runner = CliRunner()
 def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
-    class FakeSource:
-        def __init__(self, table_id: str, run_id: str) -> None:
+    class FakeReader:
+        def __init__(self, base_dir) -> None:
+            calls["base_dir"] = base_dir
+
+        def iter_cbs_records(self, table_id: str, run_id: str):
             calls["table_id"] = table_id
             calls["run_id"] = run_id
 
-        def iter_records(self):
             yield RawRecord(
                 source_name="cbs_statline",
                 entity_name="83625NED.MeasureCodes",
@@ -53,7 +56,8 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
 
             return FakeSink()
 
-    monkeypatch.setattr("fip.commands.cbs.CBSODataSource", FakeSource)
+    monkeypatch.setattr("fip.commands.cbs.RawSnapshotReader", FakeReader)
+    monkeypatch.setattr("fip.commands.cbs.MinioRawSnapshotReader", FakeReader)
     monkeypatch.setattr("fip.commands.cbs.CBSIcebergSinkFactory", FakeSinkFactory)
 
     result = runner.invoke(
@@ -68,6 +72,10 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
             "bronze",
             "--limit",
             "1",
+            "--raw-target",
+            "local",
+            "--raw-output-dir",
+            ".raw-smoke",
         ],
     )
 
@@ -79,17 +87,19 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
     assert calls["entity_name"] == "83625NED.MeasureCodes"
     rows = cast(list[RawRecord], calls["rows"])
     assert len(rows) == 1
+    assert calls["base_dir"] == Path(".raw-smoke")
 
 
 def test_ingest_bag_command_invokes_service_and_prints_result(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
-    class FakeSource:
-        def __init__(self, run_id: str, collection: str = "verblijfsobject") -> None:
+    class FakeReader:
+        def __init__(self, base_dir) -> None:
+            calls["base_dir"] = base_dir
+
+        def iter_bag_records(self, run_id: str, collection: str):
             calls["run_id"] = run_id
             calls["collection"] = collection
-
-        def iter_records(self):
             yield RawRecord(
                 source_name="bag_pdok",
                 entity_name="bag.verblijfsobject",
@@ -124,7 +134,8 @@ def test_ingest_bag_command_invokes_service_and_prints_result(monkeypatch) -> No
 
             return FakeSink()
 
-    monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
+    monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotReader", FakeReader)
+    monkeypatch.setattr("fip.commands.pdok_bag.MinioRawSnapshotReader", FakeReader)
     monkeypatch.setattr("fip.commands.pdok_bag.BAGIcebergSinkFactory", FakeSinkFactory)
 
     result = runner.invoke(
@@ -133,34 +144,42 @@ def test_ingest_bag_command_invokes_service_and_prints_result(monkeypatch) -> No
             "ingest-bag",
             "--run-id",
             "run-002",
+            "--collection",
+            "verblijfsobject",
             "--target-namespace",
             "bronze",
             "--limit",
             "1",
             "--progress-every",
             "1",
+            "--raw-target",
+            "local",
+            "--raw-output-dir",
+            ".raw-smoke",
         ],
     )
 
     assert result.exit_code == 0
-    assert result.stdout == ("Read 1 BAG records...\nWrote 1 records using sink namespace bronze\n")
+    assert result.stdout == "Read 1 BAG records...\nWrote 1 records using sink namespace bronze\n"
     assert calls["run_id"] == "run-002"
     assert calls["collection"] == "verblijfsobject"
     assert calls["target_namespace"] == "bronze"
     assert calls["entity_name"] == "bag.verblijfsobject"
     rows = cast(list[RawRecord], calls["rows"])
     assert len(rows) == 1
+    assert calls["base_dir"] == Path(".raw-smoke")
 
 
 def test_ingest_bag_command_supports_pand_collection(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
-    class FakeSource:
-        def __init__(self, run_id: str, collection: str = "verblijfsobject") -> None:
+    class FakeReader:
+        def __init__(self, base_dir) -> None:
+            calls["base_dir"] = base_dir
+
+        def iter_bag_records(self, run_id: str, collection: str):
             calls["run_id"] = run_id
             calls["collection"] = collection
-
-        def iter_records(self):
             yield RawRecord(
                 source_name="bag_pdok",
                 entity_name="bag.pand",
@@ -186,7 +205,8 @@ def test_ingest_bag_command_supports_pand_collection(monkeypatch) -> None:
 
             return FakeSink()
 
-    monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
+    monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotReader", FakeReader)
+    monkeypatch.setattr("fip.commands.pdok_bag.MinioRawSnapshotReader", FakeReader)
     monkeypatch.setattr("fip.commands.pdok_bag.BAGIcebergSinkFactory", FakeSinkFactory)
 
     result = runner.invoke(
@@ -203,6 +223,10 @@ def test_ingest_bag_command_supports_pand_collection(monkeypatch) -> None:
             "1",
             "--progress-every",
             "1",
+            "--raw-target",
+            "local",
+            "--raw-output-dir",
+            ".raw-smoke",
         ],
     )
 
@@ -211,6 +235,7 @@ def test_ingest_bag_command_supports_pand_collection(monkeypatch) -> None:
     assert calls["run_id"] == "run-002"
     assert calls["collection"] == "pand"
     assert calls["entity_name"] == "bag.pand"
+    assert calls["base_dir"] == Path(".raw-smoke")
 
 
 def test_inspect_cbs_raw_command_prints_filtered_payloads(monkeypatch) -> None:
@@ -616,20 +641,13 @@ def test_build_gold_reference_commands_filter_records_and_write(
     calls: dict[str, object] = {}
 
     class FakeSource:
-        def __init__(self, table_id: str, run_id: str) -> None:
+        def __init__(self, base_dir=None) -> None:
+            calls["base_dir"] = base_dir
+
+        def iter_cbs_entity_records(self, table_id: str, run_id: str, entity: str):
             calls["table_id"] = table_id
             calls["run_id"] = run_id
-
-        def iter_records(self):
-            yield RawRecord(
-                source_name="cbs_statline",
-                entity_name="83625NED.Observations",
-                natural_key="1",
-                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
-                run_id="debug-raw",
-                payload={"Identifier": "IGNORED", "Title": "Ignored"},
-                schema_version="v1",
-            )
+            calls["entity"] = entity
             yield RawRecord(
                 source_name="cbs_statline",
                 entity_name=f"83625NED.{expected_entity}",
@@ -651,7 +669,8 @@ def test_build_gold_reference_commands_filter_records_and_write(
             calls["rows"] = self.rows
             return len(self.rows)
 
-    monkeypatch.setattr("fip.commands._helpers.CBSODataSource", FakeSource)
+    monkeypatch.setattr("fip.commands._helpers.RawSnapshotReader", FakeSource)
+    monkeypatch.setattr("fip.commands._helpers.MinioRawSnapshotReader", FakeSource)
     monkeypatch.setattr("fip.commands._helpers.CBSReferenceCodeWriter", FakeWriter)
 
     result = runner.invoke(
