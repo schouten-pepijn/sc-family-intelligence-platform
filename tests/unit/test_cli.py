@@ -629,6 +629,12 @@ def test_archive_bag_raw_command_supports_pand_collection(
             "cbs_region_codes",
             "NL01",
         ),
+        (
+            "build-gold-eigendom-codes",
+            "EigendomCodes",
+            "cbs_eigendom_codes",
+            "A047047",
+        ),
     ],
 )
 def test_build_gold_reference_commands_filter_records_and_write(
