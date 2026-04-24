@@ -1,8 +1,8 @@
 version: 2
 
 models:
-  - name: stg_cbs_observations
-    description: Staging view over the landing CBS observations table.
+  - name: stg_cbs_observations_83625
+    description: Staging view over the landing CBS observations table for 83625NED.
     columns:
       - name: source_name
         tests:

@@ -1,7 +1,8 @@
 {{ config(materialized='view') }}
 
-{# Staging layer provides a single source of truth for observations from landing layer,
-   enabling downstream models to depend on a consistent schema. #}
+{# Staging layer provides a single source of truth for CBS 83625NED
+   observations from the landing layer, enabling downstream models to depend on
+   a consistent schema. #}
 select
     source_name,
     natural_key,
@@ -16,4 +17,4 @@ select
     numeric_value,
     value_attribute,
     string_value
-from {{ source('landing', 'cbs_observations') }}
+from {{ source('landing', 'cbs_observations_83625ned') }}

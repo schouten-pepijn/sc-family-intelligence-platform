@@ -2,7 +2,7 @@
    commonly-queried attributes and reduce join overhead in downstream consumers. #}
 with staged as (
     select *
-    from {{ ref('stg_cbs_observations') }}
+    from {{ ref('stg_cbs_observations_83625') }}
 ),
 joined_dimensions as (
     select

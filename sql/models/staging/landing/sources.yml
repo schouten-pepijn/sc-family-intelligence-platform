@@ -4,8 +4,8 @@ sources:
   - name: landing
     schema: landing
     tables:
-      - name: cbs_observations
-        description: Landing table loaded by the Python export.
+      - name: cbs_observations_83625ned
+        description: Landing table loaded by the Python export for CBS table 83625NED.
         columns:
           - name: source_name
             tests:
