@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Iterator
 
 from fip.gold.cbs.cbs_reference_codes_writer import CBSReferenceCodeWriter
 from fip.ingestion.base import RawRecord, Source
-from fip.ingestion.cbs.adapter import CBSODataSource
+from fip.raw.reader import MinioRawSnapshotReader, RawSnapshotReader
 from fip.readback.duckdb import attach_lakekeeper_catalog, load_extensions
 from fip.readback.duckdb import connect as connect_duckdb
 from fip.settings import get_settings
@@ -70,8 +71,17 @@ def build_gold_reference_codes(
     run_id: str,
     entity: str,
     table_name: str,
+    raw_target: str = "local",
+    raw_output_dir: Path = Path(".raw"),
 ) -> int:
-    source = CBSODataSource(table_id=table_id, run_id=run_id)
-    records = list(iter_records_for_entity(source=source, entity=entity))
+    reader: RawSnapshotReader | MinioRawSnapshotReader
+    if raw_target == "local":
+        reader = RawSnapshotReader(base_dir=raw_output_dir)
+    elif raw_target == "minio":
+        reader = MinioRawSnapshotReader()
+    else:
+        raise ValueError("raw_target must be either 'local' or 'minio'")
+
+    records = list(reader.iter_cbs_entity_records(table_id=table_id, run_id=run_id, entity=entity))
     sink = CBSReferenceCodeWriter(table_name=table_name, entity=entity)
     return sink.write(records)
