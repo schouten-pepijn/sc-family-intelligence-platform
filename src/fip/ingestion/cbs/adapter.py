@@ -10,11 +10,15 @@ from fip.ingestion.base import RawRecord
 class CBSODataSource:
     # Adapter for CBS OData API (Dutch statistics bureau)
     ENTITIES = ("Observations", "MeasureCodes", "PeriodenCodes", "RegioSCodes")
+    EXTRA_ENTITIES_BY_TABLE_ID = {
+        "85036NED": ("EigendomCodes",),
+    }
     ENTITY_KEY_FIELDS = {
         "Observations": ("Id",),
         "MeasureCodes": ("Id", "Key", "Identifier"),
         "PeriodenCodes": ("Id", "Key", "Identifier"),
         "RegioSCodes": ("Id", "Key", "Identifier"),
+        "EigendomCodes": ("Id", "Key", "Identifier"),
     }
 
     name = "cbs_statline"
@@ -32,7 +36,7 @@ class CBSODataSource:
     def iter_records(self, since: datetime | None = None) -> Iterator[RawRecord]:
         # Full-table pulls only; incremental sync not yet implemented
         _ = since
-        for entity in self.ENTITIES:
+        for entity in self.ENTITIES + self.EXTRA_ENTITIES_BY_TABLE_ID.get(self.table_id, ()):
             url: str | None = f"{self.base_url}/{entity}"
 
             while url:
