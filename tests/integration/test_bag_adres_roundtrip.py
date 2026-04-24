@@ -2,29 +2,28 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
 
-from fip.gold.core.service import write_rows_to_sink
-from fip.gold.pdok_bag.bag_adressen_writer import BAGAdressenLandingWriter
+from fip.commands.geo import build_bag_geo_region_mapping
+from fip.commands.pdok_bag import (
+    archive_bag_raw,
+    build_bag_landing_adressen,
+    build_bag_silver_adressen,
+    ingest_bag,
+)
 from fip.gold.readback import connect as connect_postgres
 from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
 from fip.ingestion.base import RawRecord
-from fip.ingestion.service import ingest_source_to_sink
-from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
-from fip.lakehouse.silver.pdok_bag.bag_adressen_service import (
-    write_bronze_rows_to_bag_adressen_sink,
-)
-from fip.lakehouse.silver.pdok_bag.bag_adressen_sink import BAGAdressenSink
 from fip.readback.duckdb import (
     attach_lakekeeper_catalog,
     connect,
-    count_rows,
     load_extensions,
-    sample_rows,
 )
+from fip.settings import get_settings
 
 pytestmark = pytest.mark.integration
 
@@ -44,13 +43,26 @@ class FakeSource:
         return True
 
 
-def _make_record(natural_key: str, bag_id: str) -> RawRecord:
+class FakeArchiveSource:
+    def __init__(self, run_id: str, collection: str = "adres") -> None:
+        self.run_id = run_id
+        self.collection = collection
+
+    def iter_records(self, since: datetime | None = None):
+        _ = since
+        yield _make_record(natural_key="0", bag_id="adres-1", run_id=self.run_id)
+
+    def healthcheck(self) -> bool:
+        return True
+
+
+def _make_record(natural_key: str, bag_id: str, run_id: str) -> RawRecord:
     return RawRecord(
         source_name=FakeSource.name,
         entity_name="bag.adres",
         natural_key=natural_key,
         retrieved_at=datetime(2026, 4, 19, 17, 43, 42, 77000, tzinfo=timezone.utc),
-        run_id="integration-roundtrip",
+        run_id=run_id,
         payload={
             "type": "Feature",
             "id": bag_id,
@@ -79,21 +91,39 @@ def _make_record(natural_key: str, bag_id: str) -> RawRecord:
     os.getenv("FIP_RUN_INTEGRATION") != "1",
     reason="Set FIP_RUN_INTEGRATION=1 to run local lakehouse integration tests.",
 )
-def test_bag_adres_roundtrip_against_local_lakehouse() -> None:
+def test_bag_adres_command_flow_against_local_lakehouse(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     suffix = uuid4().hex[:8]
+    run_id = f"integration-roundtrip-{suffix}"
     bronze_namespace = f"bronze_it_{suffix}"
     silver_namespace = f"silver_it_{suffix}"
-    bronze_table_name = "bag_adressen"
-    silver_table_name = "bag_adressen_flat"
-    landing_table_name = f"bag_adressen_it_{suffix}"
 
-    source = FakeSource([_make_record(natural_key="0", bag_id="adres-1")])
+    monkeypatch.setenv("FIP_BRONZE_NAMESPACE", bronze_namespace)
+    monkeypatch.setenv("FIP_SILVER_NAMESPACE", silver_namespace)
+    get_settings.cache_clear()
 
-    bronze_written = ingest_source_to_sink(
-        source=source,
-        sink_factory=BAGIcebergSinkFactory(namespace=bronze_namespace),
+    monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeArchiveSource)
+
+    archive_bag_raw(
+        run_id=run_id,
+        collection="adres",
+        limit=1,
+        target="local",
+        output_dir=tmp_path,
     )
-    assert bronze_written == 1
+    ingest_bag(
+        run_id=run_id,
+        collection="adres",
+        target_namespace=bronze_namespace,
+        limit=1,
+        progress_every=1,
+        raw_target="local",
+        raw_output_dir=tmp_path,
+    )
+
+    build_bag_silver_adressen(table_name="bag_adressen", namespace=bronze_namespace)
 
     bronze_conn = connect()
     try:
