@@ -7,10 +7,6 @@ with cbs_scores as (
     from {{ ref('mart_cbs_observation_values_by_region_year') }}
     where region_id like 'GM%'
 ),
-regions as (
-    select *
-    from {{ ref('dim_region') }}
-),
 bag_coverage as (
     select *
     from {{ ref('mart_bag_region_coverage') }}
@@ -18,8 +14,8 @@ bag_coverage as (
 select
     concat_ws('|', cbs_scores.region_id, cbs_scores.period_id, cbs_scores.measure_id) as scorecard_key,
     cbs_scores.region_id,
-    coalesce(cbs_scores.region_title, regions.region_title) as region_title,
-    regions.region_description,
+    cbs_scores.region_title,
+    region.region_description,
     cbs_scores.region_dimension_group_id,
     cbs_scores.period_year,
     cbs_scores.period_id,
@@ -42,7 +38,7 @@ select
     bag_coverage.first_mapped_at,
     bag_coverage.last_mapped_at
 from cbs_scores
-left join regions
-    on cbs_scores.region_id = regions.region_id
+join {{ ref('dim_region') }} as region
+    on cbs_scores.region_id = region.region_id
 left join bag_coverage
     on cbs_scores.region_id = bag_coverage.region_id
