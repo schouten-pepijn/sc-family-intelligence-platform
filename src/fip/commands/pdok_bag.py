@@ -27,8 +27,20 @@ from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_service import (
 from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import (
     BAGVerblijfsobjectSink,
 )
+from fip.raw.reader import MinioRawSnapshotReader, RawSnapshotReader
 from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
 from fip.settings import get_settings
+
+
+def _bag_raw_reader(
+    raw_target: str,
+    raw_output_dir: Path,
+) -> RawSnapshotReader | MinioRawSnapshotReader:
+    if raw_target == "local":
+        return RawSnapshotReader(base_dir=raw_output_dir)
+    if raw_target == "minio":
+        return MinioRawSnapshotReader()
+    raise typer.BadParameter("raw_target must be either 'local' or 'minio'")
 
 
 @app.command("ingest-bag")
@@ -52,16 +64,21 @@ def ingest_bag(
         min=1,
         help="Print progress every N records while reading BAG.",
     ),
+    raw_target: str = typer.Option(
+        "minio",
+        help="Raw source target: local JSONL files or MinIO object storage.",
+    ),
+    raw_output_dir: Path = Path(".raw"),
 ) -> None:
     if target_namespace is None:
         target_namespace = get_settings().bronze_namespace
 
-    source = PDOKBAGSource(run_id=run_id, collection=collection)
+    reader = _bag_raw_reader(raw_target=raw_target, raw_output_dir=raw_output_dir)
     sink_factory = BAGIcebergSinkFactory(namespace=target_namespace)
 
     grouped_records: dict[str, list[RawRecord]] = {}
     seen = 0
-    for record in source.iter_records():
+    for record in reader.iter_bag_records(run_id=run_id, collection=collection):
         grouped_records.setdefault(record.entity_name, []).append(record)
         seen += 1
         if seen % progress_every == 0:
