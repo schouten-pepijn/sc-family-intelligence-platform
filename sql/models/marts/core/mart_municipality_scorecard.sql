@@ -4,7 +4,7 @@
    CBS municipality/region statistics enriched with BAG address coverage. #}
 with cbs_scores as (
     select *
-    from {{ ref('mart_cbs_observation_values_by_region_year_enriched') }}
+    from {{ ref('mart_cbs_observation_values_by_region_year') }}
     where region_id like 'GM%'
 ),
 regions as (
