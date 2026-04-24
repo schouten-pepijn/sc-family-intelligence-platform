@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-import re
 
 import psycopg
 from psycopg.sql import SQL, Identifier
@@ -44,8 +44,7 @@ class PostgresFullRefreshWriter(ABC):
         run_ids = {str(row["run_id"]) for row in rows}
         if len(run_ids) != 1:
             raise ValueError(
-                f"{self.__class__.__name__} expects a single run_id per write "
-                f"got {sorted(run_ids)}"
+                f"{self.__class__.__name__} expects a single run_id per write got {sorted(run_ids)}"
             )
 
     def _validate_rows(self, rows: Sequence[object]) -> None:
