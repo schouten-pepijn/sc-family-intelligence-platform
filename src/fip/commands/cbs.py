@@ -214,7 +214,7 @@ def build_landing_observations(
         help="Silver table name to materialize into the Postgres landing layer.",
     ),
     landing_table_name: str = typer.Option(
-        "cbs_observations",
+        "cbs_observations_83625ned",
         "--landing-table",
         help="Postgres landing table name to write to.",
     ),

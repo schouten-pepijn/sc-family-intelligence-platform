@@ -155,7 +155,7 @@ def inspect_bag_silver_pand(
 @app.command("inspect-landing")
 def inspect_landing(
     table_name: str = typer.Option(
-        "cbs_observations",
+        "cbs_observations_83625ned",
         "--table",
         help="Landing table name to inspect.",
     ),
