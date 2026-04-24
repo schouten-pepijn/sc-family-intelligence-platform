@@ -893,9 +893,14 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
             self.table_ident = table_ident
             calls["table_ident"] = table_ident
 
-    def fake_read_bronze_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+    def fake_read_bronze_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
         calls["read_table_name"] = table_name
         calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
         return [
             {
                 "source_name": "cbs_statline",
@@ -933,6 +938,8 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
             "build-cbs-silver-observations",
             "--table",
             "cbs_observations_83625ned",
+            "--run-id",
+            "smoke-load",
         ],
     )
 
@@ -940,6 +947,7 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
     assert result.stdout == "Wrote 1 Silver rows\n"
     assert calls["read_table_name"] == "cbs_observations_83625ned"
     assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "smoke-load"
     assert calls["table_ident"] == "silver.cbs_observations_flat_83625ned"
     bronze_rows = cast(list[dict[str, object]], calls["bronze_rows"])
     assert len(bronze_rows) == 1
@@ -958,9 +966,14 @@ def test_build_silver_bag_verblijfsobject_command_reads_bronze_and_writes_silver
             self.table_ident = table_ident
             calls["table_ident"] = table_ident
 
-    def fake_read_bronze_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+    def fake_read_bronze_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
         calls["read_table_name"] = table_name
         calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
         return [
             {
                 "source_name": "bag_pdok",
@@ -994,6 +1007,8 @@ def test_build_silver_bag_verblijfsobject_command_reads_bronze_and_writes_silver
             "build-bag-silver-verblijfsobject",
             "--table",
             "bag_verblijfsobject",
+            "--run-id",
+            "smoke-load",
         ],
     )
 
@@ -1001,6 +1016,7 @@ def test_build_silver_bag_verblijfsobject_command_reads_bronze_and_writes_silver
     assert result.stdout == "Wrote 1 BAG Silver rows\n"
     assert calls["read_table_name"] == "bag_verblijfsobject"
     assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "smoke-load"
     assert calls["table_ident"] == "silver.bag_verblijfsobject_flat"
     bronze_rows = cast(list[dict[str, object]], calls["bronze_rows"])
     assert len(bronze_rows) == 1
@@ -1019,9 +1035,14 @@ def test_build_silver_bag_pand_command_reads_bronze_and_writes_silver(
             self.table_ident = table_ident
             calls["table_ident"] = table_ident
 
-    def fake_read_bronze_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+    def fake_read_bronze_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
         calls["read_table_name"] = table_name
         calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
         return [
             {
                 "source_name": "bag_pdok",
@@ -1055,6 +1076,8 @@ def test_build_silver_bag_pand_command_reads_bronze_and_writes_silver(
             "build-bag-silver-pand",
             "--table",
             "bag_pand",
+            "--run-id",
+            "smoke-load",
         ],
     )
 
@@ -1062,6 +1085,7 @@ def test_build_silver_bag_pand_command_reads_bronze_and_writes_silver(
     assert result.stdout == "Wrote 1 BAG Silver rows\n"
     assert calls["read_table_name"] == "bag_pand"
     assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "smoke-load"
     assert calls["table_ident"] == "silver.bag_pand_flat"
     bronze_rows = cast(list[dict[str, object]], calls["bronze_rows"])
     assert len(bronze_rows) == 1
@@ -1080,9 +1104,14 @@ def test_build_bag_landing_verblijfsobject_command_reads_silver_and_writes_landi
             self.table_name = table_name
             calls["table_name"] = table_name
 
-    def fake_read_silver_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+    def fake_read_silver_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
         calls["read_table_name"] = table_name
         calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
         return [
             {
                 "source_name": "bag_pdok",
@@ -1126,6 +1155,8 @@ def test_build_bag_landing_verblijfsobject_command_reads_silver_and_writes_landi
             "build-bag-landing-verblijfsobject",
             "--table",
             "bag_verblijfsobject_flat",
+            "--run-id",
+            "smoke-load",
         ],
     )
 
@@ -1133,6 +1164,7 @@ def test_build_bag_landing_verblijfsobject_command_reads_silver_and_writes_landi
     assert result.stdout == "Wrote 1 BAG landing rows\n"
     assert calls["read_table_name"] == "bag_verblijfsobject_flat"
     assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "smoke-load"
     assert calls["table_name"] == "bag_verblijfsobject"
     silver_rows = cast(list[dict[str, object]], calls["silver_rows"])
     assert len(silver_rows) == 1
@@ -1151,9 +1183,14 @@ def test_build_bag_landing_pand_command_reads_silver_and_writes_landing(
             self.table_name = table_name
             calls["table_name"] = table_name
 
-    def fake_read_silver_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+    def fake_read_silver_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
         calls["read_table_name"] = table_name
         calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
         return [
             {
                 "source_name": "bag_pdok",
@@ -1191,6 +1228,8 @@ def test_build_bag_landing_pand_command_reads_silver_and_writes_landing(
             "build-bag-landing-pand",
             "--table",
             "bag_pand_flat",
+            "--run-id",
+            "smoke-load",
         ],
     )
 
@@ -1198,6 +1237,7 @@ def test_build_bag_landing_pand_command_reads_silver_and_writes_landing(
     assert result.stdout == "Wrote 1 BAG landing rows\n"
     assert calls["read_table_name"] == "bag_pand_flat"
     assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "smoke-load"
     assert calls["table_name"] == "bag_pand"
     silver_rows = cast(list[dict[str, object]], calls["silver_rows"])
     assert len(silver_rows) == 1
@@ -1507,9 +1547,14 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
             self.table_name = table_name
             calls["table_name"] = table_name
 
-    def fake_read_silver_rows(table_name: str, namespace: str | None) -> list[dict[str, object]]:
+    def fake_read_silver_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
         calls["read_table_name"] = table_name
         calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
         return [
             {
                 "source_name": "cbs_statline",
@@ -1546,6 +1591,8 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
             "build-landing-observations",
             "--table",
             "cbs_observations_flat_83625ned",
+            "--run-id",
+            "smoke-load",
         ],
     )
 
@@ -1553,6 +1600,7 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
     assert result.stdout == "Wrote 1 landing rows\n"
     assert calls["read_table_name"] == "cbs_observations_flat_83625ned"
     assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "smoke-load"
     assert calls["table_name"] == "cbs_observations"
     silver_rows = cast(list[dict[str, object]], calls["silver_rows"])
     assert len(silver_rows) == 1
@@ -1574,9 +1622,11 @@ def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
     def fake_read_silver_rows(
         table_name: str,
         namespace: str | None,
+        run_id: str | None,
     ) -> list[dict[str, object]]:
         calls["read_table_name"] = table_name
         calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
         return [
             {
                 "bag_id": "80f96ef7-dfa4-5197-b681-cfd92b10757e",
@@ -1610,6 +1660,8 @@ def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
             "build-bag-geo-region-mapping",
             "--limit",
             "1",
+            "--run-id",
+            "smoke-load",
         ],
     )
 
@@ -1617,6 +1669,7 @@ def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
     assert result.stdout == "Wrote 1 BAG geo-region mapping rows\n"
     assert calls["read_table_name"] == "bag_adressen_flat"
     assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "smoke-load"
     assert calls["table_name"] == "bag_geo_region_mapping"
     mapped_rows = cast(list[dict[str, object]], calls["rows"])
     assert len(mapped_rows) == 1

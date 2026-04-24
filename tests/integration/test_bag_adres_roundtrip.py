@@ -123,7 +123,11 @@ def test_bag_adres_command_flow_against_local_lakehouse(
         raw_output_dir=tmp_path,
     )
 
-    build_bag_silver_adressen(table_name="bag_adressen", namespace=bronze_namespace)
+    build_bag_silver_adressen(
+        table_name="bag_adressen",
+        namespace=bronze_namespace,
+        run_id=run_id,
+    )
 
     bronze_conn = connect()
     try:
@@ -171,12 +175,17 @@ def test_bag_adres_command_flow_against_local_lakehouse(
     assert silver_row["gemeentenaam"] == "Sittard-Geleen"
     assert silver_row["geometry"] is not None
 
-    build_bag_landing_adressen(table_name="bag_adressen_flat", namespace=silver_namespace)
+    build_bag_landing_adressen(
+        table_name="bag_adressen_flat",
+        namespace=silver_namespace,
+        run_id=run_id,
+    )
     build_bag_geo_region_mapping(
         table_name="bag_adressen_flat",
         limit=1,
         fallback_to_locatieserver=False,
         namespace=silver_namespace,
+        run_id=run_id,
     )
 
     gold_conn = connect_postgres()
