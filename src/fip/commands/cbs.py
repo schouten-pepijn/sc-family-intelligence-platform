@@ -213,6 +213,11 @@ def build_landing_observations(
         "--table",
         help="Silver table name to materialize into the Postgres landing layer.",
     ),
+    landing_table_name: str = typer.Option(
+        "cbs_observations",
+        "--landing-table",
+        help="Postgres landing table name to write to.",
+    ),
     namespace: str | None = typer.Option(
         None,
         help="Silver Iceberg namespace. Defaults to configured silver namespace.",
@@ -223,7 +228,7 @@ def build_landing_observations(
     ),
 ) -> None:
     silver_rows = read_silver_rows(table_name=table_name, namespace=namespace, run_id=run_id)
-    sink = CBSObservationLandingWriter(table_name="cbs_observations")
+    sink = CBSObservationLandingWriter(table_name=landing_table_name)
 
     written = write_rows_to_sink(silver_rows, sink)
     typer.echo(f"Wrote {written} landing rows")
