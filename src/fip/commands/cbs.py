@@ -183,6 +183,24 @@ def build_gold_region_codes(
     typer.echo(f"Wrote {written} RegioSCodes rows into cbs_region_codes")
 
 
+@app.command("build-gold-eigendom-codes")
+def build_gold_eigendom_codes(
+    table_id: str = typer.Option("85036NED", help="CBS table id to ingest."),
+    run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
+    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_output_dir: Path = Path(".raw"),
+) -> None:
+    written = build_gold_reference_codes(
+        table_id=table_id,
+        run_id=run_id,
+        entity="EigendomCodes",
+        table_name="cbs_eigendom_codes",
+        raw_target=raw_target,
+        raw_output_dir=raw_output_dir,
+    )
+    typer.echo(f"Wrote {written} EigendomCodes rows into cbs_eigendom_codes")
+
+
 @app.command("build-landing-observations")
 def build_landing_observations(
     table_name: str = typer.Option(
