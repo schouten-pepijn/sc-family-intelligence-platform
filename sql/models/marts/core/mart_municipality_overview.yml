@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: mart_municipality_overview
+    description: "One-row-per-municipality overview combining BAG volume, BAG coverage and basic CBS availability."
+    columns:
+      - name: region_id
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_id
+      - name: region_title
+        tests:
+          - not_null
+      - name: region_description
+        tests:
+          - not_null
+      - name: bag_address_count
+        tests:
+          - not_null
+      - name: bag_verblijfsobject_count
+        tests:
+          - not_null
+      - name: bag_pand_count
+        tests:
+          - not_null
+      - name: mapped_address_count
+        tests:
+          - not_null
+      - name: bag_adres_mapped_count
+        tests:
+          - not_null
+      - name: locatieserver_mapped_count
+        tests:
+          - not_null
+      - name: latest_period_year
+        tests:
+          - not_null
+      - name: latest_measure_count
+        tests:
+          - not_null
