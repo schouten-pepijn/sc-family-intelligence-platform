@@ -1654,6 +1654,8 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
                 "numeric_value": 93750.0,
                 "value_attribute": "None",
                 "string_value": None,
+                "woningtype_code": None,
+                "woningkenmerk_code": None,
             }
         ]
 
@@ -1727,6 +1729,8 @@ def test_build_landing_observations_command_supports_custom_landing_table(
                 "numeric_value": 93750.0,
                 "value_attribute": "None",
                 "string_value": None,
+                "woningtype_code": None,
+                "woningkenmerk_code": None,
             }
         ]
 

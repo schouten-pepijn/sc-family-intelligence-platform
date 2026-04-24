@@ -22,6 +22,8 @@ def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:
         "numeric_value": 93750.0,
         "value_attribute": "None",
         "string_value": None,
+        "woningtype_code": None,
+        "woningkenmerk_code": None,
     }
 
 

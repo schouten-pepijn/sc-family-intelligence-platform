@@ -25,6 +25,8 @@ def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:
         "numeric_value": 93750.0,
         "value_attribute": "None",
         "string_value": None,
+        "woningtype_code": None,
+        "woningkenmerk_code": None,
     }
 
 
@@ -39,7 +41,7 @@ def test_flatten_bronze_observation_maps_payload_fields_to_silver_columns() -> N
         "payload": (
             '{"Id": 42, "Measure": "M001534", "Perioden": "1995JJ00", '
             '"RegioS": "NL01", "Eigendom": null, "StringValue": null, "Value": 93750.0, '
-            '"ValueAttribute": "None"}'
+            '"ValueAttribute": "None", "Woningtype": null, "Woningkenmerk": null}'
         ),
     }
 
@@ -56,6 +58,8 @@ def test_flatten_bronze_observation_maps_payload_fields_to_silver_columns() -> N
     assert flattened["numeric_value"] == 93750.0
     assert flattened["value_attribute"] == "None"
     assert flattened["string_value"] is None
+    assert flattened["woningtype_code"] is None
+    assert flattened["woningkenmerk_code"] is None
 
 
 def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> None:
@@ -70,7 +74,7 @@ def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> No
             "payload": (
                 '{"Id": 1, "Measure": "M001534", "Perioden": "1995JJ00", '
                 '"RegioS": "NL01", "Eigendom": null, "StringValue": null, "Value": 93750.0, '
-                '"ValueAttribute": "None"}'
+                '"ValueAttribute": "None", "Woningtype": null, "Woningkenmerk": null}'
             ),
         },
         {
@@ -83,7 +87,7 @@ def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> No
             "payload": (
                 '{"Id": 2, "Measure": "M001534", "Perioden": "1995JJ00", '
                 '"RegioS": "NL01", "Eigendom": null, "StringValue": null, "Value": 93750.0, '
-                '"ValueAttribute": "None"}'
+                '"ValueAttribute": "None", "Woningtype": null, "Woningkenmerk": null}'
             ),
         },
     ]
@@ -146,6 +150,8 @@ def test_to_silver_observation_row_returns_expected_field_order() -> None:
         "numeric_value": 93750.0,
         "value_attribute": "None",
         "string_value": None,
+        "woningtype_code": None,
+        "woningkenmerk_code": None,
     }
 
     row = to_silver_observation_row(flattened)

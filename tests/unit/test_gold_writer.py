@@ -24,6 +24,8 @@ def make_gold_row(natural_key: str, observation_id: int) -> dict[str, object]:
         "numeric_value": 93750.0,
         "value_attribute": "None",
         "string_value": None,
+        "woningtype_code": None,
+        "woningkenmerk_code": None,
     }
 
 
@@ -106,6 +108,8 @@ def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None
         "numeric_value",
         "value_attribute",
         "string_value",
+        "woningtype_code",
+        "woningkenmerk_code",
     )
 
 
