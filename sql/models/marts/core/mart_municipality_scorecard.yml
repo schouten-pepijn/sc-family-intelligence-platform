@@ -11,6 +11,10 @@ models:
       - name: region_id
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_id
       - name: region_title
         tests:
           - not_null
@@ -23,9 +27,17 @@ models:
       - name: period_id
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_period')
+                field: period_id
       - name: measure_id
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_measure')
+                field: measure_id
       - name: measure_title
         tests:
           - not_null
