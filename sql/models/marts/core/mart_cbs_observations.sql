@@ -28,11 +28,11 @@ joined_dimensions as (
         staged.value_attribute,
         staged.string_value
     from staged
-    left join {{ ref('dim_measure') }} as measure
+    join {{ ref('dim_measure') }} as measure
         on staged.measure_code = measure.measure_id
-    left join {{ ref('dim_period') }} as period
+    join {{ ref('dim_period') }} as period
         on staged.period_code = period.period_id
-    left join {{ ref('dim_region') }} as region
+    join {{ ref('dim_region') }} as region
         on staged.region_code = region.region_id
 )
 

@@ -26,11 +26,11 @@ select
     min(observations.observation_value) as min_observation_value,
     max(observations.observation_value) as max_observation_value
 from observations
-left join {{ ref('dim_region') }} as region
+join {{ ref('dim_region') }} as region
     on observations.region_id = region.region_id
-left join {{ ref('dim_period') }} as period
+join {{ ref('dim_period') }} as period
     on observations.period_id = period.period_id
-left join {{ ref('dim_measure') }} as measure
+join {{ ref('dim_measure') }} as measure
     on observations.measure_id = measure.measure_id
 where observations.observation_value is not null
     and observations.period_year is not null
