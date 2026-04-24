@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+import pytest
+
 from fip.gold.cbs.cbs_observations_writer import (
     CBS_OBSERVATION_FIELDS,
     CBSObservationLandingWriter,
@@ -119,3 +121,20 @@ def test_gold_observation_writer_returns_zero_for_empty_input(monkeypatch) -> No
     assert conn.executemany_calls == []
     assert conn.committed is False
     assert conn.closed is False
+
+
+def test_gold_observation_writer_rejects_mixed_run_ids(monkeypatch) -> None:
+    conn = FakeConnection()
+    writer = CBSObservationLandingWriter(table_name="cbs_observations")
+    rows = [
+        make_gold_row("1", 1),
+        {
+            **make_gold_row("2", 2),
+            "run_id": "run-002",
+        },
+    ]
+
+    monkeypatch.setattr(writer, "_connect", lambda: conn)
+
+    with pytest.raises(ValueError, match="single run_id"):
+        writer.write(rows)

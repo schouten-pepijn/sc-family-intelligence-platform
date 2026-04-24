@@ -138,6 +138,47 @@ def test_reference_writer_rejects_mixed_entities(monkeypatch) -> None:
         writer.write(rows)
 
 
+def test_reference_writer_rejects_mixed_run_ids(monkeypatch) -> None:
+    writer = CBSReferenceCodeWriter(table_name="cbs_measure_codes", entity="MeasureCodes")
+    rows = [
+        make_raw_record(
+            "83625NED.MeasureCodes",
+            {
+                "Identifier": "M001534",
+                "Title": "Gemiddelde verkoopprijs",
+                "Description": "De gemiddelde verkoopprijs...",
+                "MeasureGroupId": None,
+                "DataType": "Long",
+                "Unit": "euro",
+                "Decimals": 0,
+                "PresentationType": "Relative",
+            },
+        ),
+        RawRecord(
+            source_name="cbs_statline",
+            entity_name="83625NED.MeasureCodes",
+            natural_key="M001535",
+            retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+            run_id="run-002",
+            payload={
+                "Identifier": "M001535",
+                "Title": "Andere maat",
+                "Description": "Andere maat...",
+                "MeasureGroupId": None,
+                "DataType": "Long",
+                "Unit": "euro",
+                "Decimals": 0,
+                "PresentationType": "Relative",
+            },
+            schema_version="v1",
+            http_status=200,
+        ),
+    ]
+
+    with pytest.raises(ValueError, match="single run_id"):
+        writer.write(rows)
+
+
 def test_reference_writer_writes_measure_rows(monkeypatch) -> None:
     conn = FakeConnection()
     writer = CBSReferenceCodeWriter(table_name="cbs_measure_codes", entity="MeasureCodes")

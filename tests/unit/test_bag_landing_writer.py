@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+import pytest
+
 from fip.gold.pdok_bag.bag_adressen_writer import BAGAdressenLandingWriter
 from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
@@ -152,6 +154,20 @@ def test_bag_verblijfsobject_landing_writer_returns_zero_for_empty_input(
     assert conn.closed is False
 
 
+def test_bag_verblijfsobject_landing_writer_rejects_mixed_run_ids() -> None:
+    writer = BAGVerblijfsobjectLandingWriter(table_name="bag_verblijfsobject")
+    rows = [
+        make_bag_verblijfsobject_row("1", "bag-1"),
+        {
+            **make_bag_verblijfsobject_row("2", "bag-2"),
+            "run_id": "run-002",
+        },
+    ]
+
+    with pytest.raises(ValueError, match="single run_id"):
+        writer.write(rows)
+
+
 def test_bag_pand_landing_writer_truncates_and_inserts_rows(monkeypatch) -> None:
     conn = FakeConnection()
     writer = BAGPandLandingWriter(table_name="bag_pand")
@@ -190,6 +206,20 @@ def test_bag_pand_landing_writer_returns_zero_for_empty_input(monkeypatch) -> No
     assert conn.executemany_calls == []
     assert conn.committed is False
     assert conn.closed is False
+
+
+def test_bag_pand_landing_writer_rejects_mixed_run_ids() -> None:
+    writer = BAGPandLandingWriter(table_name="bag_pand")
+    rows = [
+        make_bag_pand_row("1", "pand-1"),
+        {
+            **make_bag_pand_row("2", "pand-2"),
+            "run_id": "run-002",
+        },
+    ]
+
+    with pytest.raises(ValueError, match="single run_id"):
+        writer.write(rows)
 
 
 def test_bag_adressen_landing_writer_truncates_and_inserts_rows(monkeypatch) -> None:
@@ -233,3 +263,17 @@ def test_bag_adressen_landing_writer_returns_zero_for_empty_input(monkeypatch) -
     assert conn.executemany_calls == []
     assert conn.committed is False
     assert conn.closed is False
+
+
+def test_bag_adressen_landing_writer_rejects_mixed_run_ids() -> None:
+    writer = BAGAdressenLandingWriter(table_name="bag_adressen")
+    rows = [
+        make_bag_adressen_row("1", "adres-1"),
+        {
+            **make_bag_adressen_row("2", "adres-2"),
+            "run_id": "run-002",
+        },
+    ]
+
+    with pytest.raises(ValueError, match="single run_id"):
+        writer.write(rows)
