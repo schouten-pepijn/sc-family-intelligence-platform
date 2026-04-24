@@ -322,7 +322,7 @@ tasks:
   dbt-test-smoke:
     desc: Run a smoke-sized dbt test selection for the changed CBS and housing models
     cmds:
-      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 stg_cbs_observations_85036 mart_municipality_housing_snapshot mart_municipality_woz_snapshot mart_bag_data_quality_by_municipality source:landing.cbs_observations_85035ned source:landing.cbs_observations_85036ned
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 stg_cbs_observations_85036 mart_cbs_observation_exceptions mart_municipality_housing_snapshot mart_municipality_woz_snapshot mart_bag_data_quality_by_municipality source:landing.cbs_observations_85035ned source:landing.cbs_observations_85036ned
 
   precommit:
     desc: Run pre-commit on all files
