@@ -12,6 +12,7 @@ select
     http_status,
     observation_id,
     measure_code,
+    eigendom_code,
     period_code,
     region_code,
     numeric_value,

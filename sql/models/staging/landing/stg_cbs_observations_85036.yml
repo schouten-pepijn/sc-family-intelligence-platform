@@ -28,6 +28,9 @@ models:
       - name: measure_code
         tests:
           - not_null
+      - name: eigendom_code
+        tests:
+          - not_null
       - name: period_code
         tests:
           - not_null
