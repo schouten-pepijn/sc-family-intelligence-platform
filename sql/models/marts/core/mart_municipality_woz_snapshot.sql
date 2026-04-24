@@ -7,6 +7,27 @@ with staged as (
     select *
     from {{ ref('stg_cbs_observations_85036') }}
 ),
+koopwoning_candidates as (
+    select
+        region_id,
+        period_year as koopwoningprijs_period_year,
+        period_id as koopwoningprijs_period_id,
+        measure_id as koopwoningprijs_measure_id,
+        measure_title as koopwoningprijs_measure_title,
+        average_observation_value as koopwoningprijs,
+        row_number() over (
+            partition by region_id
+            order by period_year desc, period_id desc
+        ) as rn
+    from {{ ref('mart_cbs_observation_values_by_region_year') }}
+    where region_id like 'GM%'
+        and measure_id = 'M001534'
+),
+koopwoning_latest as (
+    select *
+    from koopwoning_candidates
+    where rn = 1
+),
 
 woz_candidates as (
     select
