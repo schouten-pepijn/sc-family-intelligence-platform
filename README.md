@@ -16,6 +16,25 @@ The repo is in the first end-to-end data-platform phase. The current direction i
 
 The near-term goal is now to stabilize the working raw -> Bronze -> Silver -> landing path and continue expanding the first dbt-backed SQL layer on top of the landing table in Postgres.
 
+## Data Layers
+
+The pipeline is intentionally split by grain:
+
+- `raw`: 1-to-1 snapshots of source payloads as JSONL files in MinIO or local disk
+- `gold`: small source reference tables that should stay close to the upstream API, such as CBS measure, period, and region codes
+- `bronze`: append-only Iceberg ingest from raw source records
+- `silver`: normalized domain tables and source-specific transforms
+- `landing`: Postgres tables used as the dbt input layer
+- `marts`: dbt tables and views that combine BAG, CBS, and bridge data into analysis-ready outputs
+
+The main rule is:
+
+- raw is for replay and reproducibility
+- gold is for source lookups and reference codes
+- silver is for normalized data products
+- landing is for SQL consumption
+- marts are for cross-source analysis
+
 The local validation loop is:
 
 - `task test-unit` for fast code-level checks
@@ -35,9 +54,9 @@ The local validation loop is:
 3. `task cbs-flow`
    Runs the full local flow from raw through Bronze, Silver, landing, and dbt.
 4. `task load-all`
-   Runs the full CBS + BAG data load, including the geo-bridge seed and dbt.
+   Runs the full CBS + BAG data load, including raw archiving, Bronze, Silver, landing, the geo-bridge seed, and dbt.
 5. `task load-smoke`
-   Runs the full CBS + BAG data load with small limits.
+   Runs the same full flow with small limits.
 6. `task reset-data`
    Stops the stack, removes volumes, and clears generated local data.
 
@@ -63,36 +82,48 @@ The local validation loop is:
 4. CBS Silver full refresh, DuckDB readback, and the `inspect-cbs-silver` CLI path are working.
    The Silver package now splits shared sink mechanics into `silver/core` and
    source-specific transforms into `silver/cbs/...` and `silver/pdok_bag/...`.
-5. BAG raw, Bronze, Silver, and landing slices are present for `verblijfsobject` and `pand`.
-6. The first Locatieserver-backed BAG geo bridge is present as an MVP mapping layer.
+5. BAG raw, Bronze, Silver, and landing slices are present for `verblijfsobject`, `pand`, and `adres`.
+6. The BAG geo bridge now uses the `adres -> GMxxxx` MVP mapping, with Locatieserver only as fallback.
 7. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
-8. The next implementation steps are streaming ingest, stronger BAG end-to-end validation, and more marts on top of the current reference dims.
+8. The next implementation steps are raw-reuse for ingest, stronger BAG end-to-end validation, and more marts on top of the current reference dims.
 
 ## Current Data Flow
 
 The local pipeline currently looks like this:
 
-1. `ingest-cbs`
-   Bronze ingest from the CBS API into Iceberg through Lakekeeper.
-2. `inspect-bronze`
+1. `archive-cbs-raw`
+   Persist CBS source payloads as raw JSONL snapshots.
+2. `ingest-cbs`
+   Bronze ingest from raw CBS snapshots into Iceberg through Lakekeeper.
+3. `inspect-bronze`
    DuckDB validation against the Bronze Iceberg tables.
-3. `build-cbs-silver-observations`
+4. `build-gold-measure-codes` / `build-gold-period-codes` / `build-gold-region-codes`
+   Load CBS reference tables directly from raw snapshots into Postgres landing tables.
+5. `build-cbs-silver-observations`
    Read Bronze rows, flatten them into Silver observations, and full-refresh the Silver Iceberg table.
-4. `inspect-cbs-silver`
+6. `inspect-cbs-silver`
    DuckDB validation against the Silver Iceberg table.
-5. `build-bag-silver-verblijfsobject`
+7. `archive-bag-raw`
+   Persist BAG source payloads as raw JSONL snapshots.
+8. `ingest-bag`
+   Bronze ingest from raw BAG snapshots into Iceberg through Lakekeeper.
+9. `build-bag-silver-verblijfsobject`
    Build the first BAG Silver slice from `bag_verblijfsobject`.
-6. `build-bag-silver-pand`
+10. `build-bag-silver-pand`
    Build the first BAG `pand` Silver slice from `bag_pand`.
-7. `build-bag-landing-verblijfsobject`
+11. `build-bag-silver-adressen`
+   Build the BAG `adres` Silver slice, including the `GMxxxx` municipality key.
+12. `build-bag-landing-verblijfsobject`
    Read BAG `verblijfsobject` Silver rows and full-refresh the Postgres landing table.
-8. `build-bag-landing-pand`
+13. `build-bag-landing-pand`
    Read BAG `pand` Silver rows and full-refresh the Postgres landing table.
-9. `build-landing-observations`
+14. `build-bag-landing-adressen`
+   Read BAG `adres` Silver rows and full-refresh the Postgres landing table.
+15. `build-landing-observations`
    Read Silver rows and full-refresh the Postgres landing table.
-10. `inspect-bag-landing-verblijfsobject` / `inspect-bag-landing-pand`
+16. `inspect-bag-landing-verblijfsobject` / `inspect-bag-landing-pand`
     Postgres readback of the BAG landing tables.
-11. `inspect-landing`
+17. `inspect-landing`
    Postgres readback of the landing table.
 
 Current write semantics:
