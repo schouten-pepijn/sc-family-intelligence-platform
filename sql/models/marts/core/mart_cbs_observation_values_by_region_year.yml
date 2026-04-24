@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: mart_cbs_observation_values_by_region_year
-    description: Canonical CBS region/year/measure mart enriched with readable region, period, and measure metadata.
+    description: Canonical CBS region/year/measure mart with readable region, period, and measure metadata.
     columns:
       - name: region_id
         tests:

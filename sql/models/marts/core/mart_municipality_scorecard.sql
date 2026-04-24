@@ -1,7 +1,7 @@
 {{ config(materialized='table') }}
 
 {# First consumable cross-source mart:
-   CBS municipality/region statistics enriched with BAG address coverage. #}
+   CBS municipality/region statistics with BAG address coverage. #}
 with cbs_scores as (
     select *
     from {{ ref('mart_cbs_observation_values_by_region_year') }}
