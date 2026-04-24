@@ -7,6 +7,7 @@ def test_to_bag_geo_region_mapping_row_uses_bag_row_and_lookup_result() -> None:
     bag_row = {
         "bag_id": "80f96ef7-dfa4-5197-b681-cfd92b10757e",
         "retrieved_at": datetime(2026, 4, 19, 17, 43, 42, 77000, tzinfo=timezone.utc),
+        "run_id": "run-001",
     }
     lookup_result = {
         "response": {
@@ -38,6 +39,7 @@ def test_to_bag_geo_region_mapping_row_uses_bag_row_and_lookup_result() -> None:
             tzinfo=timezone.utc,
         ),
         "active_to": None,
+        "run_id": "run-001",
     }
 
 
@@ -45,6 +47,7 @@ def test_to_bag_geo_region_mapping_row_raises_when_region_is_missing() -> None:
     bag_row = {
         "bag_id": "80f96ef7-dfa4-5197-b681-cfd92b10757e",
         "retrieved_at": datetime(2026, 4, 19, 17, 43, 42, 77000, tzinfo=timezone.utc),
+        "run_id": "run-001",
     }
 
     try:

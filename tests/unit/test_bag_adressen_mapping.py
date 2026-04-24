@@ -9,6 +9,7 @@ def test_to_bag_adressen_geo_region_mapping_row_uses_bronhouder_identificatie() 
     bag_row = {
         "bag_id": "adres-1",
         "retrieved_at": datetime(2026, 4, 19, 17, 43, 42, 77000, tzinfo=timezone.utc),
+        "run_id": "run-001",
         "bronhouder_identificatie": "1883",
     }
 
@@ -31,6 +32,7 @@ def test_to_bag_adressen_geo_region_mapping_row_uses_bronhouder_identificatie() 
             tzinfo=timezone.utc,
         ),
         "active_to": None,
+        "run_id": "run-001",
     }
 
 
@@ -38,6 +40,7 @@ def test_to_bag_adressen_geo_region_mapping_row_accepts_gemeente_code_alias() ->
     bag_row = {
         "bag_id": "adres-1",
         "retrieved_at": datetime(2026, 4, 19, 17, 43, 42, 77000, tzinfo=timezone.utc),
+        "run_id": "run-001",
         "gemeente_code": "1883",
     }
 
