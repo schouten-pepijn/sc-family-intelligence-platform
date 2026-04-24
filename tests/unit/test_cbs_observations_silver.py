@@ -19,6 +19,7 @@ def make_silver_row(natural_key: str, observation_id: int) -> dict[str, object]:
         "http_status": 200,
         "observation_id": observation_id,
         "measure_code": "M001534",
+        "eigendom_code": None,
         "period_code": "1995JJ00",
         "region_code": "NL01",
         "numeric_value": 93750.0,
@@ -37,7 +38,7 @@ def test_flatten_bronze_observation_maps_payload_fields_to_silver_columns() -> N
         "http_status": 200,
         "payload": (
             '{"Id": 42, "Measure": "M001534", "Perioden": "1995JJ00", '
-            '"RegioS": "NL01", "StringValue": null, "Value": 93750.0, '
+            '"RegioS": "NL01", "Eigendom": null, "StringValue": null, "Value": 93750.0, '
             '"ValueAttribute": "None"}'
         ),
     }
@@ -49,6 +50,7 @@ def test_flatten_bronze_observation_maps_payload_fields_to_silver_columns() -> N
     assert flattened["run_id"] == "run-001"
     assert flattened["observation_id"] == 42
     assert flattened["measure_code"] == "M001534"
+    assert flattened["eigendom_code"] is None
     assert flattened["period_code"] == "1995JJ00"
     assert flattened["region_code"] == "NL01"
     assert flattened["numeric_value"] == 93750.0
@@ -67,7 +69,7 @@ def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> No
             "http_status": 200,
             "payload": (
                 '{"Id": 1, "Measure": "M001534", "Perioden": "1995JJ00", '
-                '"RegioS": "NL01", "StringValue": null, "Value": 93750.0, '
+                '"RegioS": "NL01", "Eigendom": null, "StringValue": null, "Value": 93750.0, '
                 '"ValueAttribute": "None"}'
             ),
         },
@@ -80,7 +82,7 @@ def test_flatten_bronze_observation_rows_flattens_multiple_rows_in_order() -> No
             "http_status": 200,
             "payload": (
                 '{"Id": 2, "Measure": "M001534", "Perioden": "1995JJ00", '
-                '"RegioS": "NL01", "StringValue": null, "Value": 93750.0, '
+                '"RegioS": "NL01", "Eigendom": null, "StringValue": null, "Value": 93750.0, '
                 '"ValueAttribute": "None"}'
             ),
         },
@@ -138,6 +140,7 @@ def test_to_silver_observation_row_returns_expected_field_order() -> None:
         "http_status": 200,
         "observation_id": 42,
         "measure_code": "M001534",
+        "eigendom_code": None,
         "period_code": "1995JJ00",
         "region_code": "NL01",
         "numeric_value": 93750.0,

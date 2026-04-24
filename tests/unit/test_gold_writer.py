@@ -18,6 +18,7 @@ def make_gold_row(natural_key: str, observation_id: int) -> dict[str, object]:
         "http_status": 200,
         "observation_id": observation_id,
         "measure_code": "M001534",
+        "eigendom_code": None,
         "period_code": "1995JJ00",
         "region_code": "NL01",
         "numeric_value": 93750.0,
@@ -88,7 +89,8 @@ def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None
     assert "INSERT INTO" in sql
     assert len(params_seq) == 2
     assert params_seq[0][0] == "cbs_statline"
-    assert params_seq[0][6] == 1
+    assert params_seq[0][6] is None
+    assert params_seq[0][7] == 1
     assert CBS_OBSERVATION_FIELDS == (
         "source_name",
         "natural_key",
@@ -98,6 +100,7 @@ def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None
         "http_status",
         "observation_id",
         "measure_code",
+        "eigendom_code",
         "period_code",
         "region_code",
         "numeric_value",
