@@ -59,6 +59,7 @@ The local validation loop is:
 - `task test-raw` for the raw landing-pad smoke test against MinIO
 - `task test-integration` for the Bronze -> Silver -> landing roundtrip against the local stack
 - `task cbs-flow` for the CBS-only raw -> Bronze -> Silver -> landing -> dbt flow, isolated with `run_id=smoke-flow`
+- `task load-woz` for the CBS 85036NED flow with its own raw -> Bronze -> Silver -> landing -> dbt path, isolated with `run_id=woz-load`, including the `EigendomCodes` codelist
 - `task load-medium` for the CBS + BAG flow with moderate BAG limits, isolated with `run_id=medium-load`
 - `task load-all` for the full CBS + BAG data load, isolated with `run_id=load-all`
 - `task load-smoke` for the full CBS + BAG data load with small limits, isolated with `run_id=smoke-load`
@@ -72,13 +73,15 @@ The local validation loop is:
    Verifies the raw landing-pad in MinIO.
 3. `task cbs-flow`
    Runs the CBS-only flow from raw through Bronze, Silver, landing, and dbt with `run_id=smoke-flow`.
-4. `task load-medium`
+4. `task load-woz`
+   Runs the CBS 85036NED flow from raw through Bronze, Silver, landing, and dbt with `run_id=woz-load`, including the `EigendomCodes` codelist.
+5. `task load-medium`
    Runs the CBS + BAG flow with medium BAG limits and `run_id=medium-load`.
-5. `task load-all`
+6. `task load-all`
    Runs the full CBS + BAG data load, including raw archiving, Bronze, Silver, landing, and dbt, with `run_id=load-all`.
-6. `task load-smoke`
+7. `task load-smoke`
    Runs the same full flow with small limits and `run_id=smoke-load`.
-7. `task reset-data`
+8. `task reset-data`
    Stops the stack, removes volumes, and clears generated local data.
 
 ## Project Structure
