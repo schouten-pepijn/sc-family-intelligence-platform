@@ -121,6 +121,13 @@ tasks:
       - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-flow --raw-target minio
       - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id smoke-flow
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id smoke-flow
+      - uv run fip archive-cbs-raw --table-id 85035NED --run-id smoke-flow --target minio
+      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id smoke-flow --raw-target minio
+      - uv run fip build-gold-period-codes --table-id 85035NED --run-id smoke-flow --raw-target minio
+      - uv run fip build-gold-region-codes --table-id 85035NED --run-id smoke-flow --raw-target minio
+      - uv run fip ingest-cbs --table-id 85035NED --run-id smoke-flow --raw-target minio
+      - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id smoke-flow
+      - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id smoke-flow
       - task: dbt-debug
       - task: dbt-run
       - task: dbt-test
@@ -138,6 +145,11 @@ tasks:
       - task: dbt-debug
       - task: dbt-run-woz
       - task: dbt-test-woz
+
+  load-housing:
+    desc: "Alias for the smoke load path that now also materializes 85035NED for the housing mart"
+    cmds:
+      - task: load-smoke
 
   load-all:
     desc: "Load the full CBS + BAG data flow, including bridge and dbt models"
@@ -160,12 +172,26 @@ tasks:
       - uv run fip build-bag-silver-pand --run-id load-all
       - uv run fip build-bag-silver-adressen --run-id load-all
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id load-all
+      - uv run fip archive-cbs-raw --table-id 85036NED --run-id load-all --target minio
+      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id load-all --raw-target minio
+      - uv run fip ingest-cbs --table-id 85036NED --run-id load-all --limit 10000 --raw-target minio
+      - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id load-all
+      - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id load-all
+      - uv run fip archive-cbs-raw --table-id 85035NED --run-id load-all --target minio
+      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id load-all --raw-target minio
+      - uv run fip build-gold-period-codes --table-id 85035NED --run-id load-all --raw-target minio
+      - uv run fip build-gold-region-codes --table-id 85035NED --run-id load-all --raw-target minio
+      - uv run fip ingest-cbs --table-id 85035NED --run-id load-all --raw-target minio
+      - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id load-all
+      - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id load-all
       - uv run fip build-bag-landing-verblijfsobject --run-id load-all
       - uv run fip build-bag-landing-pand --run-id load-all
       - uv run fip build-bag-landing-adressen --run-id load-all
       - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id load-all
       - task: dbt-run
       - task: dbt-test
+      - task: dbt-run-woz
+      - task: dbt-test-woz
 
   load-medium:
     desc: "Load the CBS + BAG data flow with medium BAG limits"
@@ -188,12 +214,26 @@ tasks:
       - uv run fip build-bag-silver-pand --run-id medium-load
       - uv run fip build-bag-silver-adressen --run-id medium-load
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id medium-load
+      - uv run fip archive-cbs-raw --table-id 85036NED --run-id medium-load --target minio
+      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id medium-load --raw-target minio
+      - uv run fip ingest-cbs --table-id 85036NED --run-id medium-load --limit 10000 --raw-target minio
+      - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id medium-load
+      - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id medium-load
+      - uv run fip archive-cbs-raw --table-id 85035NED --run-id medium-load --target minio
+      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id medium-load --raw-target minio
+      - uv run fip build-gold-period-codes --table-id 85035NED --run-id medium-load --raw-target minio
+      - uv run fip build-gold-region-codes --table-id 85035NED --run-id medium-load --raw-target minio
+      - uv run fip ingest-cbs --table-id 85035NED --run-id medium-load --raw-target minio
+      - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id medium-load
+      - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id medium-load
       - uv run fip build-bag-landing-verblijfsobject --run-id medium-load
       - uv run fip build-bag-landing-pand --run-id medium-load
       - uv run fip build-bag-landing-adressen --run-id medium-load
       - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id medium-load --limit 1000 --rows 20
       - task: dbt-run
       - task: dbt-test
+      - task: dbt-run-woz
+      - task: dbt-test-woz
 
   load-smoke:
     desc: "Load the full CBS + BAG data flow with small limits"
@@ -216,12 +256,25 @@ tasks:
       - uv run fip build-bag-silver-pand --run-id smoke-load
       - uv run fip build-bag-silver-adressen --run-id smoke-load
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id smoke-load
+      - uv run fip archive-cbs-raw --table-id 85036NED --run-id smoke-load --target minio
+      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id smoke-load --raw-target minio
+      - uv run fip ingest-cbs --table-id 85036NED --run-id smoke-load --limit 10000 --raw-target minio
+      - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id smoke-load
+      - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id smoke-load
+      - uv run fip archive-cbs-raw --table-id 85035NED --run-id smoke-load --target minio
+      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id smoke-load --raw-target minio
+      - uv run fip build-gold-period-codes --table-id 85035NED --run-id smoke-load --raw-target minio
+      - uv run fip build-gold-region-codes --table-id 85035NED --run-id smoke-load --raw-target minio
+      - uv run fip ingest-cbs --table-id 85035NED --run-id smoke-load --raw-target minio
+      - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id smoke-load
+      - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id smoke-load
       - uv run fip build-bag-landing-verblijfsobject --run-id smoke-load
       - uv run fip build-bag-landing-pand --run-id smoke-load
       - uv run fip build-bag-landing-adressen --run-id smoke-load
       - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id smoke-load --limit 25 --rows 5
       - task: dbt-run
-      - task: dbt-test
+      - task: dbt-run-woz
+      - task: dbt-test-smoke
 
   check:
     desc: Run the standard local quality gate
@@ -255,6 +308,21 @@ tasks:
     desc: Run only the 85036NED / WOZ dbt tests against the local landing schema
     cmds:
       - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_eigendom_codes stg_cbs_observations_85036 dim_eigendom mart_municipality_woz_snapshot source:landing.cbs_eigendom_codes source:landing.cbs_observations_85036ned
+
+  dbt-run-housing:
+    desc: Run only the 85035NED / housing dbt models against the local landing schema
+    cmds:
+      - uv run --project sql dbt run --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 mart_municipality_housing_snapshot
+
+  dbt-test-housing:
+    desc: Run only the 85035NED / housing dbt tests against the local landing schema
+    cmds:
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 mart_municipality_housing_snapshot source:landing.cbs_observations_85035ned
+
+  dbt-test-smoke:
+    desc: Run a smoke-sized dbt test selection for the changed CBS and housing models
+    cmds:
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 stg_cbs_observations_85036 mart_municipality_housing_snapshot mart_municipality_woz_snapshot mart_bag_data_quality_by_municipality source:landing.cbs_observations_85035ned source:landing.cbs_observations_85036ned
 
   precommit:
     desc: Run pre-commit on all files
