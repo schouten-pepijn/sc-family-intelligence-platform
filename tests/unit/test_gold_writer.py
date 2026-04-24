@@ -67,7 +67,7 @@ class FakeConnection:
 
 def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None:
     conn = FakeConnection()
-    writer = CBSObservationLandingWriter(table_name="cbs_observations")
+    writer = CBSObservationLandingWriter(table_name="cbs_observations_83625ned")
     rows = [make_gold_row("1", 1), make_gold_row("2", 2)]
 
     monkeypatch.setattr(writer, "_connect", lambda: conn)
@@ -89,8 +89,8 @@ def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None
     assert "INSERT INTO" in sql
     assert len(params_seq) == 2
     assert params_seq[0][0] == "cbs_statline"
-    assert params_seq[0][6] is None
-    assert params_seq[0][7] == 1
+    assert params_seq[0][6] == 1
+    assert params_seq[0][8] is None
     assert CBS_OBSERVATION_FIELDS == (
         "source_name",
         "natural_key",
@@ -111,7 +111,7 @@ def test_gold_observation_writer_truncates_and_inserts_rows(monkeypatch) -> None
 
 def test_gold_observation_writer_returns_zero_for_empty_input(monkeypatch) -> None:
     conn = FakeConnection()
-    writer = CBSObservationLandingWriter(table_name="cbs_observations")
+    writer = CBSObservationLandingWriter(table_name="cbs_observations_83625ned")
 
     monkeypatch.setattr(writer, "_connect", lambda: conn)
 
@@ -128,7 +128,7 @@ def test_gold_observation_writer_returns_zero_for_empty_input(monkeypatch) -> No
 
 def test_gold_observation_writer_rejects_mixed_run_ids(monkeypatch) -> None:
     conn = FakeConnection()
-    writer = CBSObservationLandingWriter(table_name="cbs_observations")
+    writer = CBSObservationLandingWriter(table_name="cbs_observations_83625ned")
     rows = [
         make_gold_row("1", 1),
         {

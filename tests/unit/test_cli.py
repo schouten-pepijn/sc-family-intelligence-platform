@@ -1685,12 +1685,12 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
     assert calls["read_table_name"] == "cbs_observations_flat_83625ned"
     assert calls["read_namespace"] is None
     assert calls["read_run_id"] == "smoke-load"
-    assert calls["table_name"] == "cbs_observations"
+    assert calls["table_name"] == "cbs_observations_83625ned"
     silver_rows = cast(list[dict[str, object]], calls["silver_rows"])
     assert len(silver_rows) == 1
     sink = calls["sink"]
     assert isinstance(sink, FakeGoldSink)
-    assert sink.table_name == "cbs_observations"
+    assert sink.table_name == "cbs_observations_83625ned"
 
 
 def test_build_landing_observations_command_supports_custom_landing_table(
@@ -1791,6 +1791,7 @@ def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
                 "bag_id": "80f96ef7-dfa4-5197-b681-cfd92b10757e",
                 "retrieved_at": datetime(2026, 4, 19, 17, 43, 42, 77000, tzinfo=timezone.utc),
                 "bronhouder_identificatie": "1883",
+                "run_id": "smoke-load",
             }
         ]
 
@@ -1875,7 +1876,7 @@ def test_inspect_gold_command_prints_row_count_and_rows(monkeypatch) -> None:
         [
             "inspect-landing",
             "--table",
-            "cbs_observations",
+            "cbs_observations_83625ned",
             "--limit",
             "1",
         ],
@@ -1884,9 +1885,9 @@ def test_inspect_gold_command_prints_row_count_and_rows(monkeypatch) -> None:
     assert result.exit_code == 0
     assert result.stdout == "Row count: 3\nSample rows (1):\n('gold-row-1', 'value-1')\n"
     assert calls["connected"] is True
-    assert calls["count_table_name"] == "cbs_observations"
+    assert calls["count_table_name"] == "cbs_observations_83625ned"
     assert calls["count_schema"] is None
-    assert calls["sample_table_name"] == "cbs_observations"
+    assert calls["sample_table_name"] == "cbs_observations_83625ned"
     assert calls["sample_schema"] is None
     assert calls["sample_limit"] == 1
     assert calls["closed"] is True
