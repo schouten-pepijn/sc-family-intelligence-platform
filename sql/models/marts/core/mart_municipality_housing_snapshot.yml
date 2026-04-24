@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: mart_municipality_housing_snapshot
-    description: One-row-per-municipality housing snapshot with BAG context and the latest average purchase price from CBS 83625NED.
+    description: One-row-per-municipality housing snapshot with BAG context, the latest average purchase price from CBS 83625NED, and housing-stock context from CBS 85035NED.
     columns:
       - name: region_id
         tests:
@@ -39,6 +39,16 @@ models:
       - name: latest_measure_count
         tests:
           - not_null
+      - name: housing_stock_period_year
+      - name: housing_stock_period_id
+      - name: housing_stock_measure_id
+      - name: housing_stock_measure_title
+      - name: housing_stock
+      - name: avg_housing_surface_period_year
+      - name: avg_housing_surface_period_id
+      - name: avg_housing_surface_measure_id
+      - name: avg_housing_surface_measure_title
+      - name: avg_housing_surface_m2
       - name: avg_koopwoningprijs_period_year
       - name: avg_koopwoningprijs_period_id
       - name: avg_koopwoningprijs_measure_id
