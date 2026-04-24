@@ -27,5 +27,7 @@ class CBSObservationSink(SilverIcebergSink):
                 pa.field("numeric_value", pa.float64(), nullable=True),
                 pa.field("value_attribute", pa.string(), nullable=True),
                 pa.field("string_value", pa.string(), nullable=True),
+                pa.field("woningtype_code", pa.string(), nullable=True),
+                pa.field("woningkenmerk_code", pa.string(), nullable=True),
             ]
         )
