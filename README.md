@@ -23,9 +23,16 @@ The first municipality consumable marts now start with:
 The housing snapshot is intentionally staged:
 
 1. `83625NED` for the first compact snapshot
-2. `85792NED` for price index and trend
-3. `85036NED` for WOZ context
-4. `85035NED` for housing stock and typology
+2. `85036NED` for WOZ context and the better municipality fit
+3. `85035NED` for housing stock and typology
+
+`85036NED` is the preferred next step for the municipality snapshot because it
+has municipality and province coverage from 2019 onward, which maps cleanly to
+`GMxxxx`.
+
+`85792NED` is not part of the municipality snapshot. It only covers the
+Netherlands, provinces, and the 4 largest municipalities, so it belongs in a
+separate price-index mart instead of a `GMxxxx`-wide snapshot.
 
 ## Data Layers
 
