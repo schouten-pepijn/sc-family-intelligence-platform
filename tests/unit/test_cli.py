@@ -1608,8 +1608,6 @@ def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
         cli.app,
         [
             "build-bag-geo-region-mapping",
-            "--table",
-            "bag_adressen_flat",
             "--limit",
             "1",
         ],
