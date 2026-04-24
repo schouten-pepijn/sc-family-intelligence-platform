@@ -15,6 +15,17 @@ The repo is in the first end-to-end data-platform phase. The current direction i
   - DuckDB for validation and ad-hoc analysis against Iceberg data
 
 The near-term goal is now to keep the raw -> Bronze -> Silver -> landing path stable, reuse raw snapshots for ingest and replay, and continue expanding the first dbt-backed SQL layer on top of the landing table in Postgres.
+The first municipality consumable marts now start with:
+
+- `mart_municipality_overview` as the municipality comparison entrypoint
+- `mart_municipality_housing_snapshot` as the first compact housing snapshot
+
+The housing snapshot is intentionally staged:
+
+1. `83625NED` for the first compact snapshot
+2. `85792NED` for price index and trend
+3. `85036NED` for WOZ context
+4. `85035NED` for housing stock and typology
 
 ## Data Layers
 
