@@ -14,7 +14,7 @@ The repo is in the first end-to-end data-platform phase. The current direction i
   - Python ingestion and write scripts
   - DuckDB for validation and ad-hoc analysis against Iceberg data
 
-The near-term goal is now to stabilize the working raw -> Bronze -> Silver -> landing path and continue expanding the first dbt-backed SQL layer on top of the landing table in Postgres.
+The near-term goal is now to keep the raw -> Bronze -> Silver -> landing path stable, reuse raw snapshots for ingest and replay, and continue expanding the first dbt-backed SQL layer on top of the landing table in Postgres.
 
 ## Data Layers
 
@@ -41,6 +41,7 @@ The local validation loop is:
 - `task test-raw` for the raw landing-pad smoke test against MinIO
 - `task test-integration` for the Bronze -> Silver -> landing roundtrip against the local stack
 - `task cbs-flow` for the CBS-only raw -> Bronze -> Silver -> landing -> dbt flow
+- `task load-medium` for the CBS + BAG flow with moderate BAG limits
 - `task load-all` for the full CBS + BAG data load
 - `task load-smoke` for the full CBS + BAG data load with small limits
 - `task check` for the standard local quality gate
@@ -53,11 +54,13 @@ The local validation loop is:
    Verifies the raw landing-pad in MinIO.
 3. `task cbs-flow`
    Runs the full local flow from raw through Bronze, Silver, landing, and dbt.
-4. `task load-all`
+4. `task load-medium`
+   Runs the CBS + BAG flow with medium BAG limits.
+5. `task load-all`
    Runs the full CBS + BAG data load, including raw archiving, Bronze, Silver, landing, the geo-bridge seed, and dbt.
-5. `task load-smoke`
+6. `task load-smoke`
    Runs the same full flow with small limits.
-6. `task reset-data`
+7. `task reset-data`
    Stops the stack, removes volumes, and clears generated local data.
 
 ## Project Structure
@@ -83,9 +86,10 @@ The local validation loop is:
    The Silver package now splits shared sink mechanics into `silver/core` and
    source-specific transforms into `silver/cbs/...` and `silver/pdok_bag/...`.
 5. BAG raw, Bronze, Silver, and landing slices are present for `verblijfsobject`, `pand`, and `adres`.
-6. The BAG geo bridge now uses the `adres -> GMxxxx` MVP mapping, with Locatieserver only as fallback.
-7. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
-8. The next implementation steps are raw-reuse for ingest, stronger BAG end-to-end validation, and more marts on top of the current reference dims.
+6. The BAG raw archive path now flushes in chunks instead of buffering a whole collection in memory.
+7. The BAG geo bridge now uses the `adres -> GMxxxx` MVP mapping, with Locatieserver only as fallback.
+8. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
+9. Raw-reuse for ingest is in place; the next implementation steps are stronger BAG end-to-end validation, more marts on top of the current reference dims, and possibly COPY-based Postgres landing writes if landing becomes the bottleneck.
 
 ## Current Data Flow
 
@@ -97,14 +101,14 @@ The local pipeline currently looks like this:
    Bronze ingest from raw CBS snapshots into Iceberg through Lakekeeper.
 3. `inspect-bronze`
    DuckDB validation against the Bronze Iceberg tables.
-4. `build-gold-measure-codes` / `build-gold-period-codes` / `build-gold-region-codes`
-   Load CBS reference tables directly from raw snapshots into Postgres landing tables.
+4. CBS reference code builders
+   Load CBS measure, period, and region reference tables directly from raw snapshots into Postgres landing tables.
 5. `build-cbs-silver-observations`
    Read Bronze rows, flatten them into Silver observations, and full-refresh the Silver Iceberg table.
 6. `inspect-cbs-silver`
    DuckDB validation against the Silver Iceberg table.
 7. `archive-bag-raw`
-   Persist BAG source payloads as raw JSONL snapshots.
+   Persist BAG source payloads as raw JSONL snapshots. The BAG archive path now flushes in chunks instead of buffering the whole collection in memory.
 8. `ingest-bag`
    Bronze ingest from raw BAG snapshots into Iceberg through Lakekeeper.
 9. `build-bag-silver-verblijfsobject`
