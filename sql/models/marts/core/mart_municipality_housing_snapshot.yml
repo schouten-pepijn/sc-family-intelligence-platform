@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: mart_municipality_housing_snapshot
+    description: One-row-per-municipality housing snapshot with BAG context and the latest average purchase price from CBS 83625NED.
+    columns:
+      - name: region_id
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_id
+      - name: region_title
+        tests:
+          - not_null
+      - name: region_description
+        tests:
+          - not_null
+      - name: bag_address_count
+        tests:
+          - not_null
+      - name: bag_verblijfsobject_count
+        tests:
+          - not_null
+      - name: bag_pand_count
+        tests:
+          - not_null
+      - name: mapped_address_count
+        tests:
+          - not_null
+      - name: bag_adres_mapped_count
+        tests:
+          - not_null
+      - name: locatieserver_mapped_count
+        tests:
+          - not_null
+      - name: latest_period_year
+        tests:
+          - not_null
+      - name: latest_measure_count
+        tests:
+          - not_null
+      - name: avg_koopwoningprijs_period_year
+      - name: avg_koopwoningprijs_period_id
+      - name: avg_koopwoningprijs_measure_id
+      - name: avg_koopwoningprijs_measure_title
+        tests:
+          - not_null
+      - name: avg_koopwoningprijs
+        tests:
+          - not_null
