@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: dim_eigendom
+    description: Reference dimension for CBS Eigendom codes from 85036NED.
+    columns:
+      - name: eigendom_id
+        tests:
+          - not_null
+          - unique
+      - name: identifier
+        tests:
+          - not_null
+      - name: eigendom_title
+        tests:
+          - not_null
