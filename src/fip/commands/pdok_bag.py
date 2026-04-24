@@ -33,6 +33,9 @@ from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
 from fip.settings import get_settings
 
 
+RAW_ARCHIVE_BATCH_SIZE = 1000
+
+
 def _bag_raw_reader(
     raw_target: str,
     raw_output_dir: Path,
@@ -119,17 +122,22 @@ def archive_bag_raw(
     else:
         raise typer.BadParameter("target must be either 'local' or 'minio'")
 
-    grouped: dict[str, list[RawRecord]] = {}
+    buffers: dict[str, list[RawRecord]] = defaultdict(list)
     archived = 0
+    written = 0
     for record in source.iter_records():
-        grouped.setdefault(record.entity_name, []).append(record)
         archived += 1
+        buffer = buffers[record.entity_name]
+        buffer.append(record)
+        if len(buffer) >= RAW_ARCHIVE_BATCH_SIZE:
+            written += writer.write(buffer)
+            buffers[record.entity_name] = []
         if limit is not None and archived >= limit:
             break
 
-    written = 0
-    for records in grouped.values():
-        written += writer.write(records)
+    for records in buffers.values():
+        if records:
+            written += writer.write(records)
 
     typer.echo(f"Wrote {written} raw records")
 
