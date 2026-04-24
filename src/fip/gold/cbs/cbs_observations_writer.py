@@ -19,6 +19,8 @@ CBS_OBSERVATION_FIELDS = (
     "numeric_value",
     "value_attribute",
     "string_value",
+    "woningtype_code",
+    "woningkenmerk_code",
 )
 
 
@@ -47,5 +49,7 @@ class CBSObservationLandingWriter(PostgresFullRefreshWriter):
                     region_code text NOT NULL,
                     numeric_value double precision,
                     value_attribute text,
-                    string_value text
+                    string_value text,
+                    woningtype_code text,
+                    woningkenmerk_code text
                 """
