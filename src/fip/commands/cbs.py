@@ -19,6 +19,7 @@ from fip.lakehouse.silver.cbs.cbs_observations_service import (
     write_bronze_rows_to_cbs_observation_sink,
 )
 from fip.lakehouse.silver.cbs.cbs_observations_sink import CBSObservationSink
+from fip.raw.reader import MinioRawSnapshotReader, RawSnapshotReader
 from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
 from fip.settings import get_settings
 
@@ -27,25 +28,27 @@ from fip.settings import get_settings
 def ingest_cbs(
     table_id: str = typer.Option(..., help="CBS table id, for example 83625NED."),
     run_id: str = typer.Option(..., help="Run identifier for this ingestion."),
-    target_namespace: str | None = typer.Option(
-        None,
-        help="Target Iceberg namespace.",
-    ),
-    limit: int = typer.Option(
-        1000,
-        min=1,
-        help="Maximum number of CBS records to ingest.",
-    ),
+    target_namespace: str | None = typer.Option(None, help="Target Iceberg namespace."),
+    limit: int = typer.Option(1000, min=1, help="Maximum number of CBS records to ingest."),
+    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_output_dir: Path = Path(".raw"),
 ) -> None:
     if target_namespace is None:
         target_namespace = get_settings().bronze_namespace
 
-    source = CBSODataSource(table_id=table_id, run_id=run_id)
-    sink_factory = CBSIcebergSinkFactory(namespace=target_namespace)
+    reader: RawSnapshotReader | MinioRawSnapshotReader
+    if raw_target == "local":
+        reader = RawSnapshotReader(base_dir=raw_output_dir)
+    elif raw_target == "minio":
+        reader = MinioRawSnapshotReader()
+    else:
+        raise typer.BadParameter("raw_target must be either 'local' or 'minio'")
 
+    sink_factory = CBSIcebergSinkFactory(namespace=target_namespace)
     grouped_records: dict[str, list[RawRecord]] = {}
     seen = 0
-    for record in source.iter_records():
+
+    for record in reader.iter_cbs_records(table_id=table_id, run_id=run_id):
         grouped_records.setdefault(record.entity_name, []).append(record)
         seen += 1
         if seen >= limit:
@@ -124,12 +127,16 @@ def build_cbs_silver_observations(
 def build_gold_measure_codes(
     table_id: str = typer.Option("83625NED", help="CBS table id to ingest."),
     run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
+    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_output_dir: Path = Path(".raw"),
 ) -> None:
     written = build_gold_reference_codes(
         table_id=table_id,
         run_id=run_id,
         entity="MeasureCodes",
         table_name="cbs_measure_codes",
+        raw_target=raw_target,
+        raw_output_dir=raw_output_dir,
     )
     typer.echo(f"Wrote {written} MeasureCodes rows into cbs_measure_codes")
 
@@ -138,12 +145,16 @@ def build_gold_measure_codes(
 def build_gold_period_codes(
     table_id: str = typer.Option("83625NED", help="CBS table id to ingest."),
     run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
+    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_output_dir: Path = Path(".raw"),
 ) -> None:
     written = build_gold_reference_codes(
         table_id=table_id,
         run_id=run_id,
         entity="PeriodenCodes",
         table_name="cbs_period_codes",
+        raw_target=raw_target,
+        raw_output_dir=raw_output_dir,
     )
     typer.echo(f"Wrote {written} PeriodenCodes rows into cbs_period_codes")
 
@@ -152,12 +163,16 @@ def build_gold_period_codes(
 def build_gold_region_codes(
     table_id: str = typer.Option("83625NED", help="CBS table id to ingest."),
     run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
+    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_output_dir: Path = Path(".raw"),
 ) -> None:
     written = build_gold_reference_codes(
         table_id=table_id,
         run_id=run_id,
         entity="RegioSCodes",
         table_name="cbs_region_codes",
+        raw_target=raw_target,
+        raw_output_dir=raw_output_dir,
     )
     typer.echo(f"Wrote {written} RegioSCodes rows into cbs_region_codes")
 
