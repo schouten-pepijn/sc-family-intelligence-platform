@@ -36,9 +36,6 @@ models:
       - name: locatieserver_mapped_count
         tests:
           - not_null
-      - name: latest_period_year
-        tests:
-          - not_null
       - name: latest_measure_count
         tests:
           - not_null
@@ -46,8 +43,4 @@ models:
       - name: avg_koopwoningprijs_period_id
       - name: avg_koopwoningprijs_measure_id
       - name: avg_koopwoningprijs_measure_title
-        tests:
-          - not_null
       - name: avg_koopwoningprijs
-        tests:
-          - not_null

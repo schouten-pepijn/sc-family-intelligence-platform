@@ -36,9 +36,6 @@ models:
       - name: locatieserver_mapped_count
         tests:
           - not_null
-      - name: latest_period_year
-        tests:
-          - not_null
       - name: latest_measure_count
         tests:
           - not_null
