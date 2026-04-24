@@ -21,6 +21,7 @@ class CBSObservationSink(SilverIcebergSink):
                 pa.field("http_status", pa.int32(), nullable=False),
                 pa.field("observation_id", pa.int64(), nullable=False),
                 pa.field("measure_code", pa.string(), nullable=False),
+                pa.field("eigendom_code", pa.string(), nullable=True),
                 pa.field("period_code", pa.string(), nullable=False),
                 pa.field("region_code", pa.string(), nullable=False),
                 pa.field("numeric_value", pa.float64(), nullable=True),
