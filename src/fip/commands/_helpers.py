@@ -85,3 +85,12 @@ def build_gold_reference_codes(
     records = list(reader.iter_cbs_entity_records(table_id=table_id, run_id=run_id, entity=entity))
     sink = CBSReferenceCodeWriter(table_name=table_name, entity=entity)
     return sink.write(records)
+
+
+def dedupe_raw_records(records: list[RawRecord]) -> list[RawRecord]:
+    """Keep the last record per source/entity/natural_key within a batch."""
+    deduped: dict[str, RawRecord] = {}
+    for record in records:
+        key = f"{record.source_name}:{record.entity_name}:{record.natural_key}"
+        deduped[key] = record
+    return list(deduped.values())
