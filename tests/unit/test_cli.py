@@ -944,6 +944,8 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
             "build-cbs-silver-observations",
             "--table",
             "cbs_observations_83625ned",
+            "--silver-table",
+            "cbs_observations_flat_83625ned",
             "--run-id",
             "smoke-load",
         ],
@@ -960,6 +962,81 @@ def test_build_silver_observations_command_reads_bronze_and_writes_silver(
     sink = calls["sink"]
     assert isinstance(sink, FakeSilverSink)
     assert sink.table_ident == "silver.cbs_observations_flat_83625ned"
+
+
+def test_build_cbs_silver_observations_command_supports_custom_silver_table(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSilverSink:
+        def __init__(self, table_ident: str) -> None:
+            self.table_ident = table_ident
+            calls["table_ident"] = table_ident
+
+    def fake_read_bronze_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
+        return [
+            {
+                "source_name": "cbs_statline",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-18T09:00:00Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "payload": (
+                    '{"Id": 1, "Measure": "M001534", "Perioden": '
+                    '"1995JJ00", "RegioS": "NL01", "StringValue": null, '
+                    '"Value": 93750.0, "ValueAttribute": "None"}'
+                ),
+            }
+        ]
+
+    def fake_write_bronze_rows_to_cbs_observation_sink(
+        bronze_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["bronze_rows"] = bronze_rows
+        calls["sink"] = sink
+        return 1
+
+    monkeypatch.setattr("fip.commands.cbs.read_bronze_rows", fake_read_bronze_rows)
+    monkeypatch.setattr("fip.commands.cbs.CBSObservationSink", FakeSilverSink)
+    monkeypatch.setattr(
+        "fip.commands.cbs.write_bronze_rows_to_cbs_observation_sink",
+        fake_write_bronze_rows_to_cbs_observation_sink,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-cbs-silver-observations",
+            "--table",
+            "cbs_observations_85036ned",
+            "--silver-table",
+            "cbs_observations_flat_85036ned",
+            "--run-id",
+            "woz-load",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 Silver rows\n"
+    assert calls["read_table_name"] == "cbs_observations_85036ned"
+    assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "woz-load"
+    assert calls["table_ident"] == "silver.cbs_observations_flat_85036ned"
+    bronze_rows = cast(list[dict[str, object]], calls["bronze_rows"])
+    assert len(bronze_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeSilverSink)
+    assert sink.table_ident == "silver.cbs_observations_flat_85036ned"
 
 
 def test_build_silver_bag_verblijfsobject_command_reads_bronze_and_writes_silver(
