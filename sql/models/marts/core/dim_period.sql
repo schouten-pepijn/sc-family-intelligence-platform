@@ -8,7 +8,7 @@ select
     period_title,
     period_description,
     dimension_group_id,
-    status,
+    coalesce(status, 'unknown') as status,
     period_year,
     period_granularity
 from {{ ref('stg_cbs_period_codes') }}
