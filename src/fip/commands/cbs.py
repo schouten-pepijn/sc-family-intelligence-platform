@@ -110,6 +110,11 @@ def build_cbs_silver_observations(
         "--table",
         help="Bronze table name to transform into Silver.",
     ),
+    silver_table_name: str = typer.Option(
+        "cbs_observations_flat_83625ned",
+        "--silver-table",
+        help="Silver table name to write to.",
+    ),
     run_id: str = typer.Option(
         "debug-raw",
         help="Bronze run identifier to materialize into Silver.",
@@ -122,7 +127,7 @@ def build_cbs_silver_observations(
     bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     silver_namespace = get_settings().silver_namespace
     sink = CBSObservationSink(
-        table_ident=f"{silver_namespace}.cbs_observations_flat_83625ned",
+        table_ident=f"{silver_namespace}.{silver_table_name}",
     )
 
     written = write_bronze_rows_to_cbs_observation_sink(bronze_rows, sink)
