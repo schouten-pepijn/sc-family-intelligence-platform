@@ -32,7 +32,6 @@ from fip.raw.reader import MinioRawSnapshotReader, RawSnapshotReader
 from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
 from fip.settings import get_settings
 
-
 RAW_ARCHIVE_BATCH_SIZE = 1000
 
 
