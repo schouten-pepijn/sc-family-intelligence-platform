@@ -57,7 +57,7 @@ The local validation loop is:
 4. `task load-medium`
    Runs the CBS + BAG flow with medium BAG limits and `run_id=medium-load`.
 5. `task load-all`
-   Runs the full CBS + BAG data load, including raw archiving, Bronze, Silver, landing, the geo-bridge seed, and dbt, with `run_id=load-all`.
+   Runs the full CBS + BAG data load, including raw archiving, Bronze, Silver, landing, and dbt, with `run_id=load-all`.
 6. `task load-smoke`
    Runs the same full flow with small limits and `run_id=smoke-load`.
 7. `task reset-data`
