@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: mart_cbs_observation_exceptions
+    description: Debug mart for CBS observations that fail dimensional enrichment.
+    columns:
+      - name: source_name
+        tests:
+          - not_null
+      - name: run_id
+        tests:
+          - not_null
+      - name: retrieved_at
+        tests:
+          - not_null
+      - name: observation_key
+        tests:
+          - not_null
+      - name: observation_id
+        tests:
+          - not_null
+      - name: measure_id
+        tests:
+          - not_null
+      - name: period_id
+        tests:
+          - not_null
+      - name: region_id
+        tests:
+          - not_null
+      - name: missing_measure
+        tests:
+          - not_null
+      - name: missing_period
+        tests:
+          - not_null
+      - name: missing_region
+        tests:
+          - not_null
