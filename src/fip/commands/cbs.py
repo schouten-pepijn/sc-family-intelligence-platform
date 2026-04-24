@@ -110,12 +110,16 @@ def build_cbs_silver_observations(
         "--table",
         help="Bronze table name to transform into Silver.",
     ),
+    run_id: str = typer.Option(
+        "debug-raw",
+        help="Bronze run identifier to materialize into Silver.",
+    ),
     namespace: str | None = typer.Option(
         None,
         help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
     ),
 ) -> None:
-    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace)
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     silver_namespace = get_settings().silver_namespace
     sink = CBSObservationSink(
         table_ident=f"{silver_namespace}.cbs_observations_flat_83625ned",
@@ -190,8 +194,12 @@ def build_landing_observations(
         None,
         help="Silver Iceberg namespace. Defaults to configured silver namespace.",
     ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the landing layer.",
+    ),
 ) -> None:
-    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace)
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     sink = CBSObservationLandingWriter(table_name="cbs_observations")
 
     written = write_rows_to_sink(silver_rows, sink)

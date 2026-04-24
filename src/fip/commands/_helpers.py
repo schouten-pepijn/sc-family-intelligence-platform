@@ -39,6 +39,7 @@ def iter_records_for_entity(source: Source, entity: str) -> Iterator[RawRecord]:
 def read_bronze_rows(
     table_name: str,
     namespace: str | None = None,
+    run_id: str | None = None,
 ) -> list[dict[str, object]]:
     conn = connect_duckdb()
     try:
@@ -46,7 +47,11 @@ def read_bronze_rows(
         attach_lakekeeper_catalog(conn)
         ns = namespace or get_settings().bronze_namespace
         query = f"SELECT * FROM lakekeeper_catalog.{ns}.{table_name}"
-        return conn.execute(query).to_arrow_table().to_pylist()
+        params: list[object] = []
+        if run_id is not None:
+            query += " WHERE run_id = ?"
+            params.append(run_id)
+        return conn.execute(query, params).to_arrow_table().to_pylist()
     finally:
         conn.close()
 
@@ -54,6 +59,7 @@ def read_bronze_rows(
 def read_silver_rows(
     table_name: str,
     namespace: str | None = None,
+    run_id: str | None = None,
 ) -> list[dict[str, object]]:
     conn = connect_duckdb()
     try:
@@ -61,7 +67,11 @@ def read_silver_rows(
         attach_lakekeeper_catalog(conn)
         ns = namespace or get_settings().silver_namespace
         query = f"SELECT * FROM lakekeeper_catalog.{ns}.{table_name}"
-        return conn.execute(query).to_arrow_table().to_pylist()
+        params: list[object] = []
+        if run_id is not None:
+            query += " WHERE run_id = ?"
+            params.append(run_id)
+        return conn.execute(query, params).to_arrow_table().to_pylist()
     finally:
         conn.close()
 

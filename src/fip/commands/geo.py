@@ -26,6 +26,10 @@ def build_bag_geo_region_mapping(
         None,
         help="Silver Iceberg namespace. Defaults to configured silver namespace.",
     ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the geo-region mapping.",
+    ),
     limit: int = typer.Option(
         100,
         min=1,
@@ -42,7 +46,7 @@ def build_bag_geo_region_mapping(
         "does not contain a bronhouder_identificatie.",
     ),
 ) -> None:
-    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace)
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     sink = BAGGeoRegionMappingLandingWriter(table_name="bag_geo_region_mapping")
     client = LocatieserverClient() if fallback_to_locatieserver else None
 

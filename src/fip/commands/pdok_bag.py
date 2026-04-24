@@ -152,8 +152,12 @@ def build_bag_silver_verblijfsobject(
         None,
         help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
     ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Bronze run identifier to materialize into Silver.",
+    ),
 ) -> None:
-    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace)
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     silver_namespace = get_settings().silver_namespace
     sink = BAGVerblijfsobjectSink(table_ident=f"{silver_namespace}.bag_verblijfsobject_flat")
 
@@ -172,8 +176,12 @@ def build_bag_silver_adressen(
         None,
         help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
     ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Bronze run identifier to materialize into Silver.",
+    ),
 ) -> None:
-    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace)
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     silver_namespace = get_settings().silver_namespace
     sink = BAGAdressenSink(table_ident=f"{silver_namespace}.bag_adressen_flat")
 
@@ -192,8 +200,12 @@ def build_bag_silver_pand(
         None,
         help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
     ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Bronze run identifier to materialize into Silver.",
+    ),
 ) -> None:
-    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace)
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     silver_namespace = get_settings().silver_namespace
     sink = BAGPandSink(table_ident=f"{silver_namespace}.bag_pand_flat")
 
@@ -212,8 +224,12 @@ def build_bag_landing_verblijfsobject(
         None,
         help="Silver Iceberg namespace. Defaults to configured silver namespace.",
     ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the landing layer.",
+    ),
 ) -> None:
-    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace)
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     sink = BAGVerblijfsobjectLandingWriter(table_name="bag_verblijfsobject")
 
     written = write_rows_to_sink(silver_rows, sink)
@@ -231,8 +247,12 @@ def build_bag_landing_adressen(
         None,
         help="Silver Iceberg namespace. Defaults to configured silver namespace.",
     ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the landing layer.",
+    ),
 ) -> None:
-    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace)
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     sink = BAGAdressenLandingWriter(table_name="bag_adressen")
 
     written = write_rows_to_sink(silver_rows, sink)
@@ -250,8 +270,12 @@ def build_bag_landing_pand(
         None,
         help="Silver Iceberg namespace. Defaults to configured silver namespace.",
     ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the landing layer.",
+    ),
 ) -> None:
-    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace)
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace, run_id=run_id)
     sink = BAGPandLandingWriter(table_name="bag_pand")
 
     written = write_rows_to_sink(silver_rows, sink)
