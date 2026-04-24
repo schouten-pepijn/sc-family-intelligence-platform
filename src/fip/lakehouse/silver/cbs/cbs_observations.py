@@ -15,6 +15,8 @@ SILVER_OBSERVATION_FIELDS = (
     "numeric_value",
     "value_attribute",
     "string_value",
+    "woningtype_code",
+    "woningkenmerk_code",
 )
 
 
@@ -49,6 +51,8 @@ def flatten_bronze_observation(row: dict[str, object]) -> dict[str, object]:
         "numeric_value": payload["Value"],
         "value_attribute": payload["ValueAttribute"],
         "string_value": payload["StringValue"],
+        "woningtype_code": payload.get("Woningtype"),
+        "woningkenmerk_code": payload.get("Woningkenmerk"),
     }
 
 
