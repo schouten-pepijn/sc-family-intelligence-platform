@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+import re
 
 import psycopg
 from psycopg.sql import SQL, Identifier
@@ -79,6 +80,31 @@ class PostgresFullRefreshWriter(ABC):
                 SQL(self._table_columns_sql()),
             )
         )
+        self._ensure_columns(conn)
+
+    def _ensure_columns(self, conn: psycopg.Connection) -> None:
+        schema_name = get_settings().postgres_schema
+        for column_name, column_definition in self._column_definitions():
+            conn.execute(
+                SQL("ALTER TABLE {}.{} ADD COLUMN IF NOT EXISTS {} {}").format(
+                    Identifier(schema_name),
+                    Identifier(self.table_name),
+                    Identifier(column_name),
+                    SQL(column_definition),
+                )
+            )
+
+    def _column_definitions(self) -> Sequence[tuple[str, str]]:
+        definitions: list[tuple[str, str]] = []
+        for line in self._table_columns_sql().splitlines():
+            stripped = line.strip().rstrip(",")
+            if not stripped:
+                continue
+            match = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s+(.+)$", stripped)
+            if not match:
+                continue
+            definitions.append((match.group(1), match.group(2)))
+        return definitions
 
     def _truncate_table(self, conn: psycopg.Connection) -> None:
         schema_name = get_settings().postgres_schema
