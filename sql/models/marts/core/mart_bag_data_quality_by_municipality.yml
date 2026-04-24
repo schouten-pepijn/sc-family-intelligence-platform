@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: mart_bag_data_quality_by_municipality
+    description: Municipality-level BAG coverage and data-quality mart.
+    columns:
+      - name: region_id
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_id
+      - name: region_title
+        tests:
+          - not_null
+      - name: region_description
+        tests:
+          - not_null
+      - name: bag_address_count
+        tests:
+          - not_null
+      - name: bag_verblijfsobject_count
+        tests:
+          - not_null
+      - name: bag_pand_count
+        tests:
+          - not_null
+      - name: mapped_address_count
+        tests:
+          - not_null
+      - name: mapping_coverage_ratio
+        tests:
+          - not_null
+      - name: missing_postcode_count
+        tests:
+          - not_null
+      - name: missing_huisnummer_count
+        tests:
+          - not_null
+      - name: missing_geometry_count
+        tests:
+          - not_null
+      - name: missing_bronhouder_identificatie_count
+        tests:
+          - not_null
