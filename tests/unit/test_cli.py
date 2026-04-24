@@ -1692,6 +1692,80 @@ def test_build_gold_observations_command_reads_silver_and_writes_gold(
     assert sink.table_name == "cbs_observations"
 
 
+def test_build_landing_observations_command_supports_custom_landing_table(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeGoldSink:
+        def __init__(self, table_name: str) -> None:
+            self.table_name = table_name
+            calls["table_name"] = table_name
+
+    def fake_read_silver_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
+        return [
+            {
+                "source_name": "cbs_statline",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-18T09:00:00Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "observation_id": 1,
+                "measure_code": "M001534",
+                "period_code": "1995JJ00",
+                "region_code": "NL01",
+                "numeric_value": 93750.0,
+                "value_attribute": "None",
+                "string_value": None,
+            }
+        ]
+
+    def fake_write_rows_to_sink(
+        silver_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["silver_rows"] = silver_rows
+        calls["sink"] = sink
+        return 1
+
+    monkeypatch.setattr("fip.commands.cbs.read_silver_rows", fake_read_silver_rows)
+    monkeypatch.setattr("fip.commands.cbs.CBSObservationLandingWriter", FakeGoldSink)
+    monkeypatch.setattr("fip.commands.cbs.write_rows_to_sink", fake_write_rows_to_sink)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-landing-observations",
+            "--table",
+            "cbs_observations_flat_85036ned",
+            "--landing-table",
+            "cbs_observations_85036ned",
+            "--run-id",
+            "woz-load",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 landing rows\n"
+    assert calls["read_table_name"] == "cbs_observations_flat_85036ned"
+    assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "woz-load"
+    assert calls["table_name"] == "cbs_observations_85036ned"
+    silver_rows = cast(list[dict[str, object]], calls["silver_rows"])
+    assert len(silver_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeGoldSink)
+    assert sink.table_name == "cbs_observations_85036ned"
+
+
 def test_build_bag_geo_region_mapping_command_reads_silver_and_writes_landing(
     monkeypatch,
 ) -> None:
