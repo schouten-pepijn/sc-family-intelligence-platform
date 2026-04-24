@@ -12,6 +12,7 @@ GEO_REGION_MAPPING_FIELDS = (
     "confidence",
     "active_from",
     "active_to",
+    "run_id",
 )
 
 
@@ -33,5 +34,6 @@ class BAGGeoRegionMappingLandingWriter(PostgresFullRefreshWriter):
                     mapping_method text NOT NULL,
                     confidence double precision NOT NULL,
                     active_from timestamptz NOT NULL,
-                    active_to timestamptz
+                    active_to timestamptz,
+                    run_id text NOT NULL
                 """

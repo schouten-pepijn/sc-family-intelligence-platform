@@ -11,6 +11,7 @@ def to_bag_adressen_geo_region_mapping_row(
     bag_object_id = _require_text(bag_row, "bag_id")
     region_id = _require_gemeentecode(bag_row)
     active_from = _require_datetime(bag_row, "retrieved_at")
+    run_id = _require_text(bag_row, "run_id")
 
     return {
         "bag_object_id": bag_object_id,
@@ -20,6 +21,7 @@ def to_bag_adressen_geo_region_mapping_row(
         "confidence": 1.0,
         "active_from": active_from,
         "active_to": None,
+        "run_id": run_id,
     }
 
 

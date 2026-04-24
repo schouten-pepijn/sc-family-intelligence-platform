@@ -15,6 +15,7 @@ def to_bag_geo_region_mapping_row(
     region_id = _extract_region_id(lookup_result)
     confidence = _extract_confidence(lookup_result)
     active_from = _require_datetime(bag_row, "retrieved_at")
+    run_id = _require_text(bag_row, "run_id")
 
     return {
         "bag_object_id": bag_object_id,
@@ -24,6 +25,7 @@ def to_bag_geo_region_mapping_row(
         "confidence": confidence,
         "active_from": active_from,
         "active_to": None,
+        "run_id": run_id,
     }
 
 
