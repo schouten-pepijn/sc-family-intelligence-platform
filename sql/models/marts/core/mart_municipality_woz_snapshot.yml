@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: mart_municipality_woz_snapshot
+    description: One-row-per-municipality WOZ snapshot built from CBS 85036NED total eigendom observations.
+    columns:
+      - name: region_id
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_id
+      - name: region_title
+        tests:
+          - not_null
+      - name: region_description
+        tests:
+          - not_null
+      - name: woz_period_year
+        tests:
+          - not_null
+      - name: woz_period_id
+        tests:
+          - not_null
+      - name: woz_period_title
+        tests:
+          - not_null
+      - name: woz_measure_id
+        tests:
+          - not_null
+      - name: woz_measure_title
+        tests:
+          - not_null
+      - name: eigendom_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_eigendom')
+                field: eigendom_id
+      - name: eigendom_title
+        tests:
+          - not_null
+      - name: avg_woz_value
+        tests:
+          - not_null
