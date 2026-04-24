@@ -2,20 +2,51 @@ version: 2
 
 models:
   - name: mart_cbs_observation_values_by_region_year
-    description: Aggregated numeric CBS observations by region, year, and measure.
+    description: Canonical CBS region/year/measure mart enriched with readable region, period, and measure metadata.
     columns:
       - name: region_id
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_id
+      - name: region_title
+        tests:
+          - not_null
+      - name: region_dimension_group_id
       - name: period_year
         tests:
           - not_null
+      - name: period_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_period')
+                field: period_id
+      - name: period_title
+        tests:
+          - not_null
+      - name: period_granularity
+      - name: period_status
       - name: measure_id
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_measure')
+                field: measure_id
+      - name: measure_title
+        tests:
+          - not_null
+      - name: measure_description
+      - name: data_type
+      - name: unit
+      - name: presentation_type
       - name: observation_count
         tests:
           - not_null
-      - name: avg_observation_value
+      - name: average_observation_value
       - name: min_observation_value
       - name: max_observation_value
