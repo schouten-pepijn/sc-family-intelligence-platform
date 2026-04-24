@@ -7,6 +7,7 @@ import typer
 from fip.cli import app
 from fip.commands._helpers import (
     build_gold_reference_codes,
+    dedupe_raw_records,
     read_bronze_rows,
     read_silver_rows,
 )
@@ -57,7 +58,8 @@ def ingest_cbs(
     written = 0
     for entity_name, records in grouped_records.items():
         sink = sink_factory.for_entity(entity_name)
-        written += sink.write(records)
+        deduped_records = dedupe_raw_records(records)
+        written += sink.write(deduped_records)
 
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
 

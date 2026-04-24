@@ -6,7 +6,7 @@ from pathlib import Path
 import typer
 
 from fip.cli import app
-from fip.commands._helpers import read_bronze_rows, read_silver_rows
+from fip.commands._helpers import dedupe_raw_records, read_bronze_rows, read_silver_rows
 from fip.gold.core.service import write_rows_to_sink
 from fip.gold.pdok_bag.bag_adressen_writer import BAGAdressenLandingWriter
 from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
@@ -92,7 +92,7 @@ def ingest_bag(
     written = 0
     for entity_name, records in grouped_records.items():
         sink = sink_factory.for_entity(entity_name)
-        written += sink.write(records)
+        written += sink.write(dedupe_raw_records(records))
 
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
 
