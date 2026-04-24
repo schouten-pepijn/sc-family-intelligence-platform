@@ -40,10 +40,10 @@ The local validation loop is:
 - `task test-unit` for fast code-level checks
 - `task test-raw` for the raw landing-pad smoke test against MinIO
 - `task test-integration` for the Bronze -> Silver -> landing roundtrip against the local stack
-- `task cbs-flow` for the CBS-only raw -> Bronze -> Silver -> landing -> dbt flow
-- `task load-medium` for the CBS + BAG flow with moderate BAG limits
-- `task load-all` for the full CBS + BAG data load
-- `task load-smoke` for the full CBS + BAG data load with small limits
+- `task cbs-flow` for the CBS-only raw -> Bronze -> Silver -> landing -> dbt flow, isolated with `run_id=smoke-flow`
+- `task load-medium` for the CBS + BAG flow with moderate BAG limits, isolated with `run_id=medium-load`
+- `task load-all` for the full CBS + BAG data load, isolated with `run_id=load-all`
+- `task load-smoke` for the full CBS + BAG data load with small limits, isolated with `run_id=smoke-load`
 - `task check` for the standard local quality gate
 
 ## Quick Start
@@ -53,13 +53,13 @@ The local validation loop is:
 2. `task test-raw`
    Verifies the raw landing-pad in MinIO.
 3. `task cbs-flow`
-   Runs the full local flow from raw through Bronze, Silver, landing, and dbt.
+   Runs the CBS-only flow from raw through Bronze, Silver, landing, and dbt with `run_id=smoke-flow`.
 4. `task load-medium`
-   Runs the CBS + BAG flow with medium BAG limits.
+   Runs the CBS + BAG flow with medium BAG limits and `run_id=medium-load`.
 5. `task load-all`
-   Runs the full CBS + BAG data load, including raw archiving, Bronze, Silver, landing, the geo-bridge seed, and dbt.
+   Runs the full CBS + BAG data load, including raw archiving, Bronze, Silver, landing, the geo-bridge seed, and dbt, with `run_id=load-all`.
 6. `task load-smoke`
-   Runs the same full flow with small limits.
+   Runs the same full flow with small limits and `run_id=smoke-load`.
 7. `task reset-data`
    Stops the stack, removes volumes, and clears generated local data.
 
@@ -89,7 +89,7 @@ The local validation loop is:
 6. The BAG raw archive path now flushes in chunks instead of buffering a whole collection in memory.
 7. The BAG geo bridge now uses the `adres -> GMxxxx` MVP mapping, with Locatieserver only as fallback.
 8. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
-9. Raw-reuse for ingest is in place; the next implementation steps are stronger BAG end-to-end validation, more marts on top of the current reference dims, and possibly COPY-based Postgres landing writes if landing becomes the bottleneck.
+9. Raw-reuse for ingest is in place; each full-chain task keeps a single `run_id` end-to-end. The next implementation steps are stronger BAG end-to-end validation, more marts on top of the current reference dims, and possibly COPY-based Postgres landing writes if landing becomes the bottleneck.
 
 ## Current Data Flow
 

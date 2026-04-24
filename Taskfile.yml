@@ -119,8 +119,8 @@ tasks:
       - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-flow --raw-target minio
       - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-flow --raw-target minio
       - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-flow --raw-target minio
-      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
-      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned
+      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id smoke-flow
+      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id smoke-flow
       - task: dbt-debug
       - task: dbt-seed
       - task: dbt-run
@@ -142,15 +142,15 @@ tasks:
       - uv run fip ingest-bag --collection verblijfsobject --run-id load-all --raw-target minio
       - uv run fip ingest-bag --collection pand --run-id load-all --raw-target minio
       - uv run fip ingest-bag --collection adres --run-id load-all --raw-target minio
-      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
-      - uv run fip build-bag-silver-verblijfsobject
-      - uv run fip build-bag-silver-pand
-      - uv run fip build-bag-silver-adressen
-      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned
-      - uv run fip build-bag-landing-verblijfsobject
-      - uv run fip build-bag-landing-pand
-      - uv run fip build-bag-landing-adressen
-      - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat
+      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id load-all
+      - uv run fip build-bag-silver-verblijfsobject --run-id load-all
+      - uv run fip build-bag-silver-pand --run-id load-all
+      - uv run fip build-bag-silver-adressen --run-id load-all
+      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id load-all
+      - uv run fip build-bag-landing-verblijfsobject --run-id load-all
+      - uv run fip build-bag-landing-pand --run-id load-all
+      - uv run fip build-bag-landing-adressen --run-id load-all
+      - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id load-all
       - task: dbt-seed
       - task: dbt-run
       - task: dbt-test
@@ -171,15 +171,15 @@ tasks:
       - uv run fip ingest-bag --collection verblijfsobject --run-id medium-load --limit 1000 --progress-every 100 --raw-target minio
       - uv run fip ingest-bag --collection pand --run-id medium-load --limit 1000 --progress-every 100 --raw-target minio
       - uv run fip ingest-bag --collection adres --run-id medium-load --limit 1000 --progress-every 100 --raw-target minio
-      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
-      - uv run fip build-bag-silver-verblijfsobject
-      - uv run fip build-bag-silver-pand
-      - uv run fip build-bag-silver-adressen
-      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned
-      - uv run fip build-bag-landing-verblijfsobject
-      - uv run fip build-bag-landing-pand
-      - uv run fip build-bag-landing-adressen
-      - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --limit 1000 --rows 20
+      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id medium-load
+      - uv run fip build-bag-silver-verblijfsobject --run-id medium-load
+      - uv run fip build-bag-silver-pand --run-id medium-load
+      - uv run fip build-bag-silver-adressen --run-id medium-load
+      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id medium-load
+      - uv run fip build-bag-landing-verblijfsobject --run-id medium-load
+      - uv run fip build-bag-landing-pand --run-id medium-load
+      - uv run fip build-bag-landing-adressen --run-id medium-load
+      - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id medium-load --limit 1000 --rows 20
       - task: dbt-seed
       - task: dbt-run
       - task: dbt-test
@@ -196,19 +196,19 @@ tasks:
       - uv run fip build-gold-measure-codes --table-id 83625NED --run-id smoke-load --raw-target minio
       - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-load --raw-target minio
       - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-load --raw-target minio
-      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-load --limit 25 --raw-target minio
+      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-load --raw-target minio
       - uv run fip ingest-bag --collection verblijfsobject --run-id smoke-load --limit 25 --progress-every 5 --raw-target minio
       - uv run fip ingest-bag --collection pand --run-id smoke-load --limit 25 --progress-every 5 --raw-target minio
       - uv run fip ingest-bag --collection adres --run-id smoke-load --limit 25 --progress-every 5 --raw-target minio
-      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
-      - uv run fip build-bag-silver-verblijfsobject
-      - uv run fip build-bag-silver-pand
-      - uv run fip build-bag-silver-adressen
-      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned
-      - uv run fip build-bag-landing-verblijfsobject
-      - uv run fip build-bag-landing-pand
-      - uv run fip build-bag-landing-adressen
-      - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --limit 25 --rows 5
+      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id smoke-load
+      - uv run fip build-bag-silver-verblijfsobject --run-id smoke-load
+      - uv run fip build-bag-silver-pand --run-id smoke-load
+      - uv run fip build-bag-silver-adressen --run-id smoke-load
+      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id smoke-load
+      - uv run fip build-bag-landing-verblijfsobject --run-id smoke-load
+      - uv run fip build-bag-landing-pand --run-id smoke-load
+      - uv run fip build-bag-landing-adressen --run-id smoke-load
+      - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id smoke-load --limit 25 --rows 5
       - task: dbt-seed
       - task: dbt-run
       - task: dbt-test
