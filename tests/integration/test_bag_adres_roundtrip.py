@@ -133,7 +133,7 @@ def test_bag_adres_command_flow_against_local_lakehouse(
             bronze_conn.execute(
                 f"""
             SELECT *
-            FROM lakekeeper_catalog.{bronze_namespace}.{bronze_table_name}
+            FROM lakekeeper_catalog.{bronze_namespace}.bag_adressen
             """
             )
             .to_arrow_table()
@@ -145,33 +145,17 @@ def test_bag_adres_command_flow_against_local_lakehouse(
     assert len(bronze_rows) == 1
     assert bronze_rows[0]["source_name"] == "bag_pdok"
     assert bronze_rows[0]["natural_key"] == "0"
-
-    silver_sink = BAGAdressenSink(table_ident=f"{silver_namespace}.{silver_table_name}")
-    silver_written = write_bronze_rows_to_bag_adressen_sink(bronze_rows, silver_sink)
-    assert silver_written == 1
-    silver_written_again = write_bronze_rows_to_bag_adressen_sink(bronze_rows, silver_sink)
-    assert silver_written_again == 1
+    assert bronze_rows[0]["entity_name"] == "bag.adres"
 
     silver_conn = connect()
     try:
         load_extensions(silver_conn)
         attach_lakekeeper_catalog(silver_conn)
-        silver_count = count_rows(
-            silver_conn,
-            table_name=silver_table_name,
-            namespace=silver_namespace,
-        )
-        silver_rows = sample_rows(
-            silver_conn,
-            table_name=silver_table_name,
-            namespace=silver_namespace,
-            limit=1,
-        )
-        silver_rows_for_gold = (
+        silver_rows = (
             silver_conn.execute(
                 f"""
             SELECT *
-            FROM lakekeeper_catalog.{silver_namespace}.{silver_table_name}
+            FROM lakekeeper_catalog.{silver_namespace}.bag_adressen_flat
             """
             )
             .to_arrow_table()
@@ -180,33 +164,30 @@ def test_bag_adres_command_flow_against_local_lakehouse(
     finally:
         silver_conn.close()
 
-    assert silver_count == 1
     assert len(silver_rows) == 1
-    assert len(silver_rows_for_gold) == 1
+    silver_row = silver_rows[0]
+    assert silver_row["bronhouder_identificatie"] == "1883"
+    assert silver_row["gemeentecode"] == "GM1883"
+    assert silver_row["gemeentenaam"] == "Sittard-Geleen"
+    assert silver_row["geometry"] is not None
 
-    row = silver_rows[0]
-    assert row[0] == "bag_pdok"
-    assert row[1] == "0"
-    assert row[3] == "integration-roundtrip"
-    assert row[4] == "v1"
-    assert row[5] == 200
-    assert row[6] == "adres-1"
-
-    landing_writer = BAGAdressenLandingWriter(table_name=landing_table_name)
-    landing_written = write_rows_to_sink(silver_rows_for_gold, landing_writer)
-    assert landing_written == 1
-    landing_written_again = write_rows_to_sink(silver_rows_for_gold, landing_writer)
-    assert landing_written_again == 1
+    build_bag_landing_adressen(table_name="bag_adressen_flat", namespace=silver_namespace)
+    build_bag_geo_region_mapping(
+        table_name="bag_adressen_flat",
+        limit=1,
+        fallback_to_locatieserver=False,
+        namespace=silver_namespace,
+    )
 
     gold_conn = connect_postgres()
     try:
         gold_count = count_gold_rows(
             gold_conn,
-            table_name=landing_table_name,
+            table_name="bag_adressen",
         )
         gold_rows = sample_gold_rows(
             gold_conn,
-            table_name=landing_table_name,
+            table_name="bag_adressen",
             limit=1,
         )
     finally:
@@ -218,7 +199,30 @@ def test_bag_adres_command_flow_against_local_lakehouse(
     gold_row = gold_rows[0]
     assert gold_row[0] == "bag_pdok"
     assert gold_row[1] == "0"
-    assert gold_row[3] == "integration-roundtrip"
+    assert gold_row[3] == run_id
     assert gold_row[4] == "v1"
     assert gold_row[5] == 200
     assert gold_row[6] == "adres-1"
+
+    geo_conn = connect_postgres()
+    try:
+        geo_count = count_gold_rows(
+            geo_conn,
+            table_name="bag_geo_region_mapping",
+        )
+        geo_rows = sample_gold_rows(
+            geo_conn,
+            table_name="bag_geo_region_mapping",
+            limit=1,
+        )
+    finally:
+        geo_conn.close()
+
+    assert geo_count == 1
+    assert len(geo_rows) == 1
+
+    geo_row = geo_rows[0]
+    assert geo_row[0] == "adres-1"
+    assert geo_row[1] == "bag_adres"
+    assert geo_row[2] == "GM1883"
+    assert geo_row[3] == "bag_ogc_v2_adres"
