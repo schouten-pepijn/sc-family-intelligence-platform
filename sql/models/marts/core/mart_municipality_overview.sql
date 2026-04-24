@@ -48,23 +48,29 @@ bag_pand_counts as (
 
 cbs_latest as (
     select
+        latest.region_id,
         latest.period_year as latest_period_year,
         coalesce(measures.latest_measure_count, 0) as latest_measure_count
     from (
         select
+            region_id,
             max(period_year) as period_year
         from {{ ref('mart_cbs_observation_values_by_region_year') }}
         where region_id like 'GM%'
+        group by region_id
     ) as latest
     left join (
         select
+            region_id,
             period_year,
             count(distinct measure_id) as latest_measure_count
         from {{ ref('mart_cbs_observation_values_by_region_year') }}
         where region_id like 'GM%'
-        group by period_year
+        group by region_id,
+            period_year
     ) as measures
-        on measures.period_year = latest.period_year
+        on measures.region_id = latest.region_id
+        and measures.period_year = latest.period_year
 )
 
 select
@@ -89,4 +95,4 @@ left join bag_pand_counts as pd
 left join {{ ref('mart_bag_region_coverage') }} as mb
     on mb.region_id = r.region_id
 left join cbs_latest as cl
-    on true
+    on cl.region_id = r.region_id
