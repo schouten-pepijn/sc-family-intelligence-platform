@@ -70,16 +70,23 @@ woz_latest as (
 )
 
 select
-    region_id,
-    region_title,
-    region_description,
-    period_year as woz_period_year,
-    period_id as woz_period_id,
-    period_title as woz_period_title,
-    measure_id as woz_measure_id,
-    measure_title as woz_measure_title,
-    eigendom_id,
-    eigendom_title,
-    avg_woz_value_thousands,
-    observation_value * 1000 as avg_woz_value
+    woz_latest.region_id,
+    woz_latest.region_title,
+    woz_latest.region_description,
+    woz_latest.period_year as woz_period_year,
+    woz_latest.period_id as woz_period_id,
+    woz_latest.period_title as woz_period_title,
+    woz_latest.measure_id as woz_measure_id,
+    woz_latest.measure_title as woz_measure_title,
+    woz_latest.eigendom_id,
+    woz_latest.eigendom_title,
+    woz_latest.avg_woz_value_thousands,
+    woz_latest.observation_value * 1000 as avg_woz_value,
+    koopwoning.koopwoningprijs_period_year,
+    koopwoning.koopwoningprijs_period_id,
+    koopwoning.koopwoningprijs_measure_id,
+    koopwoning.koopwoningprijs_measure_title,
+    koopwoning.koopwoningprijs
 from woz_latest
+left join koopwoning_latest as koopwoning
+    on koopwoning.region_id = woz_latest.region_id
