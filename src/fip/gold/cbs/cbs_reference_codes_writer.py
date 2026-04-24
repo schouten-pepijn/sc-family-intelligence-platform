@@ -118,8 +118,9 @@ class CBSReferenceCodeWriter(PostgresFullRefreshWriter):
         self._validate_rows(rows)
         raw_rows = [cast(RawRecord, row) for row in rows]
         self.last_written_rows = [build_reference_row(row) for row in raw_rows]
-        conn = self._connect()
+        self._validate_materialized_rows(self.last_written_rows)
 
+        conn = self._connect()
         try:
             self._ensure_table(conn)
             self._truncate_table(conn)
