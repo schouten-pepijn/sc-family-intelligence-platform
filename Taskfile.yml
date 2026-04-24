@@ -103,21 +103,6 @@ tasks:
         docker compose exec minio sh -lc 'mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
         && mc ls local/fip-lakehouse/raw/cbs/83625NED/smoke-raw/'
 
-  build-gold-measure-codes:
-    desc: Build the Postgres landing table for CBS measure codes
-    cmds:
-      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id smoke-flow
-
-  build-gold-period-codes:
-    desc: Build the Postgres landing table for CBS period codes
-    cmds:
-      - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-flow
-
-  build-gold-region-codes:
-    desc: Build the Postgres landing table for CBS region codes
-    cmds:
-      - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-flow
-
   test-all:
     desc: Run unit and integration tests
     cmds:
@@ -128,11 +113,12 @@ tasks:
     desc: "Run the CBS-only local flow: raw, bronze, silver, landing, and dbt"
     cmds:
       - task: infra-up
-      - task: test-raw
-      - task: build-gold-measure-codes
-      - task: build-gold-period-codes
-      - task: build-gold-region-codes
-      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-flow
+      - task: infra-init
+      - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-flow --target minio
+      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id smoke-flow --raw-target minio
+      - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-flow --raw-target minio
+      - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-flow --raw-target minio
+      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-flow --raw-target minio
       - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned
       - task: dbt-debug
@@ -149,13 +135,13 @@ tasks:
       - uv run fip archive-bag-raw --run-id load-all --collection verblijfsobject --target minio
       - uv run fip archive-bag-raw --run-id load-all --collection pand --target minio
       - uv run fip archive-bag-raw --run-id load-all --collection adres --target minio
-      - task: build-gold-measure-codes
-      - task: build-gold-period-codes
-      - task: build-gold-region-codes
-      - uv run fip ingest-cbs --table-id 83625NED --run-id load-all
-      - uv run fip ingest-bag --collection verblijfsobject --run-id load-all
-      - uv run fip ingest-bag --collection pand --run-id load-all
-      - uv run fip ingest-bag --collection adres --run-id load-all
+      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id load-all --raw-target minio
+      - uv run fip build-gold-period-codes --table-id 83625NED --run-id load-all --raw-target minio
+      - uv run fip build-gold-region-codes --table-id 83625NED --run-id load-all --raw-target minio
+      - uv run fip ingest-cbs --table-id 83625NED --run-id load-all --raw-target minio
+      - uv run fip ingest-bag --collection verblijfsobject --run-id load-all --raw-target minio
+      - uv run fip ingest-bag --collection pand --run-id load-all --raw-target minio
+      - uv run fip ingest-bag --collection adres --run-id load-all --raw-target minio
       - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned
       - uv run fip build-bag-silver-verblijfsobject
       - uv run fip build-bag-silver-pand
