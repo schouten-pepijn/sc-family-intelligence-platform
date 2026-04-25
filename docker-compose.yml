@@ -51,6 +51,26 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  postgis:
+    image: postgis/postgis:17-3.5
+    container_name: fip-postgis
+    ports:
+      - "${POSTGIS_PORT}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGIS_DB}
+      POSTGRES_USER: ${POSTGIS_USER}
+      POSTGRES_PASSWORD: ${POSTGIS_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGIS_USER} -p 5432 -d ${POSTGIS_DB}" ]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+      - ./ops/postgres/init-postgis.sql:/docker-entrypoint-initdb.d/01-postgis.sql:ro
+
   lakekeeper-migrate:
     image: ${LAKEKEEPER_IMAGE}
     container_name: fip-lakekeeper-migrate
@@ -168,3 +188,4 @@ services:
 volumes:
   minio_data:
   postgres_data:
+  postgis_data:
