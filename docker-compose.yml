@@ -10,7 +10,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: [ "CMD", "mc", "ready", "local" ]
       interval: 2s
       timeout: 10s
       retries: 5
@@ -43,7 +43,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGDATA: /var/lib/postgresql/data/pgdata
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -p 5432 -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -p 5432 -d ${POSTGRES_DB}" ]
       interval: 2s
       timeout: 10s
       retries: 5
@@ -61,7 +61,7 @@ services:
       LAKEKEEPER__PG_DATABASE_URL_WRITE: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       LAKEKEEPER__PG_ENCRYPTION_KEY: ${LAKEKEEPER_PG_ENCRYPTION_KEY}
       LAKEKEEPER__AUTHZ_BACKEND: allowall
-    command: ["migrate"]
+    command: [ "migrate" ]
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,9 +72,9 @@ services:
     ports:
       - "8181:8181"
     environment: *lakekeeper_environment
-    command: ["serve"]
+    command: [ "serve" ]
     healthcheck:
-      test: ["CMD", "/home/nonroot/lakekeeper", "healthcheck"]
+      test: [ "CMD", "/home/nonroot/lakekeeper", "healthcheck" ]
       interval: 2s
       timeout: 10s
       retries: 5
