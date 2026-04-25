@@ -43,6 +43,12 @@ tasks:
     cmds:
       - docker compose down
 
+  infra-vol-down:
+    desc: Stop the stack and remove volumes (data will be lost)
+    cmds:
+      - docker compose down -v
+      - docker volume prune -f
+
   reset-data:
     desc: Stop the stack, remove volumes, and clear local generated data
     cmds:
