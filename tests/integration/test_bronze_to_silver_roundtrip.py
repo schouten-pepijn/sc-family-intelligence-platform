@@ -19,7 +19,7 @@ from fip.lakehouse.silver.cbs.cbs_observations_service import (
 )
 from fip.lakehouse.silver.cbs.cbs_observations_sink import CBSObservationSink
 from fip.readback.duckdb import (
-    attach_lakekeeper_catalog,
+    attach_iceberg_catalog,
     connect,
     count_rows,
     load_extensions,
@@ -96,11 +96,11 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     bronze_conn = connect()
     try:
         load_extensions(bronze_conn)
-        attach_lakekeeper_catalog(bronze_conn)
+        attach_iceberg_catalog(bronze_conn)
         bronze_rows = (
             bronze_conn.execute(f"""
             SELECT *
-            FROM lakekeeper_catalog.{bronze_namespace}.{bronze_table_name}
+            FROM iceberg_catalog.{bronze_namespace}.{bronze_table_name}
             """)
             .to_arrow_table()
             .to_pylist()
@@ -126,7 +126,7 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     silver_conn = connect()
     try:
         load_extensions(silver_conn)
-        attach_lakekeeper_catalog(silver_conn)
+        attach_iceberg_catalog(silver_conn)
         silver_count = count_rows(
             silver_conn,
             table_name=silver_table_name,
@@ -141,7 +141,7 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
         silver_rows_for_gold = (
             silver_conn.execute(f"""
             SELECT *
-            FROM lakekeeper_catalog.{silver_namespace}.{silver_table_name}
+            FROM iceberg_catalog.{silver_namespace}.{silver_table_name}
             """)
             .to_arrow_table()
             .to_pylist()

@@ -19,7 +19,7 @@ from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
 from fip.ingestion.base import RawRecord
 from fip.readback.duckdb import (
-    attach_lakekeeper_catalog,
+    attach_iceberg_catalog,
     connect,
     load_extensions,
 )
@@ -132,12 +132,12 @@ def test_bag_adres_command_flow_against_local_lakehouse(
     bronze_conn = connect()
     try:
         load_extensions(bronze_conn)
-        attach_lakekeeper_catalog(bronze_conn)
+        attach_iceberg_catalog(bronze_conn)
         bronze_rows = (
             bronze_conn.execute(
                 f"""
             SELECT *
-            FROM lakekeeper_catalog.{bronze_namespace}.bag_adressen
+            FROM iceberg_catalog.{bronze_namespace}.bag_adressen
             """
             )
             .to_arrow_table()
@@ -154,12 +154,12 @@ def test_bag_adres_command_flow_against_local_lakehouse(
     silver_conn = connect()
     try:
         load_extensions(silver_conn)
-        attach_lakekeeper_catalog(silver_conn)
+        attach_iceberg_catalog(silver_conn)
         silver_rows = (
             silver_conn.execute(
                 f"""
             SELECT *
-            FROM lakekeeper_catalog.{silver_namespace}.bag_adressen_flat
+            FROM iceberg_catalog.{silver_namespace}.bag_adressen_flat
             """
             )
             .to_arrow_table()
