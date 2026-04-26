@@ -36,7 +36,7 @@ services:
           || aws --endpoint-url "${S3_ENDPOINT_INTERNAL}" s3api create-bucket --bucket "${S3_BUCKET}"
 
   postgres:
-    image: postgres:17
+    image: postgis/postgis:17-3.5
     container_name: fip-postgres
     ports:
       - "${POSTGRES_PORT}:5432"
