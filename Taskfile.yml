@@ -111,9 +111,7 @@ tasks:
     desc: Run the SQL spatial health-check against the local Postgres container (no Python deps)
     cmds:
       - task: infra-up
-      - >-
-        cat ops/postgres/spatial_health_check.sql | docker compose exec -T postgres sh -lc
-        'PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -q'
+      - docker compose exec -T postgres env PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -q < ops/postgres/spatial_health_check.sql
 
   test-raw:
     desc: Run the raw landing smoke test against RustFS
@@ -129,6 +127,22 @@ tasks:
     cmds:
       - task: test-unit
       - task: test-integration
+
+  archive-region-geom:
+    desc: Download CBS municipality geometries from PDOK and archive them to S3
+    cmds:
+      - uv run fip archive-region-geom --year 2025 --run-id region-geom-2025 --target s3
+
+  build-region-geom:
+    desc: Load authoritative region polygons into landing.region_geom
+    cmds:
+      - uv run python -c "from pathlib import Path; import sys; uri = r'{{.REGION_GEOM_INPUT}}'; sys.exit(0 if uri.startswith('s3://') or Path(uri).is_file() else 1)"
+      - uv run fip build-region-geom --input "{{.REGION_GEOM_INPUT}}" --table region_geom
+
+  load-region-geom:
+    desc: Download CBS municipality geometries from PDOK, archive them to S3, and load landing.region_geom
+    cmds:
+      - uv run fip load-region-geom --year 2025 --run-id region-geom-2025 --target s3
 
   cbs-flow:
     desc: "Run the CBS-only local flow: raw, bronze, silver, landing, and dbt"
@@ -148,6 +162,7 @@ tasks:
       - uv run fip ingest-cbs --table-id 85035NED --run-id smoke-flow --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id smoke-flow
       - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id smoke-flow
+      - task: load-region-geom
       - task: dbt-debug
       - task: dbt-run
       - task: dbt-test
@@ -206,6 +221,7 @@ tasks:
       - uv run fip build-bag-landing-pand --run-id load-all
       - uv run fip build-bag-landing-adressen --run-id load-all
       - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id load-all
+      - task: load-region-geom
       - task: dbt-run
       - task: dbt-test
       - task: dbt-run-woz
