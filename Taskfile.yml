@@ -59,9 +59,10 @@ tasks:
         [shutil.rmtree(path, ignore_errors=True) for path in paths]"
 
   infra-init:
-    desc: Create the local MinIO bucket used by the project
+    desc: Create the local RustFS bucket and Polaris catalog used by the project
     cmds:
-      - docker compose --profile init up minio-init
+      - docker compose --profile init up rustfs-init
+      - docker compose --profile init up polaris-setup
 
   format:
     desc: Format the codebase
@@ -101,13 +102,13 @@ tasks:
       - uv run pytest tests/integration -m integration
 
   test-raw:
-    desc: Run the raw landing smoke test against MinIO
+    desc: Run the raw landing smoke test against RustFS
     cmds:
       - task: infra-init
-      - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-raw --target minio
+      - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-raw --target s3
       - >-
-        docker compose exec minio sh -lc 'mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-        && mc ls local/fip-lakehouse/raw/cbs/83625NED/smoke-raw/'
+        docker compose run --rm --entrypoint /bin/sh rustfs-init -lc 'aws --endpoint-url "$S3_ENDPOINT_INTERNAL"
+        s3 ls "s3://$S3_BUCKET/raw/cbs/83625NED/smoke-raw/"'
 
   test-all:
     desc: Run unit and integration tests
@@ -120,18 +121,18 @@ tasks:
     cmds:
       - task: infra-up
       - task: infra-init
-      - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-flow --target minio
-      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id smoke-flow --raw-target minio
-      - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-flow --raw-target minio
-      - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-flow --raw-target minio
-      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-flow --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-flow --target s3
+      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id smoke-flow --raw-target s3
+      - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-flow --raw-target s3
+      - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-flow --raw-target s3
+      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-flow --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id smoke-flow
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id smoke-flow
-      - uv run fip archive-cbs-raw --table-id 85035NED --run-id smoke-flow --target minio
-      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id smoke-flow --raw-target minio
-      - uv run fip build-gold-period-codes --table-id 85035NED --run-id smoke-flow --raw-target minio
-      - uv run fip build-gold-region-codes --table-id 85035NED --run-id smoke-flow --raw-target minio
-      - uv run fip ingest-cbs --table-id 85035NED --run-id smoke-flow --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 85035NED --run-id smoke-flow --target s3
+      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id smoke-flow --raw-target s3
+      - uv run fip build-gold-period-codes --table-id 85035NED --run-id smoke-flow --raw-target s3
+      - uv run fip build-gold-region-codes --table-id 85035NED --run-id smoke-flow --raw-target s3
+      - uv run fip ingest-cbs --table-id 85035NED --run-id smoke-flow --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id smoke-flow
       - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id smoke-flow
       - task: dbt-debug
@@ -143,9 +144,9 @@ tasks:
     cmds:
       - task: infra-up
       - task: infra-init
-      - uv run fip archive-cbs-raw --table-id 85036NED --run-id woz-load --target minio
-      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id woz-load --raw-target minio
-      - uv run fip ingest-cbs --table-id 85036NED --run-id woz-load --limit 10000 --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 85036NED --run-id woz-load --target s3
+      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id woz-load --raw-target s3
+      - uv run fip ingest-cbs --table-id 85036NED --run-id woz-load --limit 10000 --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id woz-load
       - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id woz-load
       - task: dbt-debug
@@ -162,32 +163,32 @@ tasks:
     cmds:
       - task: infra-up
       - task: infra-init
-      - uv run fip archive-cbs-raw --table-id 83625NED --run-id load-all --target minio
-      - uv run fip archive-bag-raw --run-id load-all --collection verblijfsobject --target minio
-      - uv run fip archive-bag-raw --run-id load-all --collection pand --target minio
-      - uv run fip archive-bag-raw --run-id load-all --collection adres --target minio
-      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id load-all --raw-target minio
-      - uv run fip build-gold-period-codes --table-id 83625NED --run-id load-all --raw-target minio
-      - uv run fip build-gold-region-codes --table-id 83625NED --run-id load-all --raw-target minio
-      - uv run fip ingest-cbs --table-id 83625NED --run-id load-all --raw-target minio
-      - uv run fip ingest-bag --collection verblijfsobject --run-id load-all --raw-target minio
-      - uv run fip ingest-bag --collection pand --run-id load-all --raw-target minio
-      - uv run fip ingest-bag --collection adres --run-id load-all --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 83625NED --run-id load-all --target s3
+      - uv run fip archive-bag-raw --run-id load-all --collection verblijfsobject --target s3
+      - uv run fip archive-bag-raw --run-id load-all --collection pand --target s3
+      - uv run fip archive-bag-raw --run-id load-all --collection adres --target s3
+      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id load-all --raw-target s3
+      - uv run fip build-gold-period-codes --table-id 83625NED --run-id load-all --raw-target s3
+      - uv run fip build-gold-region-codes --table-id 83625NED --run-id load-all --raw-target s3
+      - uv run fip ingest-cbs --table-id 83625NED --run-id load-all --raw-target s3
+      - uv run fip ingest-bag --collection verblijfsobject --run-id load-all --raw-target s3
+      - uv run fip ingest-bag --collection pand --run-id load-all --raw-target s3
+      - uv run fip ingest-bag --collection adres --run-id load-all --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id load-all
       - uv run fip build-bag-silver-verblijfsobject --run-id load-all
       - uv run fip build-bag-silver-pand --run-id load-all
       - uv run fip build-bag-silver-adressen --run-id load-all
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id load-all
-      - uv run fip archive-cbs-raw --table-id 85036NED --run-id load-all --target minio
-      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id load-all --raw-target minio
-      - uv run fip ingest-cbs --table-id 85036NED --run-id load-all --limit 10000 --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 85036NED --run-id load-all --target s3
+      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id load-all --raw-target s3
+      - uv run fip ingest-cbs --table-id 85036NED --run-id load-all --limit 10000 --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id load-all
       - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id load-all
-      - uv run fip archive-cbs-raw --table-id 85035NED --run-id load-all --target minio
-      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id load-all --raw-target minio
-      - uv run fip build-gold-period-codes --table-id 85035NED --run-id load-all --raw-target minio
-      - uv run fip build-gold-region-codes --table-id 85035NED --run-id load-all --raw-target minio
-      - uv run fip ingest-cbs --table-id 85035NED --run-id load-all --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 85035NED --run-id load-all --target s3
+      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id load-all --raw-target s3
+      - uv run fip build-gold-period-codes --table-id 85035NED --run-id load-all --raw-target s3
+      - uv run fip build-gold-region-codes --table-id 85035NED --run-id load-all --raw-target s3
+      - uv run fip ingest-cbs --table-id 85035NED --run-id load-all --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id load-all
       - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id load-all
       - uv run fip build-bag-landing-verblijfsobject --run-id load-all
@@ -204,32 +205,32 @@ tasks:
     cmds:
       - task: infra-up
       - task: infra-init
-      - uv run fip archive-cbs-raw --table-id 83625NED --run-id medium-load --target minio
-      - uv run fip archive-bag-raw --run-id medium-load --collection verblijfsobject --target minio --limit 1000
-      - uv run fip archive-bag-raw --run-id medium-load --collection pand --target minio --limit 1000
-      - uv run fip archive-bag-raw --run-id medium-load --collection adres --target minio --limit 1000
-      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id medium-load --raw-target minio
-      - uv run fip build-gold-period-codes --table-id 83625NED --run-id medium-load --raw-target minio
-      - uv run fip build-gold-region-codes --table-id 83625NED --run-id medium-load --raw-target minio
-      - uv run fip ingest-cbs --table-id 83625NED --run-id medium-load --raw-target minio
-      - uv run fip ingest-bag --collection verblijfsobject --run-id medium-load --limit 1000 --progress-every 100 --raw-target minio
-      - uv run fip ingest-bag --collection pand --run-id medium-load --limit 1000 --progress-every 100 --raw-target minio
-      - uv run fip ingest-bag --collection adres --run-id medium-load --limit 1000 --progress-every 100 --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 83625NED --run-id medium-load --target s3
+      - uv run fip archive-bag-raw --run-id medium-load --collection verblijfsobject --target s3 --limit 1000
+      - uv run fip archive-bag-raw --run-id medium-load --collection pand --target s3 --limit 1000
+      - uv run fip archive-bag-raw --run-id medium-load --collection adres --target s3 --limit 1000
+      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id medium-load --raw-target s3
+      - uv run fip build-gold-period-codes --table-id 83625NED --run-id medium-load --raw-target s3
+      - uv run fip build-gold-region-codes --table-id 83625NED --run-id medium-load --raw-target s3
+      - uv run fip ingest-cbs --table-id 83625NED --run-id medium-load --raw-target s3
+      - uv run fip ingest-bag --collection verblijfsobject --run-id medium-load --limit 1000 --progress-every 100 --raw-target s3
+      - uv run fip ingest-bag --collection pand --run-id medium-load --limit 1000 --progress-every 100 --raw-target s3
+      - uv run fip ingest-bag --collection adres --run-id medium-load --limit 1000 --progress-every 100 --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id medium-load
       - uv run fip build-bag-silver-verblijfsobject --run-id medium-load
       - uv run fip build-bag-silver-pand --run-id medium-load
       - uv run fip build-bag-silver-adressen --run-id medium-load
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id medium-load
-      - uv run fip archive-cbs-raw --table-id 85036NED --run-id medium-load --target minio
-      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id medium-load --raw-target minio
-      - uv run fip ingest-cbs --table-id 85036NED --run-id medium-load --limit 10000 --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 85036NED --run-id medium-load --target s3
+      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id medium-load --raw-target s3
+      - uv run fip ingest-cbs --table-id 85036NED --run-id medium-load --limit 10000 --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id medium-load
       - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id medium-load
-      - uv run fip archive-cbs-raw --table-id 85035NED --run-id medium-load --target minio
-      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id medium-load --raw-target minio
-      - uv run fip build-gold-period-codes --table-id 85035NED --run-id medium-load --raw-target minio
-      - uv run fip build-gold-region-codes --table-id 85035NED --run-id medium-load --raw-target minio
-      - uv run fip ingest-cbs --table-id 85035NED --run-id medium-load --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 85035NED --run-id medium-load --target s3
+      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id medium-load --raw-target s3
+      - uv run fip build-gold-period-codes --table-id 85035NED --run-id medium-load --raw-target s3
+      - uv run fip build-gold-region-codes --table-id 85035NED --run-id medium-load --raw-target s3
+      - uv run fip ingest-cbs --table-id 85035NED --run-id medium-load --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id medium-load
       - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id medium-load
       - uv run fip build-bag-landing-verblijfsobject --run-id medium-load
@@ -246,32 +247,32 @@ tasks:
     cmds:
       - task: infra-up
       - task: infra-init
-      - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-load --target minio
-      - uv run fip archive-bag-raw --run-id smoke-load --collection verblijfsobject --target minio --limit 25
-      - uv run fip archive-bag-raw --run-id smoke-load --collection pand --target minio --limit 25
-      - uv run fip archive-bag-raw --run-id smoke-load --collection adres --target minio --limit 25
-      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id smoke-load --raw-target minio
-      - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-load --raw-target minio
-      - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-load --raw-target minio
-      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-load --raw-target minio
-      - uv run fip ingest-bag --collection verblijfsobject --run-id smoke-load --limit 25 --progress-every 5 --raw-target minio
-      - uv run fip ingest-bag --collection pand --run-id smoke-load --limit 25 --progress-every 5 --raw-target minio
-      - uv run fip ingest-bag --collection adres --run-id smoke-load --limit 25 --progress-every 5 --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-load --target s3
+      - uv run fip archive-bag-raw --run-id smoke-load --collection verblijfsobject --target s3 --limit 25
+      - uv run fip archive-bag-raw --run-id smoke-load --collection pand --target s3 --limit 25
+      - uv run fip archive-bag-raw --run-id smoke-load --collection adres --target s3 --limit 25
+      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id smoke-load --raw-target s3
+      - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-load --raw-target s3
+      - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-load --raw-target s3
+      - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-load --raw-target s3
+      - uv run fip ingest-bag --collection verblijfsobject --run-id smoke-load --limit 25 --progress-every 5 --raw-target s3
+      - uv run fip ingest-bag --collection pand --run-id smoke-load --limit 25 --progress-every 5 --raw-target s3
+      - uv run fip ingest-bag --collection adres --run-id smoke-load --limit 25 --progress-every 5 --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id smoke-load
       - uv run fip build-bag-silver-verblijfsobject --run-id smoke-load
       - uv run fip build-bag-silver-pand --run-id smoke-load
       - uv run fip build-bag-silver-adressen --run-id smoke-load
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id smoke-load
-      - uv run fip archive-cbs-raw --table-id 85036NED --run-id smoke-load --target minio
-      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id smoke-load --raw-target minio
-      - uv run fip ingest-cbs --table-id 85036NED --run-id smoke-load --limit 10000 --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 85036NED --run-id smoke-load --target s3
+      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id smoke-load --raw-target s3
+      - uv run fip ingest-cbs --table-id 85036NED --run-id smoke-load --limit 10000 --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id smoke-load
       - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id smoke-load
-      - uv run fip archive-cbs-raw --table-id 85035NED --run-id smoke-load --target minio
-      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id smoke-load --raw-target minio
-      - uv run fip build-gold-period-codes --table-id 85035NED --run-id smoke-load --raw-target minio
-      - uv run fip build-gold-region-codes --table-id 85035NED --run-id smoke-load --raw-target minio
-      - uv run fip ingest-cbs --table-id 85035NED --run-id smoke-load --raw-target minio
+      - uv run fip archive-cbs-raw --table-id 85035NED --run-id smoke-load --target s3
+      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id smoke-load --raw-target s3
+      - uv run fip build-gold-period-codes --table-id 85035NED --run-id smoke-load --raw-target s3
+      - uv run fip build-gold-region-codes --table-id 85035NED --run-id smoke-load --raw-target s3
+      - uv run fip ingest-cbs --table-id 85035NED --run-id smoke-load --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id smoke-load
       - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id smoke-load
       - uv run fip build-bag-landing-verblijfsobject --run-id smoke-load
