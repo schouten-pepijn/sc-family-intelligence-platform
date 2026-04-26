@@ -38,6 +38,6 @@ select
     geometry_json,
     case
         when geometry_json is null then null
-        else ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(geometry_json), {{ var('region_source_srid', 28992) }}), 4326)
+        else ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(geometry_json), {{ var('region_source_srid', 4326) }}), 4326)
     end as geom
 from source
