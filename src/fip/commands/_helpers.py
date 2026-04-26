@@ -7,8 +7,8 @@ from typing import Iterator
 
 from fip.gold.cbs.cbs_reference_codes_writer import CBSReferenceCodeWriter
 from fip.ingestion.base import RawRecord, Source
-from fip.raw.reader import MinioRawSnapshotReader, RawSnapshotReader
-from fip.readback.duckdb import attach_lakekeeper_catalog, load_extensions
+from fip.raw.reader import S3RawSnapshotReader, RawSnapshotReader
+from fip.readback.duckdb import attach_iceberg_catalog, load_extensions
 from fip.readback.duckdb import connect as connect_duckdb
 from fip.settings import get_settings
 
@@ -44,9 +44,9 @@ def read_bronze_rows(
     conn = connect_duckdb()
     try:
         load_extensions(conn)
-        attach_lakekeeper_catalog(conn)
+        attach_iceberg_catalog(conn)
         ns = namespace or get_settings().bronze_namespace
-        query = f"SELECT * FROM lakekeeper_catalog.{ns}.{table_name}"
+        query = f"SELECT * FROM iceberg_catalog.{ns}.{table_name}"
         params: list[object] = []
         if run_id is not None:
             query += " WHERE run_id = ?"
@@ -64,9 +64,9 @@ def read_silver_rows(
     conn = connect_duckdb()
     try:
         load_extensions(conn)
-        attach_lakekeeper_catalog(conn)
+        attach_iceberg_catalog(conn)
         ns = namespace or get_settings().silver_namespace
-        query = f"SELECT * FROM lakekeeper_catalog.{ns}.{table_name}"
+        query = f"SELECT * FROM iceberg_catalog.{ns}.{table_name}"
         params: list[object] = []
         if run_id is not None:
             query += " WHERE run_id = ?"
@@ -81,16 +81,16 @@ def build_gold_reference_codes(
     run_id: str,
     entity: str,
     table_name: str,
-    raw_target: str = "local",
+    raw_target: str = "s3",
     raw_output_dir: Path = Path(".raw"),
 ) -> int:
-    reader: RawSnapshotReader | MinioRawSnapshotReader
+    reader: RawSnapshotReader | S3RawSnapshotReader
     if raw_target == "local":
         reader = RawSnapshotReader(base_dir=raw_output_dir)
-    elif raw_target == "minio":
-        reader = MinioRawSnapshotReader()
+    elif raw_target == "s3":
+        reader = S3RawSnapshotReader()
     else:
-        raise ValueError("raw_target must be either 'local' or 'minio'")
+        raise ValueError("raw_target must be either 'local' or 's3'")
 
     records = list(reader.iter_cbs_entity_records(table_id=table_id, run_id=run_id, entity=entity))
     sink = CBSReferenceCodeWriter(table_name=table_name, entity=entity)
