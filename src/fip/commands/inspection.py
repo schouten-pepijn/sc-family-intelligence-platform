@@ -14,7 +14,7 @@ from fip.gold.readback import sample_rows as sample_gold_rows
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.readback.duckdb import (
-    attach_lakekeeper_catalog,
+    attach_iceberg_catalog,
     count_rows,
     load_extensions,
     sample_rows,
@@ -74,7 +74,7 @@ def inspect_bronze(
     con = connect_duckdb()
     try:
         load_extensions(con)
-        attach_lakekeeper_catalog(con)
+        attach_iceberg_catalog(con)
         row_count = count_rows(con, table_name=table_name, namespace=namespace)
         rows = sample_rows(con, table_name=table_name, namespace=namespace, limit=limit)
     finally:
@@ -118,7 +118,7 @@ def inspect_cbs_silver(
     con = connect_duckdb()
     try:
         load_extensions(con)
-        attach_lakekeeper_catalog(con)
+        attach_iceberg_catalog(con)
         row_count = count_rows(con, table_name=table_name, namespace=silver_namespace)
         rows = sample_rows(con, table_name=table_name, namespace=silver_namespace, limit=limit)
     finally:
