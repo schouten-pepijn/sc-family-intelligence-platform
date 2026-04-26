@@ -77,15 +77,9 @@ services:
 
   polaris-setup:
     image: curlimages/curl:8.16.0
-    container_name: fip-polaris-setup
     profiles:
       - init
     restart: "no"
-    depends_on:
-      polaris:
-        condition: service_healthy
-      rustfs-init:
-        condition: service_completed_successfully
     environment:
       POLARIS_CATALOG_NAME: ${POLARIS_CATALOG_NAME}
       POLARIS_CLIENT_ID: ${POLARIS_CLIENT_ID}
@@ -98,6 +92,9 @@ services:
       - /bin/sh
       - -ec
       - |
+        until curl -fsS http://polaris:8182/q/health >/dev/null 2>&1; do
+          sleep 2
+        done
         token_response="$$(curl -sS -X POST \
           http://polaris:8181/api/catalog/v1/oauth/tokens \
           -H 'Content-Type: application/x-www-form-urlencoded' \
