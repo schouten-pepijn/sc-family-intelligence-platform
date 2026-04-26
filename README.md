@@ -7,9 +7,9 @@ Personal data platform for comparing Dutch regions, municipalities, and later sp
 The repo is in the first end-to-end data-platform phase. The current direction is:
 
 - Docker:
-  - MinIO for object storage
-  - Postgres for Lakekeeper persistence and the landing layer
-  - Lakekeeper as the Iceberg REST catalog
+  - RustFS for S3-compatible object storage
+  - Postgres for the landing layer
+  - Polaris as the Iceberg REST catalog
 - Local:
   - Python ingestion and write scripts
   - DuckDB for validation and ad-hoc analysis against Iceberg data
@@ -38,7 +38,7 @@ separate price-index mart instead of a `GMxxxx`-wide snapshot.
 
 The pipeline is intentionally split by grain:
 
-- `raw`: 1-to-1 snapshots of source payloads as JSONL files in MinIO or local disk
+- `raw`: 1-to-1 snapshots of source payloads as JSONL files in RustFS or local disk
 - `gold`: small source reference tables that should stay close to the upstream API, such as CBS measure, period, and region codes
 - `bronze`: append-only Iceberg ingest from raw source records
 - `silver`: normalized domain tables and source-specific transforms
@@ -56,7 +56,7 @@ The main rule is:
 The local validation loop is:
 
 - `task test-unit` for fast code-level checks
-- `task test-raw` for the raw landing-pad smoke test against MinIO
+- `task test-raw` for the raw landing-pad smoke test against RustFS
 - `task test-integration` for the Bronze -> Silver -> landing roundtrip against the local stack
 - `task cbs-flow` for the CBS-only raw -> Bronze -> Silver -> landing -> dbt flow, isolated with `run_id=smoke-flow`
 - `task load-woz` for the CBS 85036NED flow with its own raw -> Bronze -> Silver -> landing -> dbt path, isolated with `run_id=woz-load`, including the `EigendomCodes` codelist
@@ -68,9 +68,9 @@ The local validation loop is:
 ## Quick Start
 
 1. `task setup`
-   Installs dependencies, starts the local stack, and initializes the MinIO bucket.
+   Installs dependencies, starts the local stack, and initializes the RustFS bucket and Polaris catalog.
 2. `task test-raw`
-   Verifies the raw landing-pad in MinIO.
+   Verifies the raw landing-pad in RustFS.
 3. `task cbs-flow`
    Runs the CBS-only flow from raw through Bronze, Silver, landing, and dbt with `run_id=smoke-flow`.
 4. `task load-woz`
@@ -100,8 +100,8 @@ The local validation loop is:
 
 ## Near-Term Plan
 
-1. Keep the local stack focused: MinIO + Postgres + Lakekeeper in Docker, Python + DuckDB locally.
-2. Bronze Iceberg writes through Lakekeeper are working, and Bronze is append-only.
+1. Keep the local stack focused: RustFS + Postgres + Polaris in Docker, Python + DuckDB locally.
+2. Bronze Iceberg writes through Polaris are working, and Bronze is append-only.
 3. DuckDB readback and the `inspect-bronze` CLI path are working.
 4. CBS Silver full refresh, DuckDB readback, and the `inspect-cbs-silver` CLI path are working.
    The Silver package now splits shared sink mechanics into `silver/core` and
@@ -119,7 +119,7 @@ The local pipeline currently looks like this:
 1. `archive-cbs-raw`
    Persist CBS source payloads as raw JSONL snapshots.
 2. `ingest-cbs`
-   Bronze ingest from raw CBS snapshots into Iceberg through Lakekeeper.
+   Bronze ingest from raw CBS snapshots into Iceberg through Polaris.
 3. `inspect-bronze`
    DuckDB validation against the Bronze Iceberg tables.
 4. CBS reference code builders
@@ -131,7 +131,7 @@ The local pipeline currently looks like this:
 7. `archive-bag-raw`
    Persist BAG source payloads as raw JSONL snapshots. The BAG archive path now flushes in chunks instead of buffering the whole collection in memory.
 8. `ingest-bag`
-   Bronze ingest from raw BAG snapshots into Iceberg through Lakekeeper.
+   Bronze ingest from raw BAG snapshots into Iceberg through Polaris.
 9. `build-bag-silver-verblijfsobject`
    Build the first BAG Silver slice from `bag_verblijfsobject`.
 10. `build-bag-silver-pand`
@@ -161,20 +161,20 @@ Current write semantics:
 
 The local infrastructure now consists of:
 
-- `minio`: object storage for raw data and Iceberg table files
-- `minio-init`: creates the configured bucket on startup
-- `postgres`: metadata database for Lakekeeper and future landing store
-- `lakekeeper-migrate`: runs catalog migrations once
-- `lakekeeper`: serves the UI, management API, and Iceberg REST catalog
-- `lakekeeper-bootstrap`: bootstraps the catalog in unsecured local mode
-- `lakekeeper-create-warehouse`: creates the initial MinIO-backed warehouse
+- `rustfs`: S3-compatible object storage for raw data and Iceberg table files
+- `rustfs-init`: creates the configured bucket on startup
+- `postgres`: landing store for dbt input tables
+- `polaris`: serves the Iceberg REST catalog and management API
+- `polaris-setup`: creates the initial RustFS-backed Polaris catalog
 
 Default host endpoints:
 
-- MinIO API: `http://localhost:9000`
-- MinIO Console: `http://localhost:9001`
+- RustFS S3 API: `http://localhost:9000`
+- RustFS Console: `http://localhost:9001`
 - Postgres: `localhost:55432`
-- Lakekeeper UI and API: `http://localhost:8181`
+- Polaris Iceberg REST API: `http://localhost:8181/api/catalog`
+- Polaris management API: `http://localhost:8181/api/management`
+- Polaris health API: `http://localhost:8182/q/health`
 
 Bring the stack up with:
 
@@ -184,9 +184,7 @@ docker compose up -d
 
 The first startup sequence is:
 
-1. `minio` and `postgres` come up.
-2. `minio-init` creates the bucket.
-3. `lakekeeper-migrate` initializes the catalog schema in Postgres.
-4. `lakekeeper` starts serving on port `8181`.
-5. `lakekeeper-bootstrap` accepts the local terms bootstrap.
-6. `lakekeeper-create-warehouse` registers the first MinIO-backed warehouse.
+1. `rustfs` and `postgres` come up.
+2. `rustfs-init` creates the bucket.
+3. `polaris` starts serving on port `8181`.
+4. `polaris-setup` creates the first RustFS-backed catalog.
