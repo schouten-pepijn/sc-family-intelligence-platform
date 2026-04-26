@@ -5,9 +5,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    lakekeeper_catalog_uri: str = Field(
-        default="http://localhost:8181/catalog",
-        validation_alias="LAKEKEEPER_CATALOG_URI",
+    polaris_catalog_uri: str = Field(
+        default="http://localhost:8181/api/catalog",
+        validation_alias="POLARIS_CATALOG_URI",
+    )
+    polaris_oauth2_uri: str = Field(
+        default="http://localhost:8181/api/catalog/v1/oauth/tokens",
+        validation_alias="POLARIS_OAUTH2_URI",
     )
     bronze_namespace: str = Field(
         default="bronze",
@@ -17,9 +21,21 @@ class Settings(BaseSettings):
         default="silver",
         validation_alias=AliasChoices("FIP_SILVER_NAMESPACE", "SILVER_NAMESPACE"),
     )
-    lakekeeper_warehouse_name: str = Field(
-        default="local",
-        validation_alias="LAKEKEEPER_WAREHOUSE_NAME",
+    polaris_catalog_name: str = Field(
+        default="fip_catalog",
+        validation_alias="POLARIS_CATALOG_NAME",
+    )
+    polaris_client_id: str = Field(
+        default="root",
+        validation_alias="POLARIS_CLIENT_ID",
+    )
+    polaris_client_secret: str = Field(
+        default="s3cr3t",
+        validation_alias="POLARIS_CLIENT_SECRET",
+    )
+    polaris_scope: str = Field(
+        default="PRINCIPAL_ROLE:ALL",
+        validation_alias="POLARIS_SCOPE",
     )
     aws_region: str = Field(
         default="local-01",
@@ -30,12 +46,12 @@ class Settings(BaseSettings):
         validation_alias="S3_ENDPOINT",
     )
     s3_access_key_id: str = Field(
-        default="minio",
-        validation_alias=AliasChoices("S3_ACCESS_KEY_ID", "MINIO_ROOT_USER"),
+        default="rustfsadmin",
+        validation_alias=AliasChoices("S3_ACCESS_KEY_ID", "RUSTFS_ACCESS_KEY"),
     )
     s3_secret_access_key: str = Field(
-        default="minio123",
-        validation_alias=AliasChoices("S3_SECRET_ACCESS_KEY", "MINIO_ROOT_PASSWORD"),
+        default="rustfsadmin",
+        validation_alias=AliasChoices("S3_SECRET_ACCESS_KEY", "RUSTFS_SECRET_KEY"),
     )
     s3_path_style_access: bool = Field(
         default=True,
