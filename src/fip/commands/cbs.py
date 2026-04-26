@@ -20,8 +20,8 @@ from fip.lakehouse.silver.cbs.cbs_observations_service import (
     write_bronze_rows_to_cbs_observation_sink,
 )
 from fip.lakehouse.silver.cbs.cbs_observations_sink import CBSObservationSink
-from fip.raw.reader import MinioRawSnapshotReader, RawSnapshotReader
-from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
+from fip.raw.reader import S3RawSnapshotReader, RawSnapshotReader
+from fip.raw.writer import S3RawSnapshotWriter, RawSnapshotWriter
 from fip.settings import get_settings
 
 
@@ -31,19 +31,22 @@ def ingest_cbs(
     run_id: str = typer.Option(..., help="Run identifier for this ingestion."),
     target_namespace: str | None = typer.Option(None, help="Target Iceberg namespace."),
     limit: int = typer.Option(1000, min=1, help="Maximum number of CBS records to ingest."),
-    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_target: str = typer.Option(
+        "s3",
+        help="Raw source: local JSONL files or S3-compatible object storage.",
+    ),
     raw_output_dir: Path = Path(".raw"),
 ) -> None:
     if target_namespace is None:
         target_namespace = get_settings().bronze_namespace
 
-    reader: RawSnapshotReader | MinioRawSnapshotReader
+    reader: RawSnapshotReader | S3RawSnapshotReader
     if raw_target == "local":
         reader = RawSnapshotReader(base_dir=raw_output_dir)
-    elif raw_target == "minio":
-        reader = MinioRawSnapshotReader()
+    elif raw_target == "s3":
+        reader = S3RawSnapshotReader()
     else:
-        raise typer.BadParameter("raw_target must be either 'local' or 'minio'")
+        raise typer.BadParameter("raw_target must be either 'local' or 's3'")
 
     sink_factory = CBSIcebergSinkFactory(namespace=target_namespace)
     grouped_records: dict[str, list[RawRecord]] = {}
@@ -73,20 +76,20 @@ def archive_cbs_raw(
         help="Maximum number of raw records to archive. Leave unset for a full pull.",
     ),
     target: str = typer.Option(
-        "local",
-        help="Raw storage target: local JSONL files or MinIO object storage.",
+        "s3",
+        help="Raw storage target: local JSONL files or S3-compatible object storage.",
     ),
     output_dir: Path = Path(".raw"),
 ) -> None:
     source = CBSODataSource(table_id=table_id, run_id=run_id)
 
-    writer: RawSnapshotWriter | MinioRawSnapshotWriter
+    writer: RawSnapshotWriter | S3RawSnapshotWriter
     if target == "local":
         writer = RawSnapshotWriter(base_dir=str(output_dir))
-    elif target == "minio":
-        writer = MinioRawSnapshotWriter()
+    elif target == "s3":
+        writer = S3RawSnapshotWriter()
     else:
-        raise typer.BadParameter("target must be either 'local' or 'minio'")
+        raise typer.BadParameter("target must be either 'local' or 's3'")
 
     grouped: dict[str, list[RawRecord]] = {}
     archived = 0
@@ -138,7 +141,10 @@ def build_cbs_silver_observations(
 def build_gold_measure_codes(
     table_id: str = typer.Option("83625NED", help="CBS table id to ingest."),
     run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
-    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_target: str = typer.Option(
+        "s3",
+        help="Raw source: local JSONL files or S3-compatible object storage.",
+    ),
     raw_output_dir: Path = Path(".raw"),
 ) -> None:
     written = build_gold_reference_codes(
@@ -156,7 +162,10 @@ def build_gold_measure_codes(
 def build_gold_period_codes(
     table_id: str = typer.Option("83625NED", help="CBS table id to ingest."),
     run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
-    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_target: str = typer.Option(
+        "s3",
+        help="Raw source: local JSONL files or S3-compatible object storage.",
+    ),
     raw_output_dir: Path = Path(".raw"),
 ) -> None:
     written = build_gold_reference_codes(
@@ -174,7 +183,10 @@ def build_gold_period_codes(
 def build_gold_region_codes(
     table_id: str = typer.Option("83625NED", help="CBS table id to ingest."),
     run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
-    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_target: str = typer.Option(
+        "s3",
+        help="Raw source: local JSONL files or S3-compatible object storage.",
+    ),
     raw_output_dir: Path = Path(".raw"),
 ) -> None:
     written = build_gold_reference_codes(
@@ -192,7 +204,10 @@ def build_gold_region_codes(
 def build_gold_eigendom_codes(
     table_id: str = typer.Option("85036NED", help="CBS table id to ingest."),
     run_id: str = typer.Option("debug-raw", help="Run identifier for this export."),
-    raw_target: str = typer.Option("local", help="Raw source: local JSONL files or MinIO."),
+    raw_target: str = typer.Option(
+        "s3",
+        help="Raw source: local JSONL files or S3-compatible object storage.",
+    ),
     raw_output_dir: Path = Path(".raw"),
 ) -> None:
     written = build_gold_reference_codes(
