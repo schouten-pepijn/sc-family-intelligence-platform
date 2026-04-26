@@ -140,7 +140,6 @@ tasks:
   load-woz:
     desc: "Load the CBS 85036NED observations flow, including raw, bronze, silver, landing, and dbt"
     cmds:
-      - task: infra-up
       - task: infra-init
       - uv run fip archive-cbs-raw --table-id 85036NED --run-id woz-load --target s3
       - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id woz-load --raw-target s3
@@ -159,7 +158,6 @@ tasks:
   load-all:
     desc: "Load the full CBS + BAG data flow, including bridge and dbt models"
     cmds:
-      - task: infra-up
       - task: infra-init
       - uv run fip archive-cbs-raw --table-id 83625NED --run-id load-all --target s3
       - uv run fip archive-bag-raw --run-id load-all --collection verblijfsobject --target s3
@@ -201,7 +199,6 @@ tasks:
   load-medium:
     desc: "Load the CBS + BAG data flow with medium BAG limits"
     cmds:
-      - task: infra-up
       - task: infra-init
       - uv run fip archive-cbs-raw --table-id 83625NED --run-id medium-load --target s3
       - uv run fip archive-bag-raw --run-id medium-load --collection verblijfsobject --target s3 --limit 1000
@@ -243,7 +240,6 @@ tasks:
   load-smoke:
     desc: "Load the full CBS + BAG data flow with small limits"
     cmds:
-      - task: infra-up
       - task: infra-init
       - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-load --target s3
       - uv run fip archive-bag-raw --run-id smoke-load --collection verblijfsobject --target s3 --limit 25
