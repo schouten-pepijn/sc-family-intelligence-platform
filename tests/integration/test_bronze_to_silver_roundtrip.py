@@ -161,11 +161,12 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     assert row[5] == 200
     assert row[6] == 0
     assert row[7] == "M001534"
-    assert row[8] == "1995JJ00"
-    assert row[9] == "NL01"
-    assert row[10] == 93750.0
-    assert row[11] == "None"
-    assert row[12] is None
+    assert row[8] is None
+    assert row[9] == "1995JJ00"
+    assert row[10] == "NL01"
+    assert row[11] == 93750.0
+    assert row[12] == "None"
+    assert row[13] is None
 
     landing_writer = CBSObservationLandingWriter(table_name=landing_table_name)
     landing_written = write_rows_to_sink(silver_rows_for_gold, landing_writer)
@@ -198,8 +199,9 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
     assert gold_row[5] == 200
     assert gold_row[6] == 0
     assert gold_row[7] == "M001534"
-    assert gold_row[8] == "1995JJ00"
-    assert gold_row[9] == "NL01"
-    assert gold_row[10] == 93750.0
-    assert gold_row[11] == "None"
-    assert gold_row[12] is None
+    assert gold_row[8] is None
+    assert gold_row[9] == "1995JJ00"
+    assert gold_row[10] == "NL01"
+    assert gold_row[11] == 93750.0
+    assert gold_row[12] == "None"
+    assert gold_row[13] is None
