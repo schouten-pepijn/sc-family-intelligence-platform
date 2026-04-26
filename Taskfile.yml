@@ -356,7 +356,7 @@ tasks:
   dbt-test-smoke:
     desc: Run a smoke-sized dbt test selection for the changed CBS, housing, and spatial models
     cmds:
-      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 stg_cbs_observations_85036 stg_bag_adressen_spatial stg_bag_pand_spatial stg_region_geom mart_cbs_observation_exceptions mart_municipality_housing_snapshot mart_municipality_woz_snapshot mart_bag_data_quality_by_municipality source:landing.cbs_observations_85035ned source:landing.cbs_observations_85036ned source:landing.region_geom
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 stg_cbs_observations_85036 stg_bag_adressen_spatial stg_bag_pand_spatial stg_region_geom mart_bag_region_bridge_comparison mart_cbs_observation_exceptions mart_municipality_housing_snapshot mart_municipality_woz_snapshot mart_bag_data_quality_by_municipality source:landing.cbs_observations_85035ned source:landing.cbs_observations_85036ned source:landing.region_geom
 
   precommit:
     desc: Run pre-commit on all files
