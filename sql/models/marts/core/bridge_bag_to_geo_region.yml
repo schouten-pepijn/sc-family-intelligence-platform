@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: bridge_bag_to_geo_region
-    description: Explicit bridge from BAG objects to the conformed geo region dimension.
+    description: Public spatial bridge from BAG objects to the conformed geo region dimension.
     columns:
       - name: bag_object_id
         tests:
