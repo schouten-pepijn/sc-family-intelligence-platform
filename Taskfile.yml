@@ -100,6 +100,21 @@ tasks:
     cmds:
       - uv run pytest tests/integration -m integration
 
+  test-spatial:
+    desc: Run only the spatial integration validation test
+    env:
+      FIP_RUN_INTEGRATION: "1"
+    cmds:
+      - uv run pytest tests/integration/test_spatial_validations.py -q
+
+  check-spatial-sql:
+    desc: Run the SQL spatial health-check against the local Postgres container (no Python deps)
+    cmds:
+      - task: infra-up
+      - >-
+        cat ops/postgres/spatial_health_check.sql | docker compose exec -T postgres sh -lc
+        'PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -q'
+
   test-raw:
     desc: Run the raw landing smoke test against RustFS
     cmds:
