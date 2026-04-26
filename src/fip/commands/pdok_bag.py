@@ -28,8 +28,8 @@ from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_service import (
 from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import (
     BAGVerblijfsobjectSink,
 )
-from fip.raw.reader import MinioRawSnapshotReader, RawSnapshotReader
-from fip.raw.writer import MinioRawSnapshotWriter, RawSnapshotWriter
+from fip.raw.reader import S3RawSnapshotReader, RawSnapshotReader
+from fip.raw.writer import S3RawSnapshotWriter, RawSnapshotWriter
 from fip.settings import get_settings
 
 RAW_ARCHIVE_BATCH_SIZE = 1000
@@ -38,12 +38,12 @@ RAW_ARCHIVE_BATCH_SIZE = 1000
 def _bag_raw_reader(
     raw_target: str,
     raw_output_dir: Path,
-) -> RawSnapshotReader | MinioRawSnapshotReader:
+) -> RawSnapshotReader | S3RawSnapshotReader:
     if raw_target == "local":
         return RawSnapshotReader(base_dir=raw_output_dir)
-    if raw_target == "minio":
-        return MinioRawSnapshotReader()
-    raise typer.BadParameter("raw_target must be either 'local' or 'minio'")
+    if raw_target == "s3":
+        return S3RawSnapshotReader()
+    raise typer.BadParameter("raw_target must be either 'local' or 's3'")
 
 
 @app.command("ingest-bag")
@@ -68,8 +68,8 @@ def ingest_bag(
         help="Print progress every N records while reading BAG.",
     ),
     raw_target: str = typer.Option(
-        "minio",
-        help="Raw source target: local JSONL files or MinIO object storage.",
+        "s3",
+        help="Raw source target: local JSONL files or S3-compatible object storage.",
     ),
     raw_output_dir: Path = Path(".raw"),
 ) -> None:
@@ -108,18 +108,21 @@ def archive_bag_raw(
         None,
         help="Maximum number of raw records to archive. Leave unset for a full pull.",
     ),
-    target: str = typer.Option("local", help="Raw storage target: local JSONL files or MinIO."),
+    target: str = typer.Option(
+        "s3",
+        help="Raw storage target: local JSONL files or S3-compatible object storage.",
+    ),
     output_dir: Path = Path(".raw"),
 ) -> None:
     source = PDOKBAGSource(run_id=run_id, collection=collection)
 
-    writer: RawSnapshotWriter | MinioRawSnapshotWriter
+    writer: RawSnapshotWriter | S3RawSnapshotWriter
     if target == "local":
         writer = RawSnapshotWriter(base_dir=str(output_dir))
-    elif target == "minio":
-        writer = MinioRawSnapshotWriter()
+    elif target == "s3":
+        writer = S3RawSnapshotWriter()
     else:
-        raise typer.BadParameter("target must be either 'local' or 'minio'")
+        raise typer.BadParameter("target must be either 'local' or 's3'")
 
     buffers: dict[str, list[RawRecord]] = defaultdict(list)
     archived = 0
