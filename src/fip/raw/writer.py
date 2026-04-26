@@ -59,7 +59,7 @@ class RawSnapshotWriter:
             raise ValueError("RawSnapshotWriter.write expects records for a single entity")
 
 
-class MinioRawSnapshotWriter:
+class S3RawSnapshotWriter:
     def __init__(
         self,
         bucket: str | None = None,
@@ -112,4 +112,4 @@ class MinioRawSnapshotWriter:
     def _validate_single_entity(self, records: list[RawRecord]) -> None:
         first_entity = records[0].entity_name
         if any(record.entity_name != first_entity for record in records):
-            raise ValueError("MinioRawSnapshotWriter.write expects records for a single entity")
+            raise ValueError("S3RawSnapshotWriter.write expects records for a single entity")

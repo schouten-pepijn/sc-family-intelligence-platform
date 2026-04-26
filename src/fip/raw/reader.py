@@ -53,7 +53,7 @@ class RawSnapshotReader:
                     yield deserialize_raw_record(line)
 
 
-class MinioRawSnapshotReader:
+class S3RawSnapshotReader:
     def __init__(
         self,
         bucket: str | None = None,
