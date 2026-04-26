@@ -23,7 +23,7 @@ legacy_candidates as (
             partition by bag_object_id, bag_object_type
             order by active_from desc nulls last, active_to desc nulls last, region_id
         ) as legacy_row_number
-    from {{ ref('bridge_bag_to_geo_region') }}
+    from {{ ref('bridge_bag_to_geo_region_legacy_code') }}
     where bag_object_type = 'bag_adres'
 ),
 legacy as (

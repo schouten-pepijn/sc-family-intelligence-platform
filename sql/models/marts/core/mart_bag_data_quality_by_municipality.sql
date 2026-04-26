@@ -1,7 +1,7 @@
 {{ config(materialized='table') }}
 
 {# Municipality-level BAG data-quality mart.
-   This keeps the existing BAG municipality bridge and makes coverage and
+   This uses the spatial BAG municipality bridge and makes coverage and
    missing-field problems visible per GMxxxx region. #}
 with regions as (
     select

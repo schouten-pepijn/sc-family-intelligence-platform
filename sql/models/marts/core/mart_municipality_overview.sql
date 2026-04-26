@@ -1,5 +1,8 @@
 {{ config(materialized='table') }}
 
+{# First consumable cross-source mart:
+   CBS municipality/region statistics with BAG address coverage.
+   The BAG side now comes from the spatial bridge. #}
 with regions as (
     select
         region_id,

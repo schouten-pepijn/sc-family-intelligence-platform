@@ -1,9 +1,10 @@
 {{ config(materialized='table') }}
 
 {# First compact housing snapshot:
-   one row per municipality with BAG context and the latest known average
-   purchase price from CBS table 83625NED (measure M001534), plus the latest
-   housing-stock and average-surface signals from CBS table 85035NED. #}
+   one row per municipality with BAG context from the spatial bridge and the
+   latest known average purchase price from CBS table 83625NED (measure
+   M001534), plus the latest housing-stock and average-surface signals from
+   CBS table 85035NED. #}
 with municipality_base as (
     select *
     from {{ ref('mart_municipality_overview') }}

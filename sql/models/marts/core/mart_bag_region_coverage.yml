@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: mart_bag_region_coverage
-    description: Cross-source mart summarizing BAG address mappings by CBS region.
+    description: Cross-source mart summarizing spatial BAG address mappings by CBS region. The legacy locatieserver count is retained as a compatibility field and is expected to be zero after cutover.
     columns:
       - name: region_id
         tests:
