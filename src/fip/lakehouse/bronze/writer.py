@@ -5,6 +5,7 @@ from pyiceberg.catalog import Catalog, load_catalog
 from pyiceberg.table import Table
 
 from fip.ingestion.base import RawRecord
+from fip.lakehouse.config import configure_table_io_for_host, iceberg_catalog_properties
 from fip.settings import get_settings
 
 BRONZE_ROW_FIELDS = (
@@ -47,6 +48,7 @@ class IcebergSink:
         arrow_table = self._to_arrow_table(self.last_written_rows)
         catalog = self._load_catalog()
         table = self._ensure_table(catalog, arrow_table.schema)
+        configure_table_io_for_host(table, get_settings())
         table.append(
             arrow_table,
             snapshot_properties={
@@ -96,21 +98,8 @@ class IcebergSink:
         # Catalog is loaded fresh per write to handle credential rotation and
         # allow independent connection lifecycle management per sink instance.
         settings = get_settings()
-        properties: dict[str, str] = {
-            "s3.endpoint": settings.s3_endpoint,
-            "s3.access-key-id": settings.s3_access_key_id,
-            "s3.secret-access-key": settings.s3_secret_access_key,
-            "s3.region": settings.aws_region,
-            "s3.force-virtual-addressing": str(not settings.s3_path_style_access).lower(),
-        }
 
-        return load_catalog(
-            "lakekeeper",
-            type="rest",
-            uri=settings.lakekeeper_catalog_uri,
-            warehouse=settings.lakekeeper_warehouse_name,
-            **properties,
-        )
+        return load_catalog("polaris", **iceberg_catalog_properties(settings))
 
     def _ensure_namespace(self, catalog: Catalog) -> None:
         catalog.create_namespace_if_not_exists(self._namespace())
