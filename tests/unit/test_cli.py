@@ -716,7 +716,7 @@ def test_inspect_bronze_command_prints_row_count_and_rows(monkeypatch) -> None:
     def fake_load_extensions(con: object) -> None:
         calls["extensions_loaded"] = con
 
-    def fake_attach_lakekeeper_catalog(con: object) -> None:
+    def fake_attach_iceberg_catalog(con: object) -> None:
         calls["catalog_attached"] = con
 
     def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
@@ -738,8 +738,8 @@ def test_inspect_bronze_command_prints_row_count_and_rows(monkeypatch) -> None:
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog",
-        fake_attach_lakekeeper_catalog,
+        "fip.commands.inspection.attach_iceberg_catalog",
+        fake_attach_iceberg_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -782,7 +782,7 @@ def test_inspect_bag_bronze_command_prints_row_count_and_rows(monkeypatch) -> No
     def fake_load_extensions(con: object) -> None:
         calls["extensions_loaded"] = con
 
-    def fake_attach_lakekeeper_catalog(con: object) -> None:
+    def fake_attach_iceberg_catalog(con: object) -> None:
         calls["catalog_attached"] = con
 
     def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
@@ -804,8 +804,8 @@ def test_inspect_bag_bronze_command_prints_row_count_and_rows(monkeypatch) -> No
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog",
-        fake_attach_lakekeeper_catalog,
+        "fip.commands.inspection.attach_iceberg_catalog",
+        fake_attach_iceberg_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -844,7 +844,7 @@ def test_inspect_bag_bronze_command_supports_pand_collection(monkeypatch) -> Non
     def fake_load_extensions(con: object) -> None:
         calls["extensions_loaded"] = con
 
-    def fake_attach_lakekeeper_catalog(con: object) -> None:
+    def fake_attach_iceberg_catalog(con: object) -> None:
         calls["catalog_attached"] = con
 
     def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
@@ -866,8 +866,8 @@ def test_inspect_bag_bronze_command_supports_pand_collection(monkeypatch) -> Non
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog",
-        fake_attach_lakekeeper_catalog,
+        "fip.commands.inspection.attach_iceberg_catalog",
+        fake_attach_iceberg_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -1343,7 +1343,7 @@ def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
     def fake_load_extensions(con: object) -> None:
         calls["extensions_loaded"] = con
 
-    def fake_attach_lakekeeper_catalog(con: object) -> None:
+    def fake_attach_iceberg_catalog(con: object) -> None:
         calls["catalog_attached"] = con
 
     def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
@@ -1365,8 +1365,8 @@ def test_inspect_silver_command_prints_row_count_and_rows(monkeypatch) -> None:
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog",
-        fake_attach_lakekeeper_catalog,
+        "fip.commands.inspection.attach_iceberg_catalog",
+        fake_attach_iceberg_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -1407,7 +1407,7 @@ def test_inspect_bag_silver_command_prints_row_count_and_rows(monkeypatch) -> No
     def fake_load_extensions(con: object) -> None:
         calls["extensions_loaded"] = con
 
-    def fake_attach_lakekeeper_catalog(con: object) -> None:
+    def fake_attach_iceberg_catalog(con: object) -> None:
         calls["catalog_attached"] = con
 
     def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
@@ -1429,8 +1429,8 @@ def test_inspect_bag_silver_command_prints_row_count_and_rows(monkeypatch) -> No
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog",
-        fake_attach_lakekeeper_catalog,
+        "fip.commands.inspection.attach_iceberg_catalog",
+        fake_attach_iceberg_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
@@ -1469,7 +1469,7 @@ def test_inspect_bag_silver_pand_command_prints_row_count_and_rows(monkeypatch) 
     def fake_load_extensions(con: object) -> None:
         calls["extensions_loaded"] = con
 
-    def fake_attach_lakekeeper_catalog(con: object) -> None:
+    def fake_attach_iceberg_catalog(con: object) -> None:
         calls["catalog_attached"] = con
 
     def fake_count_rows(con: object, table_name: str, namespace: str | None) -> int:
@@ -1491,8 +1491,8 @@ def test_inspect_bag_silver_pand_command_prints_row_count_and_rows(monkeypatch) 
     monkeypatch.setattr("fip.commands.inspection.connect_duckdb", fake_connect_duckdb)
     monkeypatch.setattr("fip.commands.inspection.load_extensions", fake_load_extensions)
     monkeypatch.setattr(
-        "fip.commands.inspection.attach_lakekeeper_catalog",
-        fake_attach_lakekeeper_catalog,
+        "fip.commands.inspection.attach_iceberg_catalog",
+        fake_attach_iceberg_catalog,
     )
     monkeypatch.setattr("fip.commands.inspection.count_rows", fake_count_rows)
     monkeypatch.setattr("fip.commands.inspection.sample_rows", fake_sample_rows)
