@@ -57,7 +57,7 @@ def test_ingest_cbs_command_invokes_service_and_prints_result(monkeypatch) -> No
             return FakeSink()
 
     monkeypatch.setattr("fip.commands.cbs.RawSnapshotReader", FakeReader)
-    monkeypatch.setattr("fip.commands.cbs.MinioRawSnapshotReader", FakeReader)
+    monkeypatch.setattr("fip.commands.cbs.S3RawSnapshotReader", FakeReader)
     monkeypatch.setattr("fip.commands.cbs.CBSIcebergSinkFactory", FakeSinkFactory)
 
     result = runner.invoke(
@@ -135,7 +135,7 @@ def test_ingest_bag_command_invokes_service_and_prints_result(monkeypatch) -> No
             return FakeSink()
 
     monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotReader", FakeReader)
-    monkeypatch.setattr("fip.commands.pdok_bag.MinioRawSnapshotReader", FakeReader)
+    monkeypatch.setattr("fip.commands.pdok_bag.S3RawSnapshotReader", FakeReader)
     monkeypatch.setattr("fip.commands.pdok_bag.BAGIcebergSinkFactory", FakeSinkFactory)
 
     result = runner.invoke(
@@ -206,7 +206,7 @@ def test_ingest_bag_command_supports_pand_collection(monkeypatch) -> None:
             return FakeSink()
 
     monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotReader", FakeReader)
-    monkeypatch.setattr("fip.commands.pdok_bag.MinioRawSnapshotReader", FakeReader)
+    monkeypatch.setattr("fip.commands.pdok_bag.S3RawSnapshotReader", FakeReader)
     monkeypatch.setattr("fip.commands.pdok_bag.BAGIcebergSinkFactory", FakeSinkFactory)
 
     result = runner.invoke(
@@ -362,7 +362,7 @@ def test_inspect_bag_raw_command_supports_pand_collection(monkeypatch) -> None:
     ("target", "expected_writer"),
     [
         ("local", "local"),
-        ("minio", "minio"),
+        ("s3", "s3"),
     ],
 )
 def test_archive_cbs_raw_command_selects_target_writer(
@@ -397,9 +397,9 @@ def test_archive_cbs_raw_command_selects_target_writer(
             calls["rows"] = rows
             return len(rows)
 
-    class FakeMinioWriter:
+    class FakeS3Writer:
         def __init__(self) -> None:
-            calls["writer"] = "minio"
+            calls["writer"] = "s3"
 
         def write(self, records) -> int:
             rows = list(records)
@@ -408,7 +408,7 @@ def test_archive_cbs_raw_command_selects_target_writer(
 
     monkeypatch.setattr("fip.commands.cbs.CBSODataSource", FakeSource)
     monkeypatch.setattr("fip.commands.cbs.RawSnapshotWriter", FakeLocalWriter)
-    monkeypatch.setattr("fip.commands.cbs.MinioRawSnapshotWriter", FakeMinioWriter)
+    monkeypatch.setattr("fip.commands.cbs.S3RawSnapshotWriter", FakeS3Writer)
 
     result = runner.invoke(
         cli.app,
@@ -441,7 +441,7 @@ def test_archive_cbs_raw_command_selects_target_writer(
     ("target", "expected_writer"),
     [
         ("local", "local"),
-        ("minio", "minio"),
+        ("s3", "s3"),
     ],
 )
 def test_archive_bag_raw_command_selects_target_writer(
@@ -486,9 +486,9 @@ def test_archive_bag_raw_command_selects_target_writer(
             calls["rows"] = rows
             return len(rows)
 
-    class FakeMinioWriter:
+    class FakeS3Writer:
         def __init__(self) -> None:
-            calls["writer"] = "minio"
+            calls["writer"] = "s3"
 
         def write(self, records) -> int:
             rows = list(records)
@@ -497,7 +497,7 @@ def test_archive_bag_raw_command_selects_target_writer(
 
     monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
     monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotWriter", FakeLocalWriter)
-    monkeypatch.setattr("fip.commands.pdok_bag.MinioRawSnapshotWriter", FakeMinioWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.S3RawSnapshotWriter", FakeS3Writer)
 
     result = runner.invoke(
         cli.app,
@@ -530,7 +530,7 @@ def test_archive_bag_raw_command_selects_target_writer(
     ("target", "expected_writer"),
     [
         ("local", "local"),
-        ("minio", "minio"),
+        ("s3", "s3"),
     ],
 )
 def test_archive_bag_raw_command_supports_pand_collection(
@@ -568,9 +568,9 @@ def test_archive_bag_raw_command_supports_pand_collection(
             calls["rows"] = rows
             return len(rows)
 
-    class FakeMinioWriter:
+    class FakeS3Writer:
         def __init__(self) -> None:
-            calls["writer"] = "minio"
+            calls["writer"] = "s3"
 
         def write(self, records) -> int:
             rows = list(records)
@@ -579,7 +579,7 @@ def test_archive_bag_raw_command_supports_pand_collection(
 
     monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
     monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotWriter", FakeLocalWriter)
-    monkeypatch.setattr("fip.commands.pdok_bag.MinioRawSnapshotWriter", FakeMinioWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.S3RawSnapshotWriter", FakeS3Writer)
 
     result = runner.invoke(
         cli.app,
@@ -676,7 +676,7 @@ def test_build_gold_reference_commands_filter_records_and_write(
             return len(self.rows)
 
     monkeypatch.setattr("fip.commands._helpers.RawSnapshotReader", FakeSource)
-    monkeypatch.setattr("fip.commands._helpers.MinioRawSnapshotReader", FakeSource)
+    monkeypatch.setattr("fip.commands._helpers.S3RawSnapshotReader", FakeSource)
     monkeypatch.setattr("fip.commands._helpers.CBSReferenceCodeWriter", FakeWriter)
 
     result = runner.invoke(

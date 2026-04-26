@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fip.ingestion.base import RawRecord
 from fip.raw.writer import (
-    MinioRawSnapshotWriter,
+    S3RawSnapshotWriter,
     RawSnapshotWriter,
     serialize_raw_record,
 )
@@ -57,7 +57,7 @@ def test_serialize_raw_record_returns_json_payload() -> None:
     assert '"payload": {' in line
 
 
-def test_minio_raw_snapshot_writer_writes_jsonl(monkeypatch) -> None:
+def test_s3_raw_snapshot_writer_writes_jsonl(monkeypatch) -> None:
     class FakeFile:
         def __init__(self, buffer: io.StringIO) -> None:
             self.buffer = buffer
@@ -81,7 +81,7 @@ def test_minio_raw_snapshot_writer_writes_jsonl(monkeypatch) -> None:
 
     monkeypatch.setattr("fip.raw.writer.s3fs.S3FileSystem", FakeS3FileSystem)
 
-    writer = MinioRawSnapshotWriter(bucket="fip-lakehouse")
+    writer = S3RawSnapshotWriter(bucket="fip-lakehouse")
     records = [
         make_record("83625NED.MeasureCodes", "M001534", {"Identifier": "M001534", "Title": "A"}),
         make_record("83625NED.MeasureCodes", "M001535", {"Identifier": "M001535", "Title": "B"}),
@@ -122,7 +122,7 @@ def test_raw_snapshot_writer_writes_bag_jsonl(tmp_path: Path) -> None:
     assert path.read_text(encoding="utf-8").count("\n") == 2
 
 
-def test_minio_raw_snapshot_writer_writes_bag_jsonl(monkeypatch) -> None:
+def test_s3_raw_snapshot_writer_writes_bag_jsonl(monkeypatch) -> None:
     class FakeFile:
         def __init__(self, buffer: io.StringIO) -> None:
             self.buffer = buffer
@@ -146,7 +146,7 @@ def test_minio_raw_snapshot_writer_writes_bag_jsonl(monkeypatch) -> None:
 
     monkeypatch.setattr("fip.raw.writer.s3fs.S3FileSystem", FakeS3FileSystem)
 
-    writer = MinioRawSnapshotWriter(bucket="fip-lakehouse")
+    writer = S3RawSnapshotWriter(bucket="fip-lakehouse")
     records = [
         make_record(
             "bag.verblijfsobject",
@@ -191,7 +191,7 @@ def test_raw_snapshot_writer_writes_bag_pand_jsonl(tmp_path: Path) -> None:
     assert path.read_text(encoding="utf-8").count("\n") == 1
 
 
-def test_minio_raw_snapshot_writer_writes_bag_pand_jsonl(monkeypatch) -> None:
+def test_s3_raw_snapshot_writer_writes_bag_pand_jsonl(monkeypatch) -> None:
     class FakeFile:
         def __init__(self, buffer: io.StringIO) -> None:
             self.buffer = buffer
@@ -215,7 +215,7 @@ def test_minio_raw_snapshot_writer_writes_bag_pand_jsonl(monkeypatch) -> None:
 
     monkeypatch.setattr("fip.raw.writer.s3fs.S3FileSystem", FakeS3FileSystem)
 
-    writer = MinioRawSnapshotWriter(bucket="fip-lakehouse")
+    writer = S3RawSnapshotWriter(bucket="fip-lakehouse")
     records = [
         make_record(
             "bag.pand",
