@@ -34,6 +34,14 @@ to `GMxxxx`.
 Netherlands, provinces, and the 4 largest municipalities, so it belongs in a
 separate price-index mart instead of a `GMxxxx`-wide snapshot.
 
+The BAG-to-municipality bridge is now spatial by default:
+
+- `bridge_bag_to_geo_region` delegates to the spatial bridge
+- `bridge_bag_to_geo_region_legacy_code` preserves the old GM-code path for
+  parity checks and rollback
+- `mart_bag_region_bridge_comparison` is the migration check between the two
+  paths
+
 ## Data Layers
 
 The pipeline is intentionally split by grain:
@@ -108,7 +116,9 @@ The local validation loop is:
    source-specific transforms into `silver/cbs/...` and `silver/pdok_bag/...`.
 5. BAG raw, Bronze, Silver, and landing slices are present for `verblijfsobject`, `pand`, and `adres`.
 6. The BAG raw archive path now flushes in chunks instead of buffering a whole collection in memory.
-7. The BAG geo bridge now uses the `adres -> GMxxxx` MVP mapping, with Locatieserver only as fallback.
+7. The BAG geo bridge now uses the spatial municipality bridge by default; the
+   GM-code path remains available as `bridge_bag_to_geo_region_legacy_code`
+   for comparison and rollback.
 8. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
 9. Raw-reuse for ingest is in place; each full-chain task keeps a single `run_id` end-to-end. The next implementation steps are stronger BAG end-to-end validation, more marts on top of the current reference dims, and possibly COPY-based Postgres landing writes if landing becomes the bottleneck.
 
