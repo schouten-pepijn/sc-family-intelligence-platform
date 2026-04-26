@@ -8,7 +8,7 @@ The repo is in the first end-to-end data-platform phase. The current direction i
 
 - Docker:
   - RustFS for S3-compatible object storage
-  - Postgres for the landing layer
+  - Postgres for the landing layer, with PostGIS enabled
   - Polaris as the Iceberg REST catalog
 - Local:
   - Python ingestion and write scripts
@@ -68,7 +68,7 @@ The local validation loop is:
 ## Quick Start
 
 1. `task setup`
-   Installs dependencies, starts the local stack, and initializes the RustFS bucket and Polaris catalog.
+   Installs dependencies, starts the local stack, initializes the RustFS bucket, and initializes the Polaris catalog.
 2. `task test-raw`
    Verifies the raw landing-pad in RustFS.
 3. `task cbs-flow`
@@ -162,10 +162,10 @@ Current write semantics:
 The local infrastructure now consists of:
 
 - `rustfs`: S3-compatible object storage for raw data and Iceberg table files
-- `rustfs-init`: creates the configured bucket on startup
-- `postgres`: landing store for dbt input tables
+- `rustfs-init`: creates the configured bucket on demand during `task infra-init`
+- `postgres`: landing store for dbt input tables, with PostGIS enabled
 - `polaris`: serves the Iceberg REST catalog and management API
-- `polaris-setup`: creates the initial RustFS-backed Polaris catalog
+- `polaris-setup`: creates the initial RustFS-backed Polaris catalog during `task infra-init`
 
 Default host endpoints:
 
@@ -182,9 +182,8 @@ Bring the stack up with:
 docker compose up -d
 ```
 
-The first startup sequence is:
+The bootstrap sequence is:
 
-1. `rustfs` and `postgres` come up.
-2. `rustfs-init` creates the bucket.
-3. `polaris` starts serving on port `8181`.
-4. `polaris-setup` creates the first RustFS-backed catalog.
+1. `task infra-up` starts `rustfs`, `postgres`, and `polaris`.
+2. `task infra-init` runs one-off init jobs for `rustfs-init` and `polaris-setup`.
+3. The landing `postgres` image includes PostGIS, so the spatial dbt task can run against the same database as the landing models.
