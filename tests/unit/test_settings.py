@@ -1,12 +1,12 @@
 from fip.settings import Settings
 
 
-def test_settings_reads_lakekeeper_catalog_uri_from_explicit_env(monkeypatch) -> None:
-    monkeypatch.setenv("LAKEKEEPER_CATALOG_URI", "http://localhost:9999/catalog")
+def test_settings_reads_polaris_catalog_uri_from_explicit_env(monkeypatch) -> None:
+    monkeypatch.setenv("POLARIS_CATALOG_URI", "http://localhost:9999/api/catalog")
 
     settings = Settings()
 
-    assert settings.lakekeeper_catalog_uri == "http://localhost:9999/catalog"
+    assert settings.polaris_catalog_uri == "http://localhost:9999/api/catalog"
 
 
 def test_settings_reads_bronze_namespace_from_fip_prefixed_env(monkeypatch) -> None:
@@ -25,17 +25,17 @@ def test_settings_reads_silver_namespace_from_fip_prefixed_env(monkeypatch) -> N
     assert settings.silver_namespace == "gold-silver"
 
 
-def test_settings_reads_lakekeeper_warehouse_name_from_env(monkeypatch) -> None:
-    monkeypatch.setenv("LAKEKEEPER_WAREHOUSE_NAME", "demo")
+def test_settings_reads_polaris_catalog_name_from_env(monkeypatch) -> None:
+    monkeypatch.setenv("POLARIS_CATALOG_NAME", "demo")
 
     settings = Settings()
 
-    assert settings.lakekeeper_warehouse_name == "demo"
+    assert settings.polaris_catalog_name == "demo"
 
 
-def test_settings_reads_minio_credentials_via_existing_env_names(monkeypatch) -> None:
-    monkeypatch.setenv("MINIO_ROOT_USER", "test-user")
-    monkeypatch.setenv("MINIO_ROOT_PASSWORD", "test-pass")
+def test_settings_reads_rustfs_credentials_via_env_names(monkeypatch) -> None:
+    monkeypatch.setenv("RUSTFS_ACCESS_KEY", "test-user")
+    monkeypatch.setenv("RUSTFS_SECRET_KEY", "test-pass")
 
     settings = Settings()
 

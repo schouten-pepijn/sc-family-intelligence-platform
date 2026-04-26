@@ -130,7 +130,7 @@ def test_iceberg_sink_namespace_returns_first_identifier_part() -> None:
     assert sink._namespace() == "bronze"
 
 
-def test_iceberg_sink_load_catalog_uses_expected_lakekeeper_and_s3_settings(
+def test_iceberg_sink_load_catalog_uses_expected_polaris_and_s3_settings(
     monkeypatch,
 ) -> None:
     captured: dict[str, object] = {}
@@ -143,11 +143,15 @@ def test_iceberg_sink_load_catalog_uses_expected_lakekeeper_and_s3_settings(
     monkeypatch.setattr(
         "fip.lakehouse.bronze.writer.get_settings",
         lambda: Settings(
-            lakekeeper_catalog_uri="http://localhost:8181/catalog",
-            lakekeeper_warehouse_name="local-host",
-            s3_endpoint="http://192.168.1.89:9000",
-            s3_access_key_id="minio",
-            s3_secret_access_key="minio123",
+            polaris_catalog_uri="http://localhost:8181/api/catalog",
+            polaris_oauth2_uri="http://localhost:8181/api/catalog/v1/oauth/tokens",
+            polaris_catalog_name="fip_catalog",
+            polaris_client_id="root",
+            polaris_client_secret="s3cr3t",
+            polaris_scope="PRINCIPAL_ROLE:ALL",
+            s3_endpoint="http://localhost:9000",
+            s3_access_key_id="rustfsadmin",
+            s3_secret_access_key="rustfsadmin",
             aws_region="local-01",
             s3_path_style_access=True,
         ),
@@ -159,16 +163,19 @@ def test_iceberg_sink_load_catalog_uses_expected_lakekeeper_and_s3_settings(
     catalog = sink._load_catalog()
 
     assert catalog is not None
-    assert captured["name"] == "lakekeeper"
+    assert captured["name"] == "polaris"
     assert captured["properties"] == {
         "type": "rest",
-        "uri": "http://localhost:8181/catalog",
-        "warehouse": "local-host",
-        "s3.endpoint": "http://192.168.1.89:9000",
-        "s3.access-key-id": "minio",
-        "s3.secret-access-key": "minio123",
+        "uri": "http://localhost:8181/api/catalog",
+        "warehouse": "fip_catalog",
+        "credential": "root:s3cr3t",
+        "scope": "PRINCIPAL_ROLE:ALL",
+        "oauth2-server-uri": "http://localhost:8181/api/catalog/v1/oauth/tokens",
+        "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+        "s3.endpoint": "http://localhost:9000",
+        "s3.access-key-id": "rustfsadmin",
+        "s3.secret-access-key": "rustfsadmin",
         "s3.region": "local-01",
-        "s3.force-virtual-addressing": "false",
     }
 
 
