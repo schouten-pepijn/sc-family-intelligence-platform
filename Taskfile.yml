@@ -20,7 +20,6 @@ tasks:
       - task: env
       - task: install
       - task: sql-install
-      - task: infra-up
       - task: infra-init
 
   install:
@@ -34,20 +33,19 @@ tasks:
       - uv sync --project sql
 
   infra-up:
-    desc: Start the local RustFS, Postgres, PostGIS, and Polaris stack
+    desc: Start the local RustFS, Postgres, and Polaris stack
     cmds:
-      - docker compose up -d
+      - docker compose up -d rustfs postgres polaris
 
   infra-down:
     desc: Stop the local RustFS, Postgres, PostGIS, and Polaris stack
     cmds:
-      - docker compose down
+      - docker compose down --remove-orphans
 
   infra-vol-down:
     desc: Stop the stack and remove volumes (data will be lost)
     cmds:
-      - docker compose down -v
-      - docker volume prune -f
+      - docker compose down -v --remove-orphans
 
   reset-data:
     desc: Stop the stack, remove volumes, and clear local generated data
@@ -59,10 +57,11 @@ tasks:
         [shutil.rmtree(path, ignore_errors=True) for path in paths]"
 
   infra-init:
-    desc: Create the local RustFS bucket and Polaris catalog used by the project
+    desc: Ensure the local RustFS bucket and Polaris catalog are initialized
     cmds:
-      - docker compose --profile init up rustfs-init
-      - docker compose --profile init up polaris-setup
+      - task: infra-up
+      - docker compose --profile init run --rm --no-deps rustfs-init
+      - docker compose --profile init run --rm --no-deps polaris-setup
 
   format:
     desc: Format the codebase
@@ -107,7 +106,7 @@ tasks:
       - task: infra-init
       - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-raw --target s3
       - >-
-        docker compose run --rm --entrypoint /bin/sh rustfs-init -lc 'aws --endpoint-url "$S3_ENDPOINT_INTERNAL"
+        docker compose --profile init run --rm --no-deps --entrypoint /bin/sh rustfs-init -lc 'aws --endpoint-url "$S3_ENDPOINT_INTERNAL"
         s3 ls "s3://$S3_BUCKET/raw/cbs/83625NED/smoke-raw/"'
 
   test-all:
