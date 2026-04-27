@@ -1343,6 +1343,75 @@ def test_build_silver_bag_verblijfsobject_command_reads_bronze_and_writes_silver
     assert sink.table_ident == "silver.bag_verblijfsobject_flat"
 
 
+def test_build_bag_gpkg_silver_verblijfsobject_command_reads_bronze_and_writes_silver(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeBagGpkgSilverSink:
+        def __init__(self, table_ident: str) -> None:
+            self.table_ident = table_ident
+            calls["table_ident"] = table_ident
+
+    def fake_read_bronze_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
+        return [
+            {
+                "source_name": "bag_gpkg",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-19T17:43:42.077000Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "payload": "{}",
+            }
+        ]
+
+    def fake_write_bronze_rows_to_bag_gpkg_verblijfsobject_sink(
+        bronze_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["bronze_rows"] = bronze_rows
+        calls["sink"] = sink
+        return 1
+
+    monkeypatch.setattr("fip.commands.pdok_bag.read_bronze_rows", fake_read_bronze_rows)
+    monkeypatch.setattr("fip.commands.pdok_bag.BAGGpkgVerblijfsobjectSink", FakeBagGpkgSilverSink)
+    monkeypatch.setattr(
+        "fip.commands.pdok_bag.write_bronze_rows_to_bag_gpkg_verblijfsobject_sink",
+        fake_write_bronze_rows_to_bag_gpkg_verblijfsobject_sink,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-bag-gpkg-silver-verblijfsobject",
+            "--table",
+            "bag_gpkg_verblijfsobject",
+            "--run-id",
+            "smoke-load",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 BAG GPKG Silver rows\n"
+    assert calls["read_table_name"] == "bag_gpkg_verblijfsobject"
+    assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "smoke-load"
+    assert calls["table_ident"] == "silver.bag_gpkg_verblijfsobject_flat"
+    bronze_rows = cast(list[dict[str, object]], calls["bronze_rows"])
+    assert len(bronze_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeBagGpkgSilverSink)
+    assert sink.table_ident == "silver.bag_gpkg_verblijfsobject_flat"
+
+
 def test_build_silver_bag_pand_command_reads_bronze_and_writes_silver(
     monkeypatch,
 ) -> None:
@@ -1489,6 +1558,86 @@ def test_build_bag_landing_verblijfsobject_command_reads_silver_and_writes_landi
     sink = calls["sink"]
     assert isinstance(sink, FakeBAGLandingWriter)
     assert sink.table_name == "bag_verblijfsobject"
+
+
+def test_build_bag_gpkg_landing_verblijfsobject_command_reads_silver_and_writes_landing(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeBAGGpkgLandingWriter:
+        def __init__(self, table_name: str) -> None:
+            self.table_name = table_name
+            calls["table_name"] = table_name
+
+    def fake_read_silver_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
+        calls["read_table_name"] = table_name
+        calls["read_namespace"] = namespace
+        calls["read_run_id"] = run_id
+        return [
+            {
+                "source_name": "bag_gpkg",
+                "natural_key": "1",
+                "retrieved_at": "2026-04-19T17:43:42.077000Z",
+                "run_id": "run-001",
+                "schema_version": "v1",
+                "http_status": 200,
+                "bag_id": "bag-1",
+                "verblijfsobject_identificatie": "0000010000057469",
+                "hoofdadres_identificatie": "0000200000057534",
+                "postcode": "6131BE",
+                "huisnummer": 32,
+                "huisletter": "A",
+                "toevoeging": None,
+                "woonplaats_naam": "Sittard",
+                "openbare_ruimte_naam": "Steenweg",
+                "gebruiksdoel": "woonfunctie",
+                "oppervlakte": 72,
+                "geometry": '{"type": "Point"}',
+            }
+        ]
+
+    def fake_write_rows_to_sink(
+        silver_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["silver_rows"] = silver_rows
+        calls["sink"] = sink
+        return len(silver_rows)
+
+    monkeypatch.setattr("fip.commands.pdok_bag.read_silver_rows", fake_read_silver_rows)
+    monkeypatch.setattr(
+        "fip.commands.pdok_bag.BAGGpkgVerblijfsobjectLandingWriter",
+        FakeBAGGpkgLandingWriter,
+    )
+    monkeypatch.setattr("fip.commands.pdok_bag.write_rows_to_sink", fake_write_rows_to_sink)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-bag-gpkg-landing-verblijfsobject",
+            "--table",
+            "bag_gpkg_verblijfsobject_flat",
+            "--run-id",
+            "smoke-load",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 BAG GPKG landing rows\n"
+    assert calls["read_table_name"] == "bag_gpkg_verblijfsobject_flat"
+    assert calls["read_namespace"] is None
+    assert calls["read_run_id"] == "smoke-load"
+    assert calls["table_name"] == "bag_gpkg_verblijfsobject"
+    silver_rows = cast(list[dict[str, object]], calls["silver_rows"])
+    assert len(silver_rows) == 1
+    sink = calls["sink"]
+    assert isinstance(sink, FakeBAGGpkgLandingWriter)
+    assert sink.table_name == "bag_gpkg_verblijfsobject"
 
 
 def test_build_bag_landing_pand_command_reads_silver_and_writes_landing(
