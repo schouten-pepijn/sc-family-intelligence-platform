@@ -2,12 +2,22 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TextIO
+from typing import Protocol
 
 import s3fs  # type: ignore[import-untyped]
 
 from fip.ingestion.base import RawRecord
 from fip.settings import Settings, get_settings
+
+
+class RawSnapshotWriteHandle(Protocol):
+    def write(self, text: str) -> object: ...
+
+    def close(self) -> None: ...
+
+    def __enter__(self) -> RawSnapshotWriteHandle: ...
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> object: ...
 
 
 def serialize_raw_record(record: RawRecord) -> str:
@@ -42,7 +52,7 @@ class RawSnapshotWriter:
 
         return len(records)
 
-    def open_for_record(self, record: RawRecord) -> TextIO:
+    def open_for_record(self, record: RawRecord) -> RawSnapshotWriteHandle:
         path = self._snapshot_path(record)
         path.parent.mkdir(parents=True, exist_ok=True)
         return path.open("w", encoding="utf-8")
@@ -100,7 +110,7 @@ class S3RawSnapshotWriter:
 
         return len(records)
 
-    def open_for_record(self, record: RawRecord) -> TextIO:
+    def open_for_record(self, record: RawRecord) -> RawSnapshotWriteHandle:
         return self.filesystem.open(self._snapshot_path(record), "w", encoding="utf-8")
 
     def _build_filesystem(self, settings: Settings) -> s3fs.S3FileSystem:
