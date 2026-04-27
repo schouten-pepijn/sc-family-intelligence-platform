@@ -397,6 +397,19 @@ def test_archive_cbs_raw_command_selects_target_writer(
             calls["rows"] = rows
             return len(rows)
 
+        def open_for_record(self, record: RawRecord):
+            calls["rows"] = []
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    if value != "\n":
+                        calls["rows"].append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
+
     class FakeS3Writer:
         def __init__(self) -> None:
             calls["writer"] = "s3"
@@ -405,6 +418,19 @@ def test_archive_cbs_raw_command_selects_target_writer(
             rows = list(records)
             calls["rows"] = rows
             return len(rows)
+
+        def open_for_record(self, record: RawRecord):
+            calls["rows"] = []
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    if value != "\n":
+                        calls["rows"].append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
 
     monkeypatch.setattr("fip.commands.cbs.CBSODataSource", FakeSource)
     monkeypatch.setattr("fip.commands.cbs.RawSnapshotWriter", FakeLocalWriter)
@@ -519,9 +545,9 @@ def test_archive_bag_raw_command_selects_target_writer(
     assert calls["run_id"] == "debug-raw"
     assert calls["collection"] == "verblijfsobject"
     assert calls["writer"] == expected_writer
-    rows = cast(list[RawRecord], calls["rows"])
+    rows = cast(list[str], calls["rows"])
     assert len(rows) == 1
-    assert rows[0].entity_name == "bag.verblijfsobject"
+    assert '"entity_name": "bag.verblijfsobject"' in rows[0]
     if target == "local":
         assert calls["base_dir"] == ".raw-smoke"
 
@@ -568,6 +594,19 @@ def test_archive_bag_raw_command_supports_pand_collection(
             calls["rows"] = rows
             return len(rows)
 
+        def open_for_record(self, record: RawRecord):
+            calls["rows"] = []
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    if value != "\n":
+                        calls["rows"].append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
+
     class FakeS3Writer:
         def __init__(self) -> None:
             calls["writer"] = "s3"
@@ -576,6 +615,19 @@ def test_archive_bag_raw_command_supports_pand_collection(
             rows = list(records)
             calls["rows"] = rows
             return len(rows)
+
+        def open_for_record(self, record: RawRecord):
+            calls["rows"] = []
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    if value != "\n":
+                        calls["rows"].append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
 
     monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
     monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotWriter", FakeLocalWriter)
@@ -603,9 +655,9 @@ def test_archive_bag_raw_command_supports_pand_collection(
     assert calls["run_id"] == "debug-raw"
     assert calls["collection"] == "pand"
     assert calls["writer"] == expected_writer
-    rows = cast(list[RawRecord], calls["rows"])
+    rows = cast(list[str], calls["rows"])
     assert len(rows) == 1
-    assert rows[0].entity_name == "bag.pand"
+    assert '"entity_name": "bag.pand"' in rows[0]
 
 
 @pytest.mark.parametrize(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TextIO
 
 import s3fs  # type: ignore[import-untyped]
 
@@ -34,15 +35,17 @@ class RawSnapshotWriter:
             return 0
 
         self._validate_single_entity(records)
-        path = self._snapshot_path(records[0])
-        path.parent.mkdir(parents=True, exist_ok=True)
-
-        with path.open("w", encoding="utf-8") as handle:
+        with self.open_for_record(records[0]) as handle:
             for record in records:
                 handle.write(serialize_raw_record(record))
                 handle.write("\n")
 
         return len(records)
+
+    def open_for_record(self, record: RawRecord) -> TextIO:
+        path = self._snapshot_path(record)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path.open("w", encoding="utf-8")
 
     def _snapshot_path(self, record: RawRecord) -> Path:
         if record.source_name == "cbs_statline":
@@ -74,14 +77,15 @@ class S3RawSnapshotWriter:
             return 0
 
         self._validate_single_entity(records)
-        path = self._snapshot_path(records[0])
-
-        with self.filesystem.open(path, "w", encoding="utf-8") as handle:
+        with self.open_for_record(records[0]) as handle:
             for record in records:
                 handle.write(serialize_raw_record(record))
                 handle.write("\n")
 
         return len(records)
+
+    def open_for_record(self, record: RawRecord) -> TextIO:
+        return self.filesystem.open(self._snapshot_path(record), "w", encoding="utf-8")
 
     def _build_filesystem(self, settings: Settings) -> s3fs.S3FileSystem:
         config_kwargs: dict[str, dict[str, str]] | None = None

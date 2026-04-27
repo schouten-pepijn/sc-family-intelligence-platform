@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from pathlib import Path
+from typing import TextIO
 
 import typer
 
@@ -29,11 +29,8 @@ from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import (
     BAGVerblijfsobjectSink,
 )
 from fip.raw.reader import S3RawSnapshotReader, RawSnapshotReader
-from fip.raw.writer import S3RawSnapshotWriter, RawSnapshotWriter
+from fip.raw.writer import S3RawSnapshotWriter, RawSnapshotWriter, serialize_raw_record
 from fip.settings import get_settings
-
-RAW_ARCHIVE_BATCH_SIZE = 1000
-
 
 def _bag_raw_reader(
     raw_target: str,
@@ -124,24 +121,29 @@ def archive_bag_raw(
     else:
         raise typer.BadParameter("target must be either 'local' or 's3'")
 
-    buffers: dict[str, list[RawRecord]] = defaultdict(list)
     archived = 0
-    written = 0
-    for record in source.iter_records():
-        archived += 1
-        buffer = buffers[record.entity_name]
-        buffer.append(record)
-        if len(buffer) >= RAW_ARCHIVE_BATCH_SIZE:
-            written += writer.write(buffer)
-            buffers[record.entity_name] = []
-        if limit is not None and archived >= limit:
-            break
+    expected_entity: str | None = None
+    handle: TextIO | None = None
 
-    for records in buffers.values():
-        if records:
-            written += writer.write(records)
+    try:
+        for record in source.iter_records():
+            if expected_entity is None:
+                expected_entity = record.entity_name
+                handle = writer.open_for_record(record)
+            elif record.entity_name != expected_entity:
+                raise ValueError("archive-bag-raw expects records for a single BAG collection")
 
-    typer.echo(f"Wrote {written} raw records")
+            assert handle is not None
+            handle.write(serialize_raw_record(record))
+            handle.write("\n")
+            archived += 1
+            if limit is not None and archived >= limit:
+                break
+    finally:
+        if handle is not None:
+            handle.close()
+
+    typer.echo(f"Wrote {archived} raw records")
 
 
 @app.command("build-bag-silver-verblijfsobject")
