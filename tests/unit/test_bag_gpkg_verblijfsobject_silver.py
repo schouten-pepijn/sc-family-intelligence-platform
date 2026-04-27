@@ -33,7 +33,7 @@ def make_bag_gpkg_bronze_row(natural_key: str, bag_id: str) -> dict[str, object]
                 },
                 "properties": {
                     "identificatie": "0000010000057469",
-                    "hoofdadres_identificatie": "0000200000057534",
+                    "nummeraanduiding_hoofdadres_identificatie": "0000200000057534",
                     "postcode": "6131BE",
                     "huisnummer": 32,
                     "huisletter": "A",

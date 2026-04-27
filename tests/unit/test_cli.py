@@ -748,10 +748,17 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
     calls: dict[str, object] = {}
 
     class FakeSource:
-        def __init__(self, run_id: str, source_ref: str, layer: str = "verblijfsobject") -> None:
+        def __init__(
+            self,
+            run_id: str,
+            source_ref: str,
+            layer: str = "verblijfsobject",
+            max_features: int | None = None,
+        ) -> None:
             calls["run_id"] = run_id
             calls["source_ref"] = source_ref
             calls["layer"] = layer
+            calls["max_features"] = max_features
 
         def iter_records(self):
             yield RawRecord(
@@ -834,6 +841,7 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
     assert calls["run_id"] == "debug-gpkg"
     assert calls["source_ref"] == "data/pdok-bag/bag-light.gpkg"
     assert calls["layer"] == "verblijfsobject"
+    assert calls["max_features"] == 1
     assert calls["writer"] == expected_writer
     rows = cast(list[str], calls["rows"])
     assert len(rows) == 1

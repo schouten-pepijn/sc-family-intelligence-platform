@@ -20,6 +20,23 @@ def test_bag_iceberg_sink_factory_routes_bag_gpkg_verblijfsobject_to_expected_ta
     assert sink.table_ident == "bronze.bag_gpkg_verblijfsobject"
 
 
+def test_bag_iceberg_sink_factory_routes_bag_gpkg_layers_to_expected_tables() -> None:
+    factory = BAGIcebergSinkFactory()
+
+    expected_tables = {
+        "bag_gpkg.pand": "bronze.bag_gpkg_pand",
+        "bag_gpkg.woonplaats": "bronze.bag_gpkg_woonplaats",
+        "bag_gpkg.ligplaats": "bronze.bag_gpkg_ligplaats",
+        "bag_gpkg.standplaats": "bronze.bag_gpkg_standplaats",
+    }
+
+    for entity_name, table_ident in expected_tables.items():
+        sink = factory.for_entity(entity_name)
+
+        assert isinstance(sink, IcebergSink)
+        assert sink.table_ident == table_ident
+
+
 def test_bag_iceberg_sink_factory_routes_pand_to_expected_table() -> None:
     factory = BAGIcebergSinkFactory()
 
