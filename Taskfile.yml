@@ -315,9 +315,28 @@ tasks:
     cmds:
       - task: infra-init
       - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer verblijfsobject --target s3 --limit 25
+      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer pand --target s3 --limit 25
+      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer woonplaats --target s3 --limit 25
+      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer ligplaats --target s3 --limit 25
+      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer standplaats --target s3 --limit 25
       - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer verblijfsobject --raw-target s3 --limit 25 --progress-every 5
+      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer pand --raw-target s3 --limit 25 --progress-every 5
+      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer woonplaats --raw-target s3 --limit 25 --progress-every 5
+      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer ligplaats --raw-target s3 --limit 25 --progress-every 5
+      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer standplaats --raw-target s3 --limit 25 --progress-every 5
       - uv run fip build-bag-gpkg-silver-verblijfsobject --run-id bag-gpkg-smoke
+      - uv run fip build-bag-gpkg-silver-pand --run-id bag-gpkg-smoke
+      - uv run fip build-bag-gpkg-silver-woonplaats --run-id bag-gpkg-smoke
+      - uv run fip build-bag-gpkg-silver-ligplaats --run-id bag-gpkg-smoke
+      - uv run fip build-bag-gpkg-silver-standplaats --run-id bag-gpkg-smoke
       - uv run fip build-bag-gpkg-landing-verblijfsobject --run-id bag-gpkg-smoke
+      - uv run fip build-bag-gpkg-landing-pand --run-id bag-gpkg-smoke
+      - uv run fip build-bag-gpkg-landing-woonplaats --run-id bag-gpkg-smoke
+      - uv run fip build-bag-gpkg-landing-ligplaats --run-id bag-gpkg-smoke
+      - uv run fip build-bag-gpkg-landing-standplaats --run-id bag-gpkg-smoke
+      - task: load-region-geom
+      - uv run --project sql dbt run --project-dir sql --profiles-dir sql --select +bridge_bag_gpkg_verblijfsobject_to_region_spatial
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_bag_gpkg_verblijfsobject stg_bag_gpkg_verblijfsobject_spatial bridge_bag_gpkg_verblijfsobject_to_region_spatial
 
   check:
     desc: Run the standard local quality gate
