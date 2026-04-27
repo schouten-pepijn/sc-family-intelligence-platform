@@ -756,7 +756,7 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
         def iter_records(self):
             yield RawRecord(
                 source_name="bag_gpkg",
-                entity_name="bag.verblijfsobject",
+                entity_name="bag_gpkg.verblijfsobject",
                 natural_key="0003010000126809",
                 retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
                 run_id="debug-gpkg",
@@ -837,7 +837,7 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
     assert calls["writer"] == expected_writer
     rows = cast(list[str], calls["rows"])
     assert len(rows) == 1
-    assert '"entity_name": "bag.verblijfsobject"' in rows[0]
+    assert '"entity_name": "bag_gpkg.verblijfsobject"' in rows[0]
     assert '"source_name": "bag_gpkg"' in rows[0]
     if target == "local":
         assert calls["base_dir"] == ".raw-smoke"
