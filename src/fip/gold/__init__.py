@@ -10,6 +10,9 @@ from fip.gold.cbs.cbs_reference_codes_writer import (
 from fip.gold.core.postgres import PostgresFullRefreshWriter
 from fip.gold.core.service import PostgresSink, write_rows_to_sink
 from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
+from fip.gold.pdok_bag.bag_gpkg_verblijfsobject_writer import (
+    BAGGpkgVerblijfsobjectLandingWriter,
+)
 from fip.gold.pdok_bag.bag_verblijfsobject_writer import (
     BAGVerblijfsobjectLandingWriter,
 )
@@ -17,6 +20,7 @@ from fip.gold.readback import connect, count_rows, sample_rows
 
 __all__ = [
     "BAGPandLandingWriter",
+    "BAGGpkgVerblijfsobjectLandingWriter",
     "BAGVerblijfsobjectLandingWriter",
     "CBS_OBSERVATION_FIELDS",
     "CBSObservationLandingWriter",
