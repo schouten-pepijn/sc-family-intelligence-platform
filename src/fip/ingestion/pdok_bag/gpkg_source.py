@@ -77,7 +77,7 @@ class PDOKBAGGeoPackageSource:
 
             yield RawRecord(
                 source_name=self.name,
-                entity_name="bag.verblijfsobject",
+                entity_name="bag_gpkg.verblijfsobject",
                 natural_key=identificatie,
                 retrieved_at=datetime.now(timezone.utc),
                 run_id=self.run_id,
