@@ -10,7 +10,7 @@ def test_raw_snapshot_reader_reads_bag_gpkg_records(tmp_path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         (
-            '{"source_name": "bag_gpkg", "entity_name": "bag.verblijfsobject", '
+            '{"source_name": "bag_gpkg", "entity_name": "bag_gpkg.verblijfsobject", '
             '"natural_key": "0003010000126809", "retrieved_at": "2026-04-18T09:00:00+00:00", '
             '"run_id": "debug-gpkg", "schema_version": "v1", "http_status": 200, '
             '"payload": {"feature_id": 1, "identificatie": "0003010000126809"}}\n'
@@ -23,5 +23,5 @@ def test_raw_snapshot_reader_reads_bag_gpkg_records(tmp_path: Path) -> None:
 
     assert len(records) == 1
     assert records[0].source_name == "bag_gpkg"
-    assert records[0].entity_name == "bag.verblijfsobject"
+    assert records[0].entity_name == "bag_gpkg.verblijfsobject"
     assert records[0].natural_key == "0003010000126809"
