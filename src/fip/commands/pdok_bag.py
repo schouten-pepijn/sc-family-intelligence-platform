@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TextIO
 
 import typer
 
@@ -12,10 +11,12 @@ from fip.gold.pdok_bag.bag_adressen_writer import BAGAdressenLandingWriter
 from fip.gold.pdok_bag.bag_gpkg_verblijfsobject_writer import (
     BAGGpkgVerblijfsobjectLandingWriter,
 )
+from fip.gold.pdok_bag.bag_gpkg_layer_writer import BAGGpkgLayerLandingWriter
 from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
 from fip.ingestion.base import RawRecord
-from fip.ingestion.pdok_bag.gpkg_source import PDOKBAGGeoPackageSource
+from fip.ingestion.pdok_bag.gpkg_cache import resolve_gpkg_source_ref
+from fip.ingestion.pdok_bag.gpkg_source import GPKG_URL, PDOKBAGGeoPackageSource
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
 from fip.lakehouse.silver.pdok_bag.bag_adressen_service import (
@@ -28,6 +29,10 @@ from fip.lakehouse.silver.pdok_bag.bag_gpkg_verblijfsobject_service import (
 from fip.lakehouse.silver.pdok_bag.bag_gpkg_verblijfsobject_sink import (
     BAGGpkgVerblijfsobjectSink,
 )
+from fip.lakehouse.silver.pdok_bag.bag_gpkg_layer_service import (
+    write_bronze_rows_to_bag_gpkg_layer_sink,
+)
+from fip.lakehouse.silver.pdok_bag.bag_gpkg_layer_sink import BAGGpkgLayerSink
 from fip.lakehouse.silver.pdok_bag.bag_pand_service import (
     write_bronze_rows_to_bag_pand_sink,
 )
@@ -39,7 +44,12 @@ from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import (
     BAGVerblijfsobjectSink,
 )
 from fip.raw.reader import S3RawSnapshotReader, RawSnapshotReader
-from fip.raw.writer import S3RawSnapshotWriter, RawSnapshotWriter, serialize_raw_record
+from fip.raw.writer import (
+    S3RawSnapshotWriter,
+    RawSnapshotWriteHandle,
+    RawSnapshotWriter,
+    serialize_raw_record,
+)
 from fip.settings import get_settings
 
 
@@ -110,7 +120,7 @@ def ingest_bag_gpkg(
     run_id: str = typer.Option(..., help="Run identifier for this ingestion."),
     layer: str = typer.Option(
         "verblijfsobject",
-        help="BAG GeoPackage layer to ingest, currently verblijfsobject only.",
+        help="BAG GeoPackage layer to ingest.",
     ),
     target_namespace: str | None = typer.Option(
         None,
@@ -185,7 +195,7 @@ def archive_bag_raw(
 
     archived = 0
     expected_entity: str | None = None
-    handle: TextIO | None = None
+    handle: RawSnapshotWriteHandle | None = None
 
     try:
         for record in source.iter_records():
@@ -212,12 +222,12 @@ def archive_bag_raw(
 def archive_bag_gpkg(
     run_id: str = typer.Option("debug-gpkg"),
     source_ref: str = typer.Option(
-        "data/pdok-bag/bag-light.gpkg",
+        GPKG_URL,
         help="GeoPackage path or URL.",
     ),
     layer: str = typer.Option(
         "verblijfsobject",
-        help="BAG layer to archive, currently verblijfsobject only.",
+        help="BAG GeoPackage layer to archive.",
     ),
     limit: int | None = typer.Option(
         None,
@@ -228,8 +238,26 @@ def archive_bag_gpkg(
         help="Raw storage target: local JSONL files or S3-compatible object storage.",
     ),
     output_dir: Path = Path(".raw"),
+    cache_dir: Path = typer.Option(
+        Path(".cache/pdok-bag"),
+        help="Local cache directory for URL GeoPackage sources.",
+    ),
+    refresh_cache: bool = typer.Option(
+        False,
+        help="Re-download URL GeoPackage sources even when a cached artifact exists.",
+    ),
 ) -> None:
-    source = PDOKBAGGeoPackageSource(run_id=run_id, source_ref=source_ref, layer=layer)
+    resolved_source_ref = resolve_gpkg_source_ref(
+        source_ref=source_ref,
+        cache_dir=cache_dir,
+        refresh_cache=refresh_cache,
+    )
+    source = PDOKBAGGeoPackageSource(
+        run_id=run_id,
+        source_ref=resolved_source_ref,
+        layer=layer,
+        max_features=limit,
+    )
 
     writer: RawSnapshotWriter | S3RawSnapshotWriter
     if target == "local":
@@ -241,7 +269,7 @@ def archive_bag_gpkg(
 
     archived = 0
     expected_entity: str | None = None
-    handle: TextIO | None = None
+    handle: RawSnapshotWriteHandle | None = None
 
     try:
         for record in source.iter_records():
@@ -255,8 +283,6 @@ def archive_bag_gpkg(
             handle.write(serialize_raw_record(record))
             handle.write("\n")
             archived += 1
-            if limit is not None and archived >= limit:
-                break
     finally:
         if handle is not None:
             handle.close()
@@ -312,6 +338,99 @@ def build_bag_gpkg_silver_verblijfsobject(
 
     written = write_bronze_rows_to_bag_gpkg_verblijfsobject_sink(bronze_rows, sink)
     typer.echo(f"Wrote {written} BAG GPKG Silver rows")
+
+
+def _build_bag_gpkg_silver_layer(
+    layer: str,
+    table_name: str,
+    namespace: str | None,
+    run_id: str | None,
+) -> None:
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace, run_id=run_id)
+    silver_namespace = get_settings().silver_namespace
+    sink = BAGGpkgLayerSink(
+        layer=layer,
+        table_ident=f"{silver_namespace}.bag_gpkg_{layer}_flat",
+    )
+
+    written = write_bronze_rows_to_bag_gpkg_layer_sink(layer, bronze_rows, sink)
+    typer.echo(f"Wrote {written} BAG GPKG {layer} Silver rows")
+
+
+@app.command("build-bag-gpkg-silver-pand")
+def build_bag_gpkg_silver_pand(
+    table_name: str = typer.Option(
+        "bag_gpkg_pand",
+        "--table",
+        help="Bronze table name to transform into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Bronze run identifier to materialize into Silver.",
+    ),
+) -> None:
+    _build_bag_gpkg_silver_layer("pand", table_name, namespace, run_id)
+
+
+@app.command("build-bag-gpkg-silver-woonplaats")
+def build_bag_gpkg_silver_woonplaats(
+    table_name: str = typer.Option(
+        "bag_gpkg_woonplaats",
+        "--table",
+        help="Bronze table name to transform into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Bronze run identifier to materialize into Silver.",
+    ),
+) -> None:
+    _build_bag_gpkg_silver_layer("woonplaats", table_name, namespace, run_id)
+
+
+@app.command("build-bag-gpkg-silver-ligplaats")
+def build_bag_gpkg_silver_ligplaats(
+    table_name: str = typer.Option(
+        "bag_gpkg_ligplaats",
+        "--table",
+        help="Bronze table name to transform into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Bronze run identifier to materialize into Silver.",
+    ),
+) -> None:
+    _build_bag_gpkg_silver_layer("ligplaats", table_name, namespace, run_id)
+
+
+@app.command("build-bag-gpkg-silver-standplaats")
+def build_bag_gpkg_silver_standplaats(
+    table_name: str = typer.Option(
+        "bag_gpkg_standplaats",
+        "--table",
+        help="Bronze table name to transform into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Bronze run identifier to materialize into Silver.",
+    ),
+) -> None:
+    _build_bag_gpkg_silver_layer("standplaats", table_name, namespace, run_id)
 
 
 @app.command("build-bag-silver-adressen")
@@ -406,6 +525,95 @@ def build_bag_gpkg_landing_verblijfsobject(
 
     written = write_rows_to_sink(silver_rows, sink)
     typer.echo(f"Wrote {written} BAG GPKG landing rows")
+
+
+def _build_bag_gpkg_landing_layer(
+    layer: str,
+    table_name: str,
+    namespace: str | None,
+    run_id: str | None,
+) -> None:
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace, run_id=run_id)
+    sink = BAGGpkgLayerLandingWriter(layer=layer, table_name=f"bag_gpkg_{layer}")
+
+    written = write_rows_to_sink(silver_rows, sink)
+    typer.echo(f"Wrote {written} BAG GPKG {layer} landing rows")
+
+
+@app.command("build-bag-gpkg-landing-pand")
+def build_bag_gpkg_landing_pand(
+    table_name: str = typer.Option(
+        "bag_gpkg_pand_flat",
+        "--table",
+        help="Silver table name to materialize into the Postgres landing layer.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Silver Iceberg namespace. Defaults to configured silver namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the landing layer.",
+    ),
+) -> None:
+    _build_bag_gpkg_landing_layer("pand", table_name, namespace, run_id)
+
+
+@app.command("build-bag-gpkg-landing-woonplaats")
+def build_bag_gpkg_landing_woonplaats(
+    table_name: str = typer.Option(
+        "bag_gpkg_woonplaats_flat",
+        "--table",
+        help="Silver table name to materialize into the Postgres landing layer.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Silver Iceberg namespace. Defaults to configured silver namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the landing layer.",
+    ),
+) -> None:
+    _build_bag_gpkg_landing_layer("woonplaats", table_name, namespace, run_id)
+
+
+@app.command("build-bag-gpkg-landing-ligplaats")
+def build_bag_gpkg_landing_ligplaats(
+    table_name: str = typer.Option(
+        "bag_gpkg_ligplaats_flat",
+        "--table",
+        help="Silver table name to materialize into the Postgres landing layer.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Silver Iceberg namespace. Defaults to configured silver namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the landing layer.",
+    ),
+) -> None:
+    _build_bag_gpkg_landing_layer("ligplaats", table_name, namespace, run_id)
+
+
+@app.command("build-bag-gpkg-landing-standplaats")
+def build_bag_gpkg_landing_standplaats(
+    table_name: str = typer.Option(
+        "bag_gpkg_standplaats_flat",
+        "--table",
+        help="Silver table name to materialize into the Postgres landing layer.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Silver Iceberg namespace. Defaults to configured silver namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the landing layer.",
+    ),
+) -> None:
+    _build_bag_gpkg_landing_layer("standplaats", table_name, namespace, run_id)
 
 
 @app.command("build-bag-landing-adressen")
