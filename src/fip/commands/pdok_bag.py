@@ -9,6 +9,9 @@ from fip.cli import app
 from fip.commands._helpers import dedupe_raw_records, read_bronze_rows, read_silver_rows
 from fip.gold.core.service import write_rows_to_sink
 from fip.gold.pdok_bag.bag_adressen_writer import BAGAdressenLandingWriter
+from fip.gold.pdok_bag.bag_gpkg_verblijfsobject_writer import (
+    BAGGpkgVerblijfsobjectLandingWriter,
+)
 from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
 from fip.ingestion.base import RawRecord
@@ -19,6 +22,12 @@ from fip.lakehouse.silver.pdok_bag.bag_adressen_service import (
     write_bronze_rows_to_bag_adressen_sink,
 )
 from fip.lakehouse.silver.pdok_bag.bag_adressen_sink import BAGAdressenSink
+from fip.lakehouse.silver.pdok_bag.bag_gpkg_verblijfsobject_service import (
+    write_bronze_rows_to_bag_gpkg_verblijfsobject_sink,
+)
+from fip.lakehouse.silver.pdok_bag.bag_gpkg_verblijfsobject_sink import (
+    BAGGpkgVerblijfsobjectSink,
+)
 from fip.lakehouse.silver.pdok_bag.bag_pand_service import (
     write_bronze_rows_to_bag_pand_sink,
 )
@@ -279,6 +288,32 @@ def build_bag_silver_verblijfsobject(
     typer.echo(f"Wrote {written} BAG Silver rows")
 
 
+@app.command("build-bag-gpkg-silver-verblijfsobject")
+def build_bag_gpkg_silver_verblijfsobject(
+    table_name: str = typer.Option(
+        "bag_gpkg_verblijfsobject",
+        "--table",
+        help="Bronze table name to transform into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Bronze run identifier to materialize into Silver.",
+    ),
+) -> None:
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace, run_id=run_id)
+    silver_namespace = get_settings().silver_namespace
+    sink = BAGGpkgVerblijfsobjectSink(
+        table_ident=f"{silver_namespace}.bag_gpkg_verblijfsobject_flat"
+    )
+
+    written = write_bronze_rows_to_bag_gpkg_verblijfsobject_sink(bronze_rows, sink)
+    typer.echo(f"Wrote {written} BAG GPKG Silver rows")
+
+
 @app.command("build-bag-silver-adressen")
 def build_bag_silver_adressen(
     table_name: str = typer.Option(
@@ -348,6 +383,29 @@ def build_bag_landing_verblijfsobject(
 
     written = write_rows_to_sink(silver_rows, sink)
     typer.echo(f"Wrote {written} BAG landing rows")
+
+
+@app.command("build-bag-gpkg-landing-verblijfsobject")
+def build_bag_gpkg_landing_verblijfsobject(
+    table_name: str = typer.Option(
+        "bag_gpkg_verblijfsobject_flat",
+        "--table",
+        help="Silver table name to materialize into the Postgres landing layer.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Silver Iceberg namespace. Defaults to configured silver namespace.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        help="Silver run identifier to materialize into the landing layer.",
+    ),
+) -> None:
+    silver_rows = read_silver_rows(table_name=table_name, namespace=namespace, run_id=run_id)
+    sink = BAGGpkgVerblijfsobjectLandingWriter(table_name="bag_gpkg_verblijfsobject")
+
+    written = write_rows_to_sink(silver_rows, sink)
+    typer.echo(f"Wrote {written} BAG GPKG landing rows")
 
 
 @app.command("build-bag-landing-adressen")
