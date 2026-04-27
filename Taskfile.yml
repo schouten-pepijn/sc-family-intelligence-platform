@@ -316,6 +316,8 @@ tasks:
       - task: infra-init
       - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer verblijfsobject --target s3 --limit 25
       - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer verblijfsobject --raw-target s3 --limit 25 --progress-every 5
+      - uv run fip build-bag-gpkg-silver-verblijfsobject --run-id bag-gpkg-smoke
+      - uv run fip build-bag-gpkg-landing-verblijfsobject --run-id bag-gpkg-smoke
 
   check:
     desc: Run the standard local quality gate
