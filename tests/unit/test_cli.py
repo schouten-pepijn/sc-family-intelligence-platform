@@ -736,6 +736,114 @@ def test_archive_bag_raw_command_supports_pand_collection(
 
 
 @pytest.mark.parametrize(
+    ("target", "expected_writer"),
+    [
+        ("local", "local"),
+        ("s3", "s3"),
+    ],
+)
+def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
+    monkeypatch, target: str, expected_writer: str
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSource:
+        def __init__(self, run_id: str, source_ref: str, layer: str = "verblijfsobject") -> None:
+            calls["run_id"] = run_id
+            calls["source_ref"] = source_ref
+            calls["layer"] = layer
+
+        def iter_records(self):
+            yield RawRecord(
+                source_name="bag_gpkg",
+                entity_name="bag.verblijfsobject",
+                natural_key="0003010000126809",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="debug-gpkg",
+                payload={
+                    "feature_id": 1,
+                    "identificatie": "0003010000126809",
+                    "geometry": {"type": "Point", "coordinates": [12345, 456789]},
+                },
+                schema_version="v1",
+                http_status=200,
+            )
+
+    class FakeLocalWriter:
+        def __init__(self, base_dir: str) -> None:
+            calls["writer"] = "local"
+            calls["base_dir"] = base_dir
+
+        def open_for_record(self, record: RawRecord):
+            calls["record"] = record
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    rows = calls.setdefault("rows", [])
+                    if value != "\n":
+                        rows.append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
+
+    class FakeS3Writer:
+        def __init__(self) -> None:
+            calls["writer"] = "s3"
+
+        def open_for_record(self, record: RawRecord):
+            calls["record"] = record
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    rows = calls.setdefault("rows", [])
+                    if value != "\n":
+                        rows.append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
+
+    monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGGeoPackageSource", FakeSource)
+    monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotWriter", FakeLocalWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.S3RawSnapshotWriter", FakeS3Writer)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "archive-bag-gpkg",
+            "--run-id",
+            "debug-gpkg",
+            "--source-ref",
+            "data/pdok-bag/bag-light.gpkg",
+            "--layer",
+            "verblijfsobject",
+            "--target",
+            target,
+            "--limit",
+            "1",
+            "--output-dir",
+            ".raw-smoke",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 raw records\n"
+    assert calls["run_id"] == "debug-gpkg"
+    assert calls["source_ref"] == "data/pdok-bag/bag-light.gpkg"
+    assert calls["layer"] == "verblijfsobject"
+    assert calls["writer"] == expected_writer
+    rows = cast(list[str], calls["rows"])
+    assert len(rows) == 1
+    assert '"entity_name": "bag.verblijfsobject"' in rows[0]
+    assert '"source_name": "bag_gpkg"' in rows[0]
+    if target == "local":
+        assert calls["base_dir"] == ".raw-smoke"
+
+
+@pytest.mark.parametrize(
     ("command", "expected_entity", "expected_table_name", "expected_natural_key"),
     [
         (

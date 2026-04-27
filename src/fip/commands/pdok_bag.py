@@ -199,6 +199,62 @@ def archive_bag_raw(
     typer.echo(f"Wrote {archived} raw records")
 
 
+@app.command("archive-bag-gpkg")
+def archive_bag_gpkg(
+    run_id: str = typer.Option("debug-gpkg"),
+    source_ref: str = typer.Option(
+        "data/pdok-bag/bag-light.gpkg",
+        help="GeoPackage path or URL.",
+    ),
+    layer: str = typer.Option(
+        "verblijfsobject",
+        help="BAG layer to archive, currently verblijfsobject only.",
+    ),
+    limit: int | None = typer.Option(
+        None,
+        help="Maximum number of raw records to archive. Leave unset for a full pull.",
+    ),
+    target: str = typer.Option(
+        "s3",
+        help="Raw storage target: local JSONL files or S3-compatible object storage.",
+    ),
+    output_dir: Path = Path(".raw"),
+) -> None:
+    source = PDOKBAGGeoPackageSource(run_id=run_id, source_ref=source_ref, layer=layer)
+
+    writer: RawSnapshotWriter | S3RawSnapshotWriter
+    if target == "local":
+        writer = RawSnapshotWriter(base_dir=str(output_dir))
+    elif target == "s3":
+        writer = S3RawSnapshotWriter()
+    else:
+        raise typer.BadParameter("target must be either 'local' or 's3'")
+
+    archived = 0
+    expected_entity: str | None = None
+    handle: TextIO | None = None
+
+    try:
+        for record in source.iter_records():
+            if expected_entity is None:
+                expected_entity = record.entity_name
+                handle = writer.open_for_record(record)
+            elif record.entity_name != expected_entity:
+                raise ValueError("archive-bag-gpkg expects records for a single BAG layer")
+
+            assert handle is not None
+            handle.write(serialize_raw_record(record))
+            handle.write("\n")
+            archived += 1
+            if limit is not None and archived >= limit:
+                break
+    finally:
+        if handle is not None:
+            handle.close()
+
+    typer.echo(f"Wrote {archived} raw records")
+
+
 @app.command("build-bag-silver-verblijfsobject")
 def build_bag_silver_verblijfsobject(
     table_name: str = typer.Option(
