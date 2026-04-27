@@ -52,6 +52,13 @@ class RawSnapshotReader:
                 if line.strip():
                     yield deserialize_raw_record(line)
 
+    def iter_bag_gpkg_records(self, run_id: str, layer: str) -> Iterator[RawRecord]:
+        path = self.base_dir / "raw" / "bag_gpkg" / run_id / f"{layer}.jsonl"
+        with path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                if line.strip():
+                    yield deserialize_raw_record(line)
+
 
 class S3RawSnapshotReader:
     def __init__(
@@ -81,6 +88,13 @@ class S3RawSnapshotReader:
 
     def iter_bag_records(self, run_id: str, collection: str) -> Iterator[RawRecord]:
         path = f"s3://{self.bucket}/raw/bag_pdok/{run_id}/{collection}.jsonl"
+        with self.filesystem.open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                if line.strip():
+                    yield deserialize_raw_record(line)
+
+    def iter_bag_gpkg_records(self, run_id: str, layer: str) -> Iterator[RawRecord]:
+        path = f"s3://{self.bucket}/raw/bag_gpkg/{run_id}/{layer}.jsonl"
         with self.filesystem.open(path, "r", encoding="utf-8") as handle:
             for line in handle:
                 if line.strip():
