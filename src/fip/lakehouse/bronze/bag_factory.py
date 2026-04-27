@@ -5,7 +5,11 @@ class BAGIcebergSinkFactory:
     ENTITY_TABLE_NAMES = {
         "bag.adres": "bag_adressen",
         "bag.adressen": "bag_adressen",
+        "bag_gpkg.ligplaats": "bag_gpkg_ligplaats",
+        "bag_gpkg.pand": "bag_gpkg_pand",
+        "bag_gpkg.standplaats": "bag_gpkg_standplaats",
         "bag_gpkg.verblijfsobject": "bag_gpkg_verblijfsobject",
+        "bag_gpkg.woonplaats": "bag_gpkg_woonplaats",
         "bag.pand": "bag_pand",
         "bag.verblijfsobject": "bag_verblijfsobject",
     }
