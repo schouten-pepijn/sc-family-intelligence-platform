@@ -310,6 +310,13 @@ tasks:
       - task: dbt-run-woz
       - task: dbt-test-smoke
 
+  load-bag-gpkg-smoke:
+    desc: "Smoke-test the BAG GeoPackage v2 flow with a small limit"
+    cmds:
+      - task: infra-init
+      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer verblijfsobject --target s3 --limit 25
+      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer verblijfsobject --raw-target s3 --limit 25 --progress-every 5
+
   check:
     desc: Run the standard local quality gate
     cmds:
