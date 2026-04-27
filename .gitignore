@@ -25,6 +25,7 @@ own_docs/
 .vscode/
 .idea/
 .codex/
+data/
 
 # dbt / sql local artifacts
 sql/logs/*.log
