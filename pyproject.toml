@@ -24,6 +24,8 @@ dependencies = [
     "psycopg[binary]>=3.2.0",
     "tenacity>=9.1.4",
     "typer>=0.24.1",
+    "geopandas>=1.1.3",
+    "pyogrio>=0.12.1",
 ]
 
 [project.scripts]
@@ -65,7 +67,14 @@ warn_unused_ignores = true
 pretty = true
 
 [[tool.mypy.overrides]]
-module = ["pyarrow", "pyarrow.*"]
+module = [
+    "pyarrow",
+    "pyarrow.*",
+    "pyogrio",
+    "pyogrio.*",
+    "shapely",
+    "shapely.*",
+]
 ignore_missing_imports = true
 
 [tool.bumpversion]
