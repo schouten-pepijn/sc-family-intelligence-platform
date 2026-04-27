@@ -250,7 +250,7 @@ def test_ingest_bag_gpkg_command_invokes_service_and_prints_result(monkeypatch) 
             calls["layer"] = layer
             yield RawRecord(
                 source_name="bag_gpkg",
-                entity_name="bag.verblijfsobject",
+                entity_name="bag_gpkg.verblijfsobject",
                 natural_key="0003010000126809",
                 retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
                 run_id="run-003",
@@ -307,7 +307,7 @@ def test_ingest_bag_gpkg_command_invokes_service_and_prints_result(monkeypatch) 
     assert calls["run_id"] == "run-003"
     assert calls["layer"] == "verblijfsobject"
     assert calls["target_namespace"] == "bronze"
-    assert calls["entity_name"] == "bag.verblijfsobject"
+    assert calls["entity_name"] == "bag_gpkg.verblijfsobject"
     rows = cast(list[RawRecord], calls["rows"])
     assert len(rows) == 1
     assert calls["base_dir"] == Path(".raw-smoke")
