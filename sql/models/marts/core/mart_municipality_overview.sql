@@ -1,8 +1,7 @@
 {{ config(materialized='table') }}
 
 {# First consumable cross-source mart:
-   CBS municipality/region statistics with BAG address coverage.
-   The BAG side now comes from the spatial bridge. #}
+   CBS municipality/region statistics with BAG object coverage. #}
 with regions as (
     select
         region_id,
@@ -12,6 +11,30 @@ with regions as (
     where region_id like 'GM%'
 ),
 
+{% if var('bag_region_bridge_source', 'gpkg_v2') == 'gpkg_v2' %}
+bag_address_counts as (
+    select
+        region_id,
+        0::bigint as bag_address_count
+    from regions
+),
+
+bag_verblijfsobject_counts as (
+    select
+        region_id,
+        count(distinct bag_object_id) as bag_verblijfsobject_count
+    from {{ ref('bridge_bag_to_geo_region') }}
+    where bag_object_type = 'bag_gpkg_verblijfsobject'
+    group by region_id
+),
+
+bag_pand_counts as (
+    select
+        region_id,
+        0::bigint as bag_pand_count
+    from regions
+),
+{% elif var('bag_region_bridge_source', 'gpkg_v2') == 'legacy_spatial' %}
 bag_address_counts as (
     select
         coalesce(a.gemeentecode, b.region_id) as region_id,
@@ -37,8 +60,6 @@ bag_verblijfsobject_counts as (
 ),
 
 bag_pand_counts as (
-    -- Pand counts remain bridge-limited until a spatial or address-based pand
-    -- municipality mapping exists. This keeps the mart honest about coverage.
     select
         b.region_id,
         count(distinct p.bag_id) as bag_pand_count
@@ -48,6 +69,11 @@ bag_pand_counts as (
         and b.bag_object_type = 'bag_pand'
     group by b.region_id
 ),
+{% else %}
+    {{ exceptions.raise_compiler_error(
+        "Unsupported bag_region_bridge_source var. Expected 'gpkg_v2' or 'legacy_spatial'."
+    ) }}
+{% endif %}
 
 cbs_latest as (
     select

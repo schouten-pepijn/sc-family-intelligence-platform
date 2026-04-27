@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: mart_bag_region_coverage
-    description: Cross-source mart summarizing spatial BAG address mappings by CBS region. The legacy locatieserver count is retained as a compatibility field and is expected to be zero after cutover.
+    description: Cross-source mart summarizing spatial BAG object mappings by CBS region. Defaults to BAG GeoPackage v2 verblijfsobject mappings; legacy address mapping counts are retained as compatibility fields.
     columns:
       - name: region_id
         tests:
@@ -18,6 +18,9 @@ models:
         tests:
           - not_null
       - name: bag_adres_mapped_count
+        tests:
+          - not_null
+      - name: bag_gpkg_verblijfsobject_mapped_count
         tests:
           - not_null
       - name: locatieserver_mapped_count

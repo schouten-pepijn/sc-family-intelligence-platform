@@ -1,8 +1,8 @@
 {{ config(materialized='table') }}
 
 {# Municipality-level BAG data-quality mart.
-   This uses the spatial BAG municipality bridge and makes coverage and
-   missing-field problems visible per GMxxxx region. #}
+   Defaults to BAG GeoPackage v2, with legacy OGC still available through
+   bag_region_bridge_source=legacy_spatial. #}
 with regions as (
     select
         region_id,
@@ -11,6 +11,49 @@ with regions as (
     from {{ ref('dim_region') }}
     where region_id like 'GM%'
 ),
+
+{% if var('bag_region_bridge_source', 'gpkg_v2') == 'gpkg_v2' %}
+verblijfsobject_quality as (
+    select
+        b.region_id,
+        count(distinct v.bag_id) as bag_verblijfsobject_count,
+        count(*) filter (
+            where nullif(trim(coalesce(v.postcode, '')), '') is null
+        ) as missing_postcode_count,
+        count(*) filter (
+            where v.huisnummer is null
+        ) as missing_huisnummer_count,
+        count(*) filter (where v.geometry is null) as missing_geometry_count,
+        0::bigint as missing_bronhouder_identificatie_count
+    from {{ ref('stg_bag_gpkg_verblijfsobject') }} as v
+    inner join {{ ref('bridge_bag_to_geo_region') }} as b
+        on b.bag_object_id = v.bag_id
+        and b.bag_object_type = 'bag_gpkg_verblijfsobject'
+    group by b.region_id
+),
+address_quality as (
+    select
+        region_id,
+        0::bigint as bag_address_count,
+        missing_postcode_count,
+        missing_huisnummer_count,
+        missing_geometry_count,
+        missing_bronhouder_identificatie_count
+    from verblijfsobject_quality
+),
+verblijfsobject_counts as (
+    select
+        region_id,
+        bag_verblijfsobject_count
+    from verblijfsobject_quality
+),
+pand_counts as (
+    select
+        region_id,
+        0::bigint as bag_pand_count
+    from regions
+),
+{% elif var('bag_region_bridge_source', 'gpkg_v2') == 'legacy_spatial' %}
 address_quality as (
     select
         coalesce(a.gemeentecode, b.region_id) as region_id,
@@ -53,6 +96,12 @@ pand_counts as (
         and b.bag_object_type = 'bag_pand'
     group by b.region_id
 ),
+{% else %}
+    {{ exceptions.raise_compiler_error(
+        "Unsupported bag_region_bridge_source var. Expected 'gpkg_v2' or 'legacy_spatial'."
+    ) }}
+{% endif %}
+
 coverage as (
     select
         region_id,
@@ -72,13 +121,16 @@ select
     coalesce(cov.mapped_address_count, 0) as mapped_address_count,
     coalesce(
         coalesce(cov.mapped_address_count, 0)::double precision
-        / nullif(coalesce(ad.bag_address_count, 0), 0),
+        / nullif(coalesce(ad.bag_address_count, vo.bag_verblijfsobject_count, 0), 0),
         0.0
     ) as mapping_coverage_ratio,
     coalesce(ad.missing_postcode_count, 0) as missing_postcode_count,
     coalesce(ad.missing_huisnummer_count, 0) as missing_huisnummer_count,
     coalesce(ad.missing_geometry_count, 0) as missing_geometry_count,
-    coalesce(ad.missing_bronhouder_identificatie_count, 0) as missing_bronhouder_identificatie_count,
+    coalesce(
+        ad.missing_bronhouder_identificatie_count,
+        0
+    ) as missing_bronhouder_identificatie_count,
     coalesce(cov.bag_adres_mapped_count, 0) as bag_adres_mapped_count,
     coalesce(cov.locatieserver_mapped_count, 0) as locatieserver_mapped_count
 from regions as r

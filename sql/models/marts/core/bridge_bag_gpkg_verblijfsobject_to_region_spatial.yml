@@ -1,12 +1,8 @@
 version: 2
 
 models:
-  - name: bridge_bag_to_geo_region
-    description: >
-      Public spatial bridge from BAG objects to the conformed geo region dimension.
-      Defaults to the BAG GeoPackage v2 spatial bridge. Use dbt var
-      bag_region_bridge_source=legacy_spatial to roll back to the legacy BAG OGC
-      spatial bridge.
+  - name: bridge_bag_gpkg_verblijfsobject_to_region_spatial
+    description: V2 spatial bridge from BAG GeoPackage verblijfsobject points to municipality regions.
     columns:
       - name: bag_object_id
         tests:
