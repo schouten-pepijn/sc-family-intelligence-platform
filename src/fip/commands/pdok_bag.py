@@ -12,6 +12,7 @@ from fip.gold.pdok_bag.bag_adressen_writer import BAGAdressenLandingWriter
 from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
 from fip.ingestion.base import RawRecord
+from fip.ingestion.pdok_bag.gpkg_source import PDOKBAGGeoPackageSource
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
 from fip.lakehouse.silver.pdok_bag.bag_adressen_service import (
@@ -31,6 +32,7 @@ from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import (
 from fip.raw.reader import S3RawSnapshotReader, RawSnapshotReader
 from fip.raw.writer import S3RawSnapshotWriter, RawSnapshotWriter, serialize_raw_record
 from fip.settings import get_settings
+
 
 def _bag_raw_reader(
     raw_target: str,

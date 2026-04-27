@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, SupportsInt
 
-import pyogrio
-from shapely.geometry import mapping
+import pyogrio  # type: ignore[import-untyped]
+from shapely.geometry import mapping  # type: ignore[import-untyped]
 
 from fip.ingestion.base import RawRecord
 
@@ -89,11 +89,7 @@ class PDOKBAGGeoPackageSource:
     def _as_int(value: object) -> int | None:
         if value is None:
             return None
-        if isinstance(value, bool):
-            return int(value)
-        if isinstance(value, int):
-            return value
-        if isinstance(value, float):
+        if isinstance(value, SupportsInt):
             return int(value)
         if isinstance(value, str):
             return int(value)
