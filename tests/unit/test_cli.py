@@ -238,6 +238,81 @@ def test_ingest_bag_command_supports_pand_collection(monkeypatch) -> None:
     assert calls["base_dir"] == Path(".raw-smoke")
 
 
+def test_ingest_bag_gpkg_command_invokes_service_and_prints_result(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeReader:
+        def __init__(self, base_dir) -> None:
+            calls["base_dir"] = base_dir
+
+        def iter_bag_gpkg_records(self, run_id: str, layer: str):
+            calls["run_id"] = run_id
+            calls["layer"] = layer
+            yield RawRecord(
+                source_name="bag_gpkg",
+                entity_name="bag.verblijfsobject",
+                natural_key="0003010000126809",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="run-003",
+                payload={
+                    "feature_id": 1,
+                    "identificatie": "0003010000126809",
+                    "geometry": {"type": "Point", "coordinates": [12345, 456789]},
+                },
+                schema_version="v1",
+            )
+
+    class FakeSinkFactory:
+        def __init__(self, namespace: str) -> None:
+            calls["target_namespace"] = namespace
+
+        def for_entity(self, entity_name: str):
+            calls["entity_name"] = entity_name
+
+            class FakeSink:
+                def write(self, records) -> int:
+                    rows = list(records)
+                    calls["rows"] = rows
+                    return len(rows)
+
+            return FakeSink()
+
+    monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotReader", FakeReader)
+    monkeypatch.setattr("fip.commands.pdok_bag.S3RawSnapshotReader", FakeReader)
+    monkeypatch.setattr("fip.commands.pdok_bag.BAGIcebergSinkFactory", FakeSinkFactory)
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "ingest-bag-gpkg",
+            "--run-id",
+            "run-003",
+            "--layer",
+            "verblijfsobject",
+            "--target-namespace",
+            "bronze",
+            "--limit",
+            "1",
+            "--progress-every",
+            "1",
+            "--raw-target",
+            "local",
+            "--raw-output-dir",
+            ".raw-smoke",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Read 1 BAG records...\nWrote 1 records using sink namespace bronze\n"
+    assert calls["run_id"] == "run-003"
+    assert calls["layer"] == "verblijfsobject"
+    assert calls["target_namespace"] == "bronze"
+    assert calls["entity_name"] == "bag.verblijfsobject"
+    rows = cast(list[RawRecord], calls["rows"])
+    assert len(rows) == 1
+    assert calls["base_dir"] == Path(".raw-smoke")
+
+
 def test_inspect_cbs_raw_command_prints_filtered_payloads(monkeypatch) -> None:
     class FakeSource:
         def __init__(self, table_id: str, run_id: str) -> None:

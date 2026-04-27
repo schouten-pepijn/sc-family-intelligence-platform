@@ -96,6 +96,57 @@ def ingest_bag(
     typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
 
 
+@app.command("ingest-bag-gpkg")
+def ingest_bag_gpkg(
+    run_id: str = typer.Option(..., help="Run identifier for this ingestion."),
+    layer: str = typer.Option(
+        "verblijfsobject",
+        help="BAG GeoPackage layer to ingest, currently verblijfsobject only.",
+    ),
+    target_namespace: str | None = typer.Option(
+        None,
+        help="Target Iceberg namespace.",
+    ),
+    limit: int = typer.Option(
+        1000,
+        min=1,
+        help="Maximum number of BAG records to ingest.",
+    ),
+    progress_every: int = typer.Option(
+        1000,
+        min=1,
+        help="Print progress every N records while reading BAG.",
+    ),
+    raw_target: str = typer.Option(
+        "s3",
+        help="Raw source target: local JSONL files or S3-compatible object storage.",
+    ),
+    raw_output_dir: Path = Path(".raw"),
+) -> None:
+    if target_namespace is None:
+        target_namespace = get_settings().bronze_namespace
+
+    reader = _bag_raw_reader(raw_target=raw_target, raw_output_dir=raw_output_dir)
+    sink_factory = BAGIcebergSinkFactory(namespace=target_namespace)
+
+    grouped_records: dict[str, list[RawRecord]] = {}
+    seen = 0
+    for record in reader.iter_bag_gpkg_records(run_id=run_id, layer=layer):
+        grouped_records.setdefault(record.entity_name, []).append(record)
+        seen += 1
+        if seen % progress_every == 0:
+            typer.echo(f"Read {seen} BAG records...")
+        if seen >= limit:
+            break
+
+    written = 0
+    for entity_name, records in grouped_records.items():
+        sink = sink_factory.for_entity(entity_name)
+        written += sink.write(dedupe_raw_records(records))
+
+    typer.echo(f"Wrote {written} records using sink namespace {target_namespace}")
+
+
 @app.command("archive-bag-raw")
 def archive_bag_raw(
     run_id: str = typer.Option("debug-raw"),
