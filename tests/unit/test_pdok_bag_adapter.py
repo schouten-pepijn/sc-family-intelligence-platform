@@ -4,7 +4,7 @@ from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 def test_pdok_bag_source_builds_raw_record_from_feature(monkeypatch) -> None:
     source = PDOKBAGSource(run_id="run-001")
 
-    def fake_get(url: str) -> dict:
+    def fake_get(url: str, client=None) -> dict:
         assert url.endswith("/collections/verblijfsobject/items?limit=1000")
         return {
             "features": [
@@ -39,7 +39,7 @@ def test_pdok_bag_source_follows_next_link(monkeypatch) -> None:
 
     calls: list[str] = []
 
-    def fake_get(url: str) -> dict:
+    def fake_get(url: str, client=None) -> dict:
         calls.append(url)
         if len(calls) == 1:
             return {
@@ -78,7 +78,7 @@ def test_pdok_bag_source_follows_next_link(monkeypatch) -> None:
 def test_pdok_bag_healthcheck_uses_collection_endpoint(monkeypatch) -> None:
     source = PDOKBAGSource(run_id="run-001")
 
-    def fake_get(url: str) -> dict:
+    def fake_get(url: str, client=None) -> dict:
         assert url == "https://api.pdok.nl/kadaster/bag/ogc/v2/collections/verblijfsobject"
         return {}
 
@@ -90,7 +90,7 @@ def test_pdok_bag_healthcheck_uses_collection_endpoint(monkeypatch) -> None:
 def test_pdok_bag_source_supports_pand_collection(monkeypatch) -> None:
     source = PDOKBAGSource(run_id="run-001", collection="pand")
 
-    def fake_get(url: str) -> dict:
+    def fake_get(url: str, client=None) -> dict:
         assert url.endswith("/collections/pand/items?limit=1000")
         return {
             "features": [
@@ -120,7 +120,7 @@ def test_pdok_bag_source_supports_pand_collection(monkeypatch) -> None:
 def test_pdok_bag_source_supports_adres_collection(monkeypatch) -> None:
     source = PDOKBAGSource(run_id="run-001", collection="adres")
 
-    def fake_get(url: str) -> dict:
+    def fake_get(url: str, client=None) -> dict:
         assert url.endswith("/collections/adres/items?limit=1000")
         return {
             "features": [
@@ -150,7 +150,7 @@ def test_pdok_bag_source_supports_adres_collection(monkeypatch) -> None:
 def test_pdok_bag_source_normalizes_legacy_adressen_collection(monkeypatch) -> None:
     source = PDOKBAGSource(run_id="run-001", collection="adressen")
 
-    def fake_get(url: str) -> dict:
+    def fake_get(url: str, client=None) -> dict:
         assert url.endswith("/collections/adres/items?limit=1000")
         return {
             "features": [

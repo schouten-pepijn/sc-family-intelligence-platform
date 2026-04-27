@@ -33,17 +33,19 @@ class PDOKBAGSource:
         _ = since
         url: str | None = f"{self.base_url}/collections/{self.collection}/items?limit=1000"
 
-        while url:
-            data = self._get(url)
+        with httpx.Client(timeout=30.0) as client:
+            while url:
+                data = self._get(url, client=client)
 
-            for feature in data.get("features", []):
-                yield self._build_raw_record(feature)
+                for feature in data.get("features", []):
+                    yield self._build_raw_record(feature)
 
-            url = self._next_link(data)
+                url = self._next_link(data)
 
     def healthcheck(self) -> bool:
         try:
-            self._get(f"{self.base_url}/collections/{self.collection}")
+            with httpx.Client(timeout=30.0) as client:
+                self._get(f"{self.base_url}/collections/{self.collection}", client=client)
             return True
         except httpx.HTTPError:
             return False
@@ -53,12 +55,17 @@ class PDOKBAGSource:
         wait=wait_exponential(multiplier=1, min=1, max=10),
         reraise=True,
     )
-    def _get(self, url: str) -> dict:
+    def _get(self, url: str, client: httpx.Client | None = None) -> dict:
         # Retry transient network failures with exponential backoff.
-        with httpx.Client(timeout=30.0) as client:
-            response = client.get(url)
-            response.raise_for_status()
-            return response.json()
+        if client is None:
+            with httpx.Client(timeout=30.0) as owned_client:
+                response = owned_client.get(url)
+                response.raise_for_status()
+                return response.json()
+
+        response = client.get(url)
+        response.raise_for_status()
+        return response.json()
 
     def _next_link(self, data: dict) -> str | None:
         for link in data.get("links", []):
