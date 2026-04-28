@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, cast
 
 import s3fs  # type: ignore[import-untyped]
 
@@ -55,37 +55,24 @@ class RawSnapshotWriter:
     def open_for_record(self, record: RawRecord) -> RawSnapshotWriteHandle:
         path = self._snapshot_path(record)
         path.parent.mkdir(parents=True, exist_ok=True)
-        return path.open("w", encoding="utf-8")
+        return cast(RawSnapshotWriteHandle, path.open("w", encoding="utf-8"))
 
     def _snapshot_path(self, record: RawRecord) -> Path:
         if record.source_name == "cbs_statline":
             table_id, entity = record.entity_name.split(".", maxsplit=1)
-            return (
-                self.base_dir
-                / "raw"
-                / "cbs"
-                / table_id
-                / record.run_id
-                / f"{entity}.jsonl"
-            )
+            return self.base_dir / "raw" / "cbs" / table_id / record.run_id / f"{entity}.jsonl"
         if record.source_name == "bag_pdok":
             _, entity = record.entity_name.split(".", maxsplit=1)
-            return (
-                self.base_dir / "raw" / "bag_pdok" / record.run_id / f"{entity}.jsonl"
-            )
+            return self.base_dir / "raw" / "bag_pdok" / record.run_id / f"{entity}.jsonl"
         if record.source_name == "bag_gpkg":
             _, entity = record.entity_name.split(".", maxsplit=1)
-            return (
-                self.base_dir / "raw" / "bag_gpkg" / record.run_id / f"{entity}.jsonl"
-            )
+            return self.base_dir / "raw" / "bag_gpkg" / record.run_id / f"{entity}.jsonl"
         raise ValueError(f"Unknown raw source '{record.source_name}'")
 
     def _validate_single_entity(self, records: list[RawRecord]) -> None:
         first_entity = records[0].entity_name
         if any(record.entity_name != first_entity for record in records):
-            raise ValueError(
-                "RawSnapshotWriter.write expects records for a single entity"
-            )
+            raise ValueError("RawSnapshotWriter.write expects records for a single entity")
 
 
 class S3RawSnapshotWriter:
