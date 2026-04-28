@@ -880,9 +880,30 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
 
             return FakeHandle()
 
+    class FakeLocalManifestWriter:
+        def __init__(self, base_dir: str) -> None:
+            calls["manifest_writer"] = "local"
+            calls["manifest_base_dir"] = base_dir
+
+        def write(self, manifest, table_id=None):
+            calls["manifest"] = manifest
+            calls["manifest_table_id"] = table_id
+            return None
+
+    class FakeS3ManifestWriter:
+        def __init__(self) -> None:
+            calls["manifest_writer"] = "s3"
+
+        def write(self, manifest, table_id=None):
+            calls["manifest"] = manifest
+            calls["manifest_table_id"] = table_id
+            return None
+
     monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGGeoPackageSource", FakeSource)
     monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotWriter", FakeLocalWriter)
     monkeypatch.setattr("fip.commands.pdok_bag.S3RawSnapshotWriter", FakeS3Writer)
+    monkeypatch.setattr("fip.commands.pdok_bag.LocalManifestWriter", FakeLocalManifestWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.S3ManifestWriter", FakeS3ManifestWriter)
 
     result = runner.invoke(
         cli.app,
@@ -916,6 +937,24 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
     assert '"source_name": "bag_gpkg"' in rows[0]
     if target == "local":
         assert calls["base_dir"] == ".raw-smoke"
+        assert calls["manifest_base_dir"] == Path(".raw-smoke")
+    assert calls["manifest_writer"] == expected_writer
+    assert calls["manifest_table_id"] is None
+    manifest = calls["manifest"]
+    assert manifest.source_name == "bag_gpkg"
+    assert manifest.source_family == "pdok_bag"
+    assert manifest.run_id == "debug-gpkg"
+    assert manifest.source_version == "verblijfsobject"
+    assert manifest.row_count == 1
+    assert manifest.status == "success"
+    assert manifest.error_message is None
+    assert manifest.source_url == "data/pdok-bag/bag-light.gpkg"
+    assert manifest.license == "pdok_open_data"
+    assert manifest.attribution == "PDOK / Kadaster BAG"
+    if target == "local":
+        assert Path(manifest.raw_uri) == Path(".raw-smoke") / "raw" / "bag_gpkg" / "debug-gpkg"
+    else:
+        assert manifest.raw_uri.endswith("/raw/bag_gpkg/debug-gpkg/")
 
 
 @pytest.mark.parametrize(
