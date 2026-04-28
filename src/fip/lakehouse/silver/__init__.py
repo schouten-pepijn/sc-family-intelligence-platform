@@ -9,12 +9,6 @@ from fip.lakehouse.silver.cbs.cbs_observations_service import (
     write_bronze_rows_to_cbs_observation_sink,
 )
 from fip.lakehouse.silver.cbs.cbs_observations_sink import CBSObservationSink
-from fip.lakehouse.silver.pdok_bag.bag_gpkg_verblijfsobject import (
-    BAG_GPKG_VERBLIJFSOBJECT_FIELDS,
-    flatten_bronze_bag_gpkg_verblijfsobject,
-    flatten_bronze_bag_gpkg_verblijfsobject_rows,
-    to_bag_gpkg_verblijfsobject_row,
-)
 from fip.lakehouse.silver.pdok_bag.bag_gpkg_layer_service import (
     BAGGpkgLayerSilverSink,
     write_bronze_rows_to_bag_gpkg_layer_sink,
