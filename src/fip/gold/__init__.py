@@ -10,10 +10,10 @@ from fip.gold.cbs.cbs_reference_codes_writer import (
 from fip.gold.core.postgres import PostgresFullRefreshWriter
 from fip.gold.core.service import PostgresSink, write_rows_to_sink
 from fip.gold.pdok_bag.bag_gpkg_layer_writer import BAGGpkgLayerLandingWriter
-from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.pdok_bag.bag_gpkg_verblijfsobject_writer import (
     BAGGpkgVerblijfsobjectLandingWriter,
 )
+from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.pdok_bag.bag_verblijfsobject_writer import (
     BAGVerblijfsobjectLandingWriter,
 )
