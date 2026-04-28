@@ -34,9 +34,7 @@ class SourceRunManifest:
                 **asdict(self),
                 "started_at": self.started_at.isoformat(),
                 "finished_at": (
-                    self.finished_at.isoformat()
-                    if self.finished_at is not None
-                    else None
+                    self.finished_at.isoformat() if self.finished_at is not None else None
                 ),
             },
             ensure_ascii=False,
