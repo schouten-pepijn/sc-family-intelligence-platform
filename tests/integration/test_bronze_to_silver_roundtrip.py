@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
+from pyiceberg.catalog import load_catalog
 
 from fip.gold.cbs.cbs_observations_writer import CBSObservationLandingWriter
 from fip.gold.core.service import write_rows_to_sink
@@ -14,6 +15,7 @@ from fip.gold.readback import sample_rows as sample_gold_rows
 from fip.ingestion.base import RawRecord
 from fip.ingestion.service import ingest_source_to_sink
 from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
+from fip.lakehouse.config import iceberg_catalog_properties
 from fip.lakehouse.silver.cbs.cbs_observations_service import (
     write_bronze_rows_to_cbs_observation_sink,
 )
@@ -25,6 +27,7 @@ from fip.readback.duckdb import (
     load_extensions,
     sample_rows,
 )
+from fip.settings import get_settings
 
 pytestmark = pytest.mark.integration
 
@@ -44,6 +47,22 @@ class FakeSource:
         return True
 
 
+def require_iceberg_catalog() -> None:
+    settings = get_settings()
+    try:
+        _ = load_catalog("polaris", **iceberg_catalog_properties(settings))
+    except Exception as exc:  # pragma: no cover - integration environment dependent
+        pytest.skip(f"Iceberg catalog is not ready: {exc}")
+
+
+def require_postgres_connection() -> None:
+    try:
+        conn = connect_postgres()
+        conn.close()
+    except Exception as exc:  # pragma: no cover - integration environment dependent
+        pytest.skip(f"Postgres is not ready: {exc}")
+
+
 def _make_record(table_id: str, natural_key: str, payload: dict[str, object]) -> RawRecord:
     return RawRecord(
         source_name=FakeSource.name,
@@ -61,6 +80,9 @@ def _make_record(table_id: str, natural_key: str, payload: dict[str, object]) ->
     reason="Set FIP_RUN_INTEGRATION=1 to run local lakehouse integration tests.",
 )
 def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
+    require_iceberg_catalog()
+    require_postgres_connection()
+
     suffix = uuid4().hex[:8]
     table_id = f"ITRT{suffix}".upper()
     bronze_namespace = f"bronze_it_{suffix}"
@@ -98,10 +120,12 @@ def test_bronze_to_silver_roundtrip_against_local_lakehouse() -> None:
         load_extensions(bronze_conn)
         attach_iceberg_catalog(bronze_conn)
         bronze_rows = (
-            bronze_conn.execute(f"""
+            bronze_conn.execute(
+                f"""
             SELECT *
             FROM iceberg_catalog.{bronze_namespace}.{bronze_table_name}
-            """)
+            """
+            )
             .to_arrow_table()
             .to_pylist()
         )
