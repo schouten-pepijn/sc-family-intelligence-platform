@@ -1,9 +1,7 @@
+import psycopg
 import pytest
 
-import psycopg
-
 from fip.settings import get_settings
-
 
 settings = get_settings()
 
@@ -26,16 +24,16 @@ def test_spatial_geom_not_null_and_srid():
     """Assert `geom` is populated and uses SRID 4326."""
     conn = _get_conn()
     with conn.cursor() as cur:
-        cur.execute(
-            "select count(*) from staging.stg_bag_pand_spatial where geom is null;"
-        )
+        cur.execute("select count(*) from staging.stg_bag_pand_spatial where geom is null;")
         row = cur.fetchone()
         if row is None:
             pytest.fail("No result returned for null-count query; table may not exist")
         null_count = row[0]
 
         cur.execute(
-            "select distinct st_srid(geom) from staging.stg_bag_pand_spatial where geom is not null;"
+            "select distinct st_srid(geom) "
+            "from staging.stg_bag_pand_spatial "
+            "where geom is not null;"
         )
         srids = {row[0] for row in cur.fetchall()}
 
@@ -49,12 +47,13 @@ def test_spatial_gist_index_exists():
     conn = _get_conn()
     with conn.cursor() as cur:
         cur.execute(
-            "select indexname, indexdef from pg_indexes where schemaname = 'staging' and tablename = 'stg_bag_pand_spatial';"
+            "select indexname, indexdef "
+            "from pg_indexes "
+            "where schemaname = 'staging' "
+            "and tablename = 'stg_bag_pand_spatial';"
         )
         indexes = cur.fetchall() or []
 
     # look for a gist index in the index definition
     gist_indexes = [name for name, idxdef in indexes if "gist" in idxdef.lower()]
-    assert (
-        gist_indexes
-    ), f"No GiST index found for staging.stg_bag_pand_spatial (found: {indexes})"
+    assert gist_indexes, f"No GiST index found for staging.stg_bag_pand_spatial (found: {indexes})"
