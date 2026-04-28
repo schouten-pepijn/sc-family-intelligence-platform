@@ -120,9 +120,7 @@ class S3RawSnapshotWriter:
     def _snapshot_path(self, record: RawRecord) -> str:
         if record.source_name == "cbs_statline":
             table_id, entity = record.entity_name.split(".", maxsplit=1)
-            return (
-                f"s3://{self.bucket}/raw/cbs/{table_id}/{record.run_id}/{entity}.jsonl"
-            )
+            return f"s3://{self.bucket}/raw/cbs/{table_id}/{record.run_id}/{entity}.jsonl"
         if record.source_name == "bag_pdok":
             _, entity = record.entity_name.split(".", maxsplit=1)
             return f"s3://{self.bucket}/raw/bag_pdok/{record.run_id}/{entity}.jsonl"
@@ -134,6 +132,4 @@ class S3RawSnapshotWriter:
     def _validate_single_entity(self, records: list[RawRecord]) -> None:
         first_entity = records[0].entity_name
         if any(record.entity_name != first_entity for record in records):
-            raise ValueError(
-                "S3RawSnapshotWriter.write expects records for a single entity"
-            )
+            raise ValueError("S3RawSnapshotWriter.write expects records for a single entity")
