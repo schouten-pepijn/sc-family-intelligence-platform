@@ -243,10 +243,7 @@ def archive_bag_gpkg(
         help="Raw storage target: local JSONL files or S3-compatible object storage.",
     ),
     output_dir: Path = Path(".raw"),
-    cache_dir: Path = typer.Option(
-        Path(".cache/pdok-bag"),
-        help="Local cache directory for URL GeoPackage sources.",
-    ),
+    cache_dir: Path = GPKG_CACHE_DIR_OPTION,
     refresh_cache: bool = typer.Option(
         False,
         help="Re-download URL GeoPackage sources even when a cached artifact exists.",
