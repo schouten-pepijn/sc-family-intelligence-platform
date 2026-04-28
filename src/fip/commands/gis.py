@@ -65,7 +65,10 @@ def _write_text(uri: str, content: str, filesystem: s3fs.S3FileSystem | None = N
 
 
 def _pdok_collection_url(year: int, collection: str) -> str:
-    return f"{PDOK_BASE_URL}/cbs/wijken-en-buurten-{year}/ogc/v1/collections/{collection}/items?f=json&limit=1000"
+    return (
+        f"{PDOK_BASE_URL}/cbs/wijken-en-buurten-{year}/ogc/v1/collections/"
+        f"{collection}/items?f=json&limit=1000"
+    )
 
 
 def _next_page_url(payload: Mapping[str, object], response: httpx.Response) -> str | None:
@@ -150,9 +153,11 @@ def _normalize_region_feature(
     if region_id == "GM0998" or region_name.casefold() == "buitenland":
         return None
 
-    source_version = _get_property(properties_raw, "source_version", "jaar") if (
-        "source_version" in properties_raw or "jaar" in properties_raw
-    ) else str(year)
+    source_version = (
+        _get_property(properties_raw, "source_version", "jaar")
+        if ("source_version" in properties_raw or "jaar" in properties_raw)
+        else str(year)
+    )
 
     valid_from = properties_raw.get("valid_from")
     if valid_from is None:
@@ -166,7 +171,11 @@ def _normalize_region_feature(
     else:
         retrieved_at_value = datetime.now(timezone.utc).isoformat()
 
-    schema_version = _get_property(properties_raw, "schema_version") if "schema_version" in properties_raw else DEFAULT_SCHEMA_VERSION
+    schema_version = (
+        _get_property(properties_raw, "schema_version")
+        if "schema_version" in properties_raw
+        else DEFAULT_SCHEMA_VERSION
+    )
     http_status_raw = properties_raw.get("http_status", 200)
     http_status = int(http_status_raw) if not isinstance(http_status_raw, int) else http_status_raw
 
@@ -219,7 +228,14 @@ def _archive_region_geom(
         bucket = get_settings().s3_bucket
         uri = f"s3://{bucket}/raw/region_geom/cbs/wijken-en-buurten-{year}/{run_id}/{collection}.geojson"
     elif target == "local":
-        uri = str(output_dir / "raw" / "region_geom" / f"cbs-wijken-en-buurten-{year}" / run_id / f"{collection}.geojson")
+        uri = str(
+            output_dir
+            / "raw"
+            / "region_geom"
+            / f"cbs-wijken-en-buurten-{year}"
+            / run_id
+            / f"{collection}.geojson"
+        )
     else:
         raise typer.BadParameter("target must be either 'local' or 's3'")
 
@@ -227,7 +243,9 @@ def _archive_region_geom(
     return uri
 
 
-def _build_region_geom_rows(input_uri: str, filesystem: s3fs.S3FileSystem | None = None) -> list[dict[str, object]]:
+def _build_region_geom_rows(
+    input_uri: str, filesystem: s3fs.S3FileSystem | None = None
+) -> list[dict[str, object]]:
     payload = json.loads(_read_text(input_uri, filesystem=filesystem))
     if not isinstance(payload, dict):
         raise ValueError("GeoJSON payload must be an object")
