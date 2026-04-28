@@ -507,9 +507,30 @@ def test_archive_cbs_raw_command_selects_target_writer(
 
             return FakeHandle()
 
+    class FakeLocalManifestWriter:
+        def __init__(self, base_dir: str) -> None:
+            calls["manifest_writer"] = "local"
+            calls["manifest_base_dir"] = base_dir
+
+        def write(self, manifest, table_id=None):
+            calls["manifest"] = manifest
+            calls["manifest_table_id"] = table_id
+            return None
+
+    class FakeS3ManifestWriter:
+        def __init__(self) -> None:
+            calls["manifest_writer"] = "s3"
+
+        def write(self, manifest, table_id=None):
+            calls["manifest"] = manifest
+            calls["manifest_table_id"] = table_id
+            return None
+
     monkeypatch.setattr("fip.commands.cbs.CBSODataSource", FakeSource)
     monkeypatch.setattr("fip.commands.cbs.RawSnapshotWriter", FakeLocalWriter)
     monkeypatch.setattr("fip.commands.cbs.S3RawSnapshotWriter", FakeS3Writer)
+    monkeypatch.setattr("fip.commands.cbs.LocalManifestWriter", FakeLocalManifestWriter)
+    monkeypatch.setattr("fip.commands.cbs.S3ManifestWriter", FakeS3ManifestWriter)
 
     result = runner.invoke(
         cli.app,
@@ -536,6 +557,16 @@ def test_archive_cbs_raw_command_selects_target_writer(
     assert rows[0].entity_name == "83625NED.MeasureCodes"
     if target == "local":
         assert calls["base_dir"] == ".raw-smoke"
+        assert calls["manifest_base_dir"] == Path(".raw-smoke")
+    assert calls["manifest_writer"] == expected_writer
+    assert calls["manifest_table_id"] == "83625NED"
+    manifest = calls["manifest"]
+    assert manifest.source_name == "cbs_statline"
+    assert manifest.source_family == "cbs"
+    assert manifest.run_id == "debug-raw"
+    assert manifest.source_version == "83625NED"
+    assert manifest.row_count == 1
+    assert manifest.status == "success"
 
 
 @pytest.mark.parametrize(
