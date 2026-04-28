@@ -20,8 +20,8 @@ from fip.lakehouse.silver.cbs.cbs_observations_service import (
     write_bronze_rows_to_cbs_observation_sink,
 )
 from fip.lakehouse.silver.cbs.cbs_observations_sink import CBSObservationSink
-from fip.raw.reader import S3RawSnapshotReader, RawSnapshotReader
-from fip.raw.writer import S3RawSnapshotWriter, RawSnapshotWriter
+from fip.raw.reader import RawSnapshotReader, S3RawSnapshotReader
+from fip.raw.writer import RawSnapshotWriter, S3RawSnapshotWriter
 from fip.settings import get_settings
 
 

@@ -7,7 +7,7 @@ from typing import Iterator
 
 from fip.gold.cbs.cbs_reference_codes_writer import CBSReferenceCodeWriter
 from fip.ingestion.base import RawRecord, Source
-from fip.raw.reader import S3RawSnapshotReader, RawSnapshotReader
+from fip.raw.reader import RawSnapshotReader, S3RawSnapshotReader
 from fip.readback.duckdb import attach_iceberg_catalog, load_extensions
 from fip.readback.duckdb import connect as connect_duckdb
 from fip.settings import get_settings
