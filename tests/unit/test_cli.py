@@ -478,7 +478,7 @@ def test_archive_cbs_raw_command_selects_target_writer(
             class FakeHandle:
                 def write(self, value: str) -> None:
                     if value != "\n":
-                        calls["rows"].append(value)
+                        cast(list[str], calls["rows"]).append(value)
 
                 def close(self) -> None:
                     return None
@@ -500,7 +500,7 @@ def test_archive_cbs_raw_command_selects_target_writer(
             class FakeHandle:
                 def write(self, value: str) -> None:
                     if value != "\n":
-                        calls["rows"].append(value)
+                        cast(list[str], calls["rows"]).append(value)
 
                 def close(self) -> None:
                     return None
@@ -593,7 +593,7 @@ def test_archive_bag_raw_command_selects_target_writer(
             class FakeHandle:
                 def write(self, value: str) -> None:
                     if value != "\n":
-                        calls["rows"].append(value)
+                        cast(list[str], calls["rows"]).append(value)
 
                 def close(self) -> None:
                     return None
@@ -615,7 +615,7 @@ def test_archive_bag_raw_command_selects_target_writer(
             class FakeHandle:
                 def write(self, value: str) -> None:
                     if value != "\n":
-                        calls["rows"].append(value)
+                        cast(list[str], calls["rows"]).append(value)
 
                 def close(self) -> None:
                     return None
@@ -701,7 +701,7 @@ def test_archive_bag_raw_command_supports_pand_collection(
             class FakeHandle:
                 def write(self, value: str) -> None:
                     if value != "\n":
-                        calls["rows"].append(value)
+                        cast(list[str], calls["rows"]).append(value)
 
                 def close(self) -> None:
                     return None
@@ -723,7 +723,7 @@ def test_archive_bag_raw_command_supports_pand_collection(
             class FakeHandle:
                 def write(self, value: str) -> None:
                     if value != "\n":
-                        calls["rows"].append(value)
+                        cast(list[str], calls["rows"]).append(value)
 
                 def close(self) -> None:
                     return None
@@ -812,7 +812,7 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
 
             class FakeHandle:
                 def write(self, value: str) -> None:
-                    rows = calls.setdefault("rows", [])
+                    rows = cast(list[str], calls.setdefault("rows", []))
                     if value != "\n":
                         rows.append(value)
 
@@ -830,7 +830,7 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
 
             class FakeHandle:
                 def write(self, value: str) -> None:
-                    rows = calls.setdefault("rows", [])
+                    rows = cast(list[str], calls.setdefault("rows", []))
                     if value != "\n":
                         rows.append(value)
 
