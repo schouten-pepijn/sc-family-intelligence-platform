@@ -83,6 +83,8 @@ def archive_cbs_raw(
     ),
     output_dir: Path = Path(".raw"),
 ) -> None:
+    started_at = datetime.now(timezone.utc)
+
     source = CBSODataSource(table_id=table_id, run_id=run_id)
 
     writer: RawSnapshotWriter | S3RawSnapshotWriter
@@ -93,17 +95,50 @@ def archive_cbs_raw(
     else:
         raise typer.BadParameter("target must be either 'local' or 's3'")
 
+    status = "success"
+    error_message: str | None = None
     grouped: dict[str, list[RawRecord]] = {}
     archived = 0
-    for record in source.iter_records():
-        grouped.setdefault(record.entity_name, []).append(record)
-        archived += 1
-        if limit is not None and archived >= limit:
-            break
-
     written = 0
-    for records in grouped.values():
-        written += writer.write(records)
+    try:
+        for record in source.iter_records():
+            grouped.setdefault(record.entity_name, []).append(record)
+            archived += 1
+            if limit is not None and archived >= limit:
+                break
+
+        for records in grouped.values():
+            written += writer.write(records)
+    except Exception as exc:
+        status = "failed"
+        error_message = str(exc)
+        raise
+    finally:
+        finished_at = datetime.now(timezone.utc)
+        manifest = SourceRunManifest(
+            source_name="cbs_statline",
+            source_family="cbs",
+            run_id=run_id,
+            started_at=started_at,
+            finished_at=finished_at,
+            source_url=f"https://opendata.cbs.nl/ODataApi/OData/{table_id}",
+            source_version=table_id,
+            license="cbs_open_data",
+            attribution="CBS StatLine",
+            raw_uri=(
+                f"s3://{get_settings().s3_bucket}/raw/cbs/{table_id}/{run_id}/"
+                if target == "s3"
+                else str(output_dir / "raw" / "cbs" / table_id / run_id)
+            ),
+            row_count=archived,
+            status=status,
+            error_message=error_message,
+        )
+
+        if target == "local":
+            LocalManifestWriter(base_dir=output_dir).write(manifest, table_id=table_id)
+        elif target == "s3":
+            S3ManifestWriter().write(manifest, table_id=table_id)
 
     typer.echo(f"Wrote {written} raw records")
 
