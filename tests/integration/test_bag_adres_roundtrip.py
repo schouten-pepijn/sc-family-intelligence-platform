@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
+from pyiceberg.catalog import load_catalog
 
 from fip.commands.geo import build_bag_geo_region_mapping
 from fip.commands.pdok_bag import (
@@ -18,6 +19,7 @@ from fip.gold.readback import connect as connect_postgres
 from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
 from fip.ingestion.base import RawRecord
+from fip.lakehouse.config import iceberg_catalog_properties
 from fip.readback.duckdb import (
     attach_iceberg_catalog,
     connect,
@@ -41,6 +43,22 @@ class FakeSource:
 
     def healthcheck(self) -> bool:
         return True
+
+
+def require_iceberg_catalog() -> None:
+    settings = get_settings()
+    try:
+        _ = load_catalog("polaris", **iceberg_catalog_properties(settings))
+    except Exception as exc:  # pragma: no cover - integration environment dependent
+        pytest.skip(f"Iceberg catalog is not ready: {exc}")
+
+
+def require_postgres_connection() -> None:
+    try:
+        conn = connect_postgres()
+        conn.close()
+    except Exception as exc:  # pragma: no cover - integration environment dependent
+        pytest.skip(f"Postgres is not ready: {exc}")
 
 
 class FakeArchiveSource:
@@ -95,6 +113,9 @@ def test_bag_adres_command_flow_against_local_lakehouse(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    require_iceberg_catalog()
+    require_postgres_connection()
+
     suffix = uuid4().hex[:8]
     run_id = f"integration-roundtrip-{suffix}"
     bronze_namespace = f"bronze_it_{suffix}"
