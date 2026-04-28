@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any
+
 import s3fs  # type: ignore[import-untyped]
 
 from fip.settings import Settings, get_settings
@@ -130,9 +131,7 @@ def local_manifest_path(
     raise ValueError(f"Unknown raw source '{source_name}'")
 
 
-def s3_manifest_uri(
-    bucket: str, source_name: str, run_id: str, table_id: str | None = None
-) -> str:
+def s3_manifest_uri(bucket: str, source_name: str, run_id: str, table_id: str | None = None) -> str:
     if source_name == "cbs_statline":
         if table_id is None:
             raise ValueError("table_id is required for CBS manifests")
