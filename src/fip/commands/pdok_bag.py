@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 import typer
@@ -43,6 +44,7 @@ from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_service import (
 from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import (
     BAGVerblijfsobjectSink,
 )
+from fip.raw.manifest import LocalManifestWriter, S3ManifestWriter, SourceRunManifest
 from fip.raw.reader import RawSnapshotReader, S3RawSnapshotReader
 from fip.raw.writer import (
     RawSnapshotWriteHandle,
@@ -249,6 +251,7 @@ def archive_bag_gpkg(
         help="Re-download URL GeoPackage sources even when a cached artifact exists.",
     ),
 ) -> None:
+    started_at = datetime.now(timezone.utc)
     resolved_source_ref = resolve_gpkg_source_ref(
         source_ref=source_ref,
         cache_dir=cache_dir,
@@ -269,9 +272,12 @@ def archive_bag_gpkg(
     else:
         raise typer.BadParameter("target must be either 'local' or 's3'")
 
+    status = "success"
+    error_message: str | None = None
     archived = 0
     expected_entity: str | None = None
     handle: RawSnapshotWriteHandle | None = None
+    written = 0
 
     try:
         for record in source.iter_records():
@@ -285,11 +291,42 @@ def archive_bag_gpkg(
             handle.write(serialize_raw_record(record))
             handle.write("\n")
             archived += 1
+        written = archived
+    except Exception as exc:
+        status = "failed"
+        error_message = str(exc)
+        raise
     finally:
+        finished_at = datetime.now(timezone.utc)
         if handle is not None:
             handle.close()
 
-    typer.echo(f"Wrote {archived} raw records")
+        manifest = SourceRunManifest(
+            source_name="bag_gpkg",
+            source_family="pdok_bag",
+            run_id=run_id,
+            started_at=started_at,
+            finished_at=finished_at,
+            source_url=str(source_ref),
+            source_version=layer,
+            license="pdok_open_data",
+            attribution="PDOK / Kadaster BAG",
+            raw_uri=(
+                f"s3://{get_settings().s3_bucket}/raw/bag_gpkg/{run_id}/"
+                if target == "s3"
+                else str(output_dir / "raw" / "bag_gpkg" / run_id)
+            ),
+            row_count=archived,
+            status=status,
+            error_message=error_message,
+        )
+
+        if target == "local":
+            LocalManifestWriter(base_dir=output_dir).write(manifest)
+        elif target == "s3":
+            S3ManifestWriter().write(manifest)
+
+    typer.echo(f"Wrote {written} raw records")
 
 
 @app.command("build-bag-silver-verblijfsobject")
