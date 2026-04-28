@@ -4,8 +4,8 @@ from pathlib import Path
 
 from fip.ingestion.base import RawRecord
 from fip.raw.writer import (
-    S3RawSnapshotWriter,
     RawSnapshotWriter,
+    S3RawSnapshotWriter,
     serialize_raw_record,
 )
 
