@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from math import isnan
+from typing import SupportsInt, cast
 
 
 @dataclass(frozen=True)
@@ -205,7 +206,7 @@ def _config(layer: str) -> BAGGpkgLayerConfig:
 def _as_int(value: object) -> int | None:
     if value is None:
         return None
-    return int(value)
+    return int(cast(SupportsInt | str | bytes | bytearray, value))
 
 
 def _clean_value(value: object) -> object | None:
