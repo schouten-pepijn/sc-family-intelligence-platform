@@ -1,9 +1,40 @@
+import os
+
 import psycopg
 import pytest
 
 from fip.settings import get_settings
 
 settings = get_settings()
+
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("FIP_RUN_INTEGRATION") != "1",
+    reason="Set FIP_RUN_INTEGRATION=1 to run local lakehouse integration tests.",
+)
+
+
+def require_table_exists(schema: str, table: str) -> None:
+    try:
+        conn = psycopg.connect(
+            host=settings.postgres_host,
+            port=settings.postgres_port,
+            dbname=settings.postgres_db,
+            user=settings.postgres_user,
+            password=settings.postgres_password,
+        )
+    except Exception as exc:  # pragma: no cover - integration environment dependent
+        pytest.skip(f"Postgres is not ready: {exc}")
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("select to_regclass(%s)", (f"{schema}.{table}",))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+
+    if row is None or row[0] is None:
+        pytest.skip(f"Required table {schema}.{table} is not available")
 
 
 def _get_conn():
@@ -22,6 +53,8 @@ def _get_conn():
 @pytest.mark.integration
 def test_spatial_geom_not_null_and_srid():
     """Assert `geom` is populated and uses SRID 4326."""
+    require_table_exists("staging", "stg_bag_pand_spatial")
+
     conn = _get_conn()
     with conn.cursor() as cur:
         cur.execute("select count(*) from staging.stg_bag_pand_spatial where geom is null;")
@@ -44,6 +77,8 @@ def test_spatial_geom_not_null_and_srid():
 @pytest.mark.integration
 def test_spatial_gist_index_exists():
     """Assert a GiST index exists on the `geom` column of the spatial model."""
+    require_table_exists("staging", "stg_bag_pand_spatial")
+
     conn = _get_conn()
     with conn.cursor() as cur:
         cur.execute(
