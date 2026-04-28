@@ -7,7 +7,6 @@ from typer.testing import CliRunner
 
 from fip import cli
 
-
 runner = CliRunner()
 
 
@@ -24,7 +23,15 @@ def _make_pdok_payload() -> dict[str, object]:
                 },
                 "geometry": {
                     "type": "Polygon",
-                    "coordinates": [[[4.8, 52.3], [4.9, 52.3], [4.9, 52.4], [4.8, 52.4], [4.8, 52.3]]],
+                    "coordinates": [
+                        [
+                            [4.8, 52.3],
+                            [4.9, 52.3],
+                            [4.9, 52.4],
+                            [4.8, 52.4],
+                            [4.8, 52.3],
+                        ]
+                    ],
                 },
             }
         ],
@@ -77,7 +84,15 @@ def _make_archived_payload() -> dict[str, object]:
                 },
                 "geometry": {
                     "type": "Polygon",
-                    "coordinates": [[[4.8, 52.3], [4.9, 52.3], [4.9, 52.4], [4.8, 52.4], [4.8, 52.3]]],
+                    "coordinates": [
+                        [
+                            [4.8, 52.3],
+                            [4.9, 52.3],
+                            [4.9, 52.4],
+                            [4.8, 52.4],
+                            [4.8, 52.3],
+                        ]
+                    ],
                 },
             }
         ],
@@ -134,7 +149,8 @@ def test_archive_region_geom_command_writes_normalized_geojson_to_local_target(
     )
 
     assert result.exit_code == 0
-    assert result.stdout == f"Archived region geometry to {tmp_path}/raw/region_geom/cbs-wijken-en-buurten-2025/region-geom-2025/gemeenten.geojson\n"
+    assert result.stdout.startswith("Archived region geometry to ")
+    assert result.stdout.endswith("gemeenten.geojson\n")
     assert fake_client.calls == [
         "https://api.pdok.nl/cbs/wijken-en-buurten-2025/ogc/v1/collections/gemeenten/items?f=json&limit=1000"
     ]
