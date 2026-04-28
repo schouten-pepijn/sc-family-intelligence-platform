@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import date, datetime
+from typing import cast
 
 from typer.testing import CliRunner
 
@@ -40,7 +41,8 @@ def _make_pdok_payload() -> dict[str, object]:
 
 def _make_pdok_payload_with_buitenland() -> dict[str, object]:
     payload = _make_pdok_payload()
-    payload["features"] = payload["features"] + [
+    features = cast(list[dict[str, object]], payload["features"])
+    payload["features"] = features + [
         {
             "type": "Feature",
             "properties": {
@@ -268,7 +270,7 @@ def test_build_region_geom_command_parses_archived_geojson_and_writes_rows(
     assert result.exit_code == 0
     assert result.stdout == "Wrote 1 region geometry rows\n"
     assert calls["table_name"] == "region_geom"
-    rows = calls["rows"]
+    rows = cast(list[dict[str, object]], calls["rows"])
     assert len(rows) == 1
     row = rows[0]
     assert row["source_name"] == "pdok_cbs_wijken_en_buurten"
@@ -280,7 +282,7 @@ def test_build_region_geom_command_parses_archived_geojson_and_writes_rows(
     assert row["source_version"] == "2025"
     assert row["retrieved_at"] == datetime.fromisoformat("2025-04-26T12:00:00+00:00")
     assert row["valid_from"] == date(2025, 1, 1)
-    assert row["geometry"].startswith('{"coordinates"')
+    assert cast(str, row["geometry"]).startswith('{"coordinates"')
 
 
 def test_load_region_geom_command_archives_and_loads(
@@ -324,8 +326,9 @@ def test_load_region_geom_command_archives_and_loads(
     )
 
     assert result.exit_code == 0
-    assert calls["archive_kwargs"]["target"] == "local"
+    archive_kwargs = cast(dict[str, object], calls["archive_kwargs"])
+    assert archive_kwargs["target"] == "local"
     assert calls["table_name"] == "region_geom"
-    rows = calls["rows"]
+    rows = cast(list[dict[str, object]], calls["rows"])
     assert len(rows) == 1
     assert rows[0]["region_id"] == "GM0363"
