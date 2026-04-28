@@ -4,7 +4,6 @@ from collections.abc import Sequence
 
 from fip.gold.core.postgres import PostgresFullRefreshWriter
 
-
 REGION_GEOM_FIELDS = (
     "source_name",
     "natural_key",
