@@ -526,11 +526,19 @@ def test_archive_cbs_raw_command_selects_target_writer(
             calls["manifest_table_id"] = table_id
             return None
 
+    class FakeSourceRunLandingWriter:
+        def write(self, manifests) -> int:
+            rows = list(manifests)
+            calls["source_run_writer"] = "called"
+            calls["source_run_manifests"] = rows
+            return len(rows)
+
     monkeypatch.setattr("fip.commands.cbs.CBSODataSource", FakeSource)
     monkeypatch.setattr("fip.commands.cbs.RawSnapshotWriter", FakeLocalWriter)
     monkeypatch.setattr("fip.commands.cbs.S3RawSnapshotWriter", FakeS3Writer)
     monkeypatch.setattr("fip.commands.cbs.LocalManifestWriter", FakeLocalManifestWriter)
     monkeypatch.setattr("fip.commands.cbs.S3ManifestWriter", FakeS3ManifestWriter)
+    monkeypatch.setattr("fip.commands.cbs.SourceRunLandingWriter", FakeSourceRunLandingWriter)
 
     result = runner.invoke(
         cli.app,
@@ -560,6 +568,8 @@ def test_archive_cbs_raw_command_selects_target_writer(
         assert calls["manifest_base_dir"] == Path(".raw-smoke")
     assert calls["manifest_writer"] == expected_writer
     assert calls["manifest_table_id"] == "83625NED"
+    assert calls["source_run_writer"] == "called"
+    assert len(calls["source_run_manifests"]) == 1
     manifest = calls["manifest"]
     assert manifest.source_name == "cbs_statline"
     assert manifest.source_family == "cbs"
@@ -899,11 +909,19 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
             calls["manifest_table_id"] = table_id
             return None
 
+    class FakeSourceRunLandingWriter:
+        def write(self, manifests) -> int:
+            rows = list(manifests)
+            calls["source_run_writer"] = "called"
+            calls["source_run_manifests"] = rows
+            return len(rows)
+
     monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGGeoPackageSource", FakeSource)
     monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotWriter", FakeLocalWriter)
     monkeypatch.setattr("fip.commands.pdok_bag.S3RawSnapshotWriter", FakeS3Writer)
     monkeypatch.setattr("fip.commands.pdok_bag.LocalManifestWriter", FakeLocalManifestWriter)
     monkeypatch.setattr("fip.commands.pdok_bag.S3ManifestWriter", FakeS3ManifestWriter)
+    monkeypatch.setattr("fip.commands.pdok_bag.SourceRunLandingWriter", FakeSourceRunLandingWriter)
 
     result = runner.invoke(
         cli.app,
@@ -940,6 +958,8 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
         assert calls["manifest_base_dir"] == Path(".raw-smoke")
     assert calls["manifest_writer"] == expected_writer
     assert calls["manifest_table_id"] is None
+    assert calls["source_run_writer"] == "called"
+    assert len(calls["source_run_manifests"]) == 1
     manifest = calls["manifest"]
     assert manifest.source_name == "bag_gpkg"
     assert manifest.source_family == "pdok_bag"
