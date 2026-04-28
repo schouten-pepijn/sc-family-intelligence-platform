@@ -587,6 +587,19 @@ def test_archive_bag_raw_command_selects_target_writer(
             calls["rows"] = rows
             return len(rows)
 
+        def open_for_record(self, record: RawRecord):
+            calls["rows"] = []
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    if value != "\n":
+                        calls["rows"].append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
+
     class FakeS3Writer:
         def __init__(self) -> None:
             calls["writer"] = "s3"
@@ -595,6 +608,19 @@ def test_archive_bag_raw_command_selects_target_writer(
             rows = list(records)
             calls["rows"] = rows
             return len(rows)
+
+        def open_for_record(self, record: RawRecord):
+            calls["rows"] = []
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    if value != "\n":
+                        calls["rows"].append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
 
     monkeypatch.setattr("fip.commands.pdok_bag.PDOKBAGSource", FakeSource)
     monkeypatch.setattr("fip.commands.pdok_bag.RawSnapshotWriter", FakeLocalWriter)
