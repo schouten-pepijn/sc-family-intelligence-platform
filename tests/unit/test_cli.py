@@ -567,6 +567,16 @@ def test_archive_cbs_raw_command_selects_target_writer(
     assert manifest.source_version == "83625NED"
     assert manifest.row_count == 1
     assert manifest.status == "success"
+    assert manifest.error_message is None
+    assert manifest.source_url == "https://opendata.cbs.nl/ODataApi/OData/83625NED"
+    assert manifest.license == "cbs_open_data"
+    assert manifest.attribution == "CBS StatLine"
+    if target == "local":
+        assert (
+            Path(manifest.raw_uri) == Path(".raw-smoke") / "raw" / "cbs" / "83625NED" / "debug-raw"
+        )
+    else:
+        assert manifest.raw_uri.endswith("/raw/cbs/83625NED/debug-raw/")
 
 
 @pytest.mark.parametrize(
