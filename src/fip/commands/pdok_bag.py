@@ -8,31 +8,31 @@ from fip.cli import app
 from fip.commands._helpers import dedupe_raw_records, read_bronze_rows, read_silver_rows
 from fip.gold.core.service import write_rows_to_sink
 from fip.gold.pdok_bag.bag_adressen_writer import BAGAdressenLandingWriter
+from fip.gold.pdok_bag.bag_gpkg_layer_writer import BAGGpkgLayerLandingWriter
 from fip.gold.pdok_bag.bag_gpkg_verblijfsobject_writer import (
     BAGGpkgVerblijfsobjectLandingWriter,
 )
-from fip.gold.pdok_bag.bag_gpkg_layer_writer import BAGGpkgLayerLandingWriter
 from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
 from fip.ingestion.base import RawRecord
+from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.ingestion.pdok_bag.gpkg_cache import resolve_gpkg_source_ref
 from fip.ingestion.pdok_bag.gpkg_source import GPKG_URL, PDOKBAGGeoPackageSource
-from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.lakehouse.bronze.bag_factory import BAGIcebergSinkFactory
 from fip.lakehouse.silver.pdok_bag.bag_adressen_service import (
     write_bronze_rows_to_bag_adressen_sink,
 )
 from fip.lakehouse.silver.pdok_bag.bag_adressen_sink import BAGAdressenSink
+from fip.lakehouse.silver.pdok_bag.bag_gpkg_layer_service import (
+    write_bronze_rows_to_bag_gpkg_layer_sink,
+)
+from fip.lakehouse.silver.pdok_bag.bag_gpkg_layer_sink import BAGGpkgLayerSink
 from fip.lakehouse.silver.pdok_bag.bag_gpkg_verblijfsobject_service import (
     write_bronze_rows_to_bag_gpkg_verblijfsobject_sink,
 )
 from fip.lakehouse.silver.pdok_bag.bag_gpkg_verblijfsobject_sink import (
     BAGGpkgVerblijfsobjectSink,
 )
-from fip.lakehouse.silver.pdok_bag.bag_gpkg_layer_service import (
-    write_bronze_rows_to_bag_gpkg_layer_sink,
-)
-from fip.lakehouse.silver.pdok_bag.bag_gpkg_layer_sink import BAGGpkgLayerSink
 from fip.lakehouse.silver.pdok_bag.bag_pand_service import (
     write_bronze_rows_to_bag_pand_sink,
 )
@@ -43,14 +43,19 @@ from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_service import (
 from fip.lakehouse.silver.pdok_bag.bag_verblijfsobject_sink import (
     BAGVerblijfsobjectSink,
 )
-from fip.raw.reader import S3RawSnapshotReader, RawSnapshotReader
+from fip.raw.reader import RawSnapshotReader, S3RawSnapshotReader
 from fip.raw.writer import (
-    S3RawSnapshotWriter,
     RawSnapshotWriteHandle,
     RawSnapshotWriter,
+    S3RawSnapshotWriter,
     serialize_raw_record,
 )
 from fip.settings import get_settings
+
+GPKG_CACHE_DIR_OPTION = typer.Option(
+    Path(".cache/pdok-bag"),
+    help="Local cache directory for URL GeoPackage sources.",
+)
 
 
 def _bag_raw_reader(
