@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import datetime, timezone
-from pathlib import Path
 from math import isnan
+from pathlib import Path
 from typing import Any, SupportsInt
 
-import pyogrio  # type: ignore[import-untyped]
-from shapely.geometry import mapping  # type: ignore[import-untyped]
+import pyogrio
+from shapely.geometry import mapping
 
 from fip.ingestion.base import RawRecord
 
@@ -105,9 +105,7 @@ class PDOKBAGGeoPackageSource:
     ) -> None:
         if layer not in GPKG_LAYER_FIELDS:
             supported = ", ".join(sorted(GPKG_LAYER_FIELDS))
-            raise ValueError(
-                f"Unsupported BAG GPKG layer '{layer}'. Expected one of: {supported}"
-            )
+            raise ValueError(f"Unsupported BAG GPKG layer '{layer}'. Expected one of: {supported}")
         self.run_id = run_id
         self.source_ref = str(source_ref)
         self.layer = layer
