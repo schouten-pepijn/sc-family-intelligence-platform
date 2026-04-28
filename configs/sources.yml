@@ -1,0 +1,132 @@
+version: 1
+
+sources:
+  cbs_statline:
+    source_name: cbs_statline
+    source_family: cbs
+    access_type: odata_api
+    core_or_plugin: core
+    base_url: https://opendata.cbs.nl/ODataApi/OData
+    license: cbs_open_data
+    attribution: "CBS StatLine"
+    refresh_policy: source_dependent
+    requires_api_key: false
+    raw_manifest_required: true
+    expected_grain: table_entity_record
+    join_keys:
+      - region_id
+      - period_id
+      - measure_id
+    notes: "Existing source family. Used for housing, WOZ, housing stock, demographics."
+
+  pdok_bag_gpkg:
+    source_name: pdok_bag_gpkg
+    source_family: pdok_bag
+    access_type: geopackage_download
+    core_or_plugin: core
+    base_url: https://service.pdok.nl/kadaster/bag/atom/downloads/bag-light.gpkg
+    license: pdok_open_data
+    attribution: "PDOK / Kadaster BAG"
+    refresh_policy: periodic_download
+    requires_api_key: false
+    raw_manifest_required: true
+    expected_grain: bag_feature
+    join_keys:
+      - bag_object_id
+      - address_id
+      - geometry
+    notes: "Primary BAG full-load path. Feeds address/location spine."
+
+  pdok_region_geom:
+    source_name: pdok_region_geom
+    source_family: pdok
+    access_type: ogc_api_features
+    core_or_plugin: core
+    base_url: https://api.pdok.nl/cbs/wijkenbuurten/ogc/v1
+    license: pdok_open_data
+    attribution: "PDOK / CBS Wijken en Buurten"
+    refresh_policy: yearly
+    requires_api_key: false
+    raw_manifest_required: true
+    expected_grain: region_geometry
+    join_keys:
+      - region_id
+      - region_level
+      - geometry
+    notes: "Municipality, wijk, and buurt geometry source."
+
+  politie_crime:
+    source_name: politie_crime
+    source_family: politie
+    access_type: odata_api
+    core_or_plugin: core
+    base_url: https://dataderden.cbs.nl/ODataApi/OData
+    license: open_data
+    attribution: "Politie / CBS"
+    refresh_policy: monthly_or_yearly
+    requires_api_key: false
+    raw_manifest_required: true
+    expected_grain: region_period_crime_type
+    join_keys:
+      - region_id
+      - period_id
+      - crime_type_id
+    tables:
+      yearly: 47018NED
+      monthly: 47022NED
+    notes: "First new source family after BAG/CBS."
+
+  duo_schools:
+    source_name: duo_schools
+    source_family: duo
+    access_type: official_download
+    core_or_plugin: core
+    base_url: https://www.duo.nl/open_onderwijsdata/
+    license: open_data
+    attribution: "DUO Open Onderwijsdata"
+    refresh_policy: source_dependent
+    requires_api_key: false
+    raw_manifest_required: true
+    expected_grain: school_location
+    join_keys:
+      - source_location_id
+      - address_id
+      - geometry
+    notes: "Feeds school access marts through dim_source_location."
+
+  lrk_childcare:
+    source_name: lrk_childcare
+    source_family: lrk
+    access_type: csv_download
+    core_or_plugin: core
+    base_url: https://data.overheid.nl/dataset/gegevens-kinderopvanglocaties-lrk
+    license: cc0
+    attribution: "Landelijk Register Kinderopvang"
+    refresh_policy: twice_weekly
+    requires_api_key: false
+    raw_manifest_required: true
+    expected_grain: childcare_location
+    join_keys:
+      - source_location_id
+      - address_id
+      - geometry
+    notes: "Feeds childcare access marts through dim_source_location."
+
+  funda:
+    source_name: funda
+    source_family: listings
+    access_type: restricted_platform
+    core_or_plugin: excluded_from_core
+    base_url: https://www.funda.nl/
+    license: restricted_terms
+    attribution: "Funda"
+    refresh_policy: not_applicable
+    requires_api_key: null
+    raw_manifest_required: true
+    expected_grain: listing_snapshot
+    join_keys:
+      - listing_id
+      - address_id
+      - bag_object_id
+      - geometry
+    notes: "No scraping. Only allowed through explicit compliant plugin/source contract."
