@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: mart_source_run_latest
+    description: Latest archived run per source, exposing run status and manifest metadata for operational monitoring.
+    columns:
+      - name: source_name
+        tests:
+          - not_null
+          - unique
+      - name: source_family
+        tests:
+          - not_null
+      - name: run_id
+        tests:
+          - not_null
+      - name: started_at
+        tests:
+          - not_null
+      - name: source_url
+        tests:
+          - not_null
+      - name: license
+        tests:
+          - not_null
+      - name: attribution
+        tests:
+          - not_null
+      - name: raw_uri
+        tests:
+          - not_null
+      - name: row_count
+        tests:
+          - not_null
+      - name: status
+        tests:
+          - not_null
