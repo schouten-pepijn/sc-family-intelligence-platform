@@ -39,4 +39,3 @@ class BAGGpkgVerblijfsobjectSink(SilverIcebergSink):
                 pa.field("geometry", pa.string(), nullable=True),
             ]
         )
-

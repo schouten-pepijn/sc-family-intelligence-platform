@@ -18,4 +18,3 @@ def write_bronze_rows_to_bag_gpkg_verblijfsobject_sink(
     """Transform bronze rows to the BAG GPKG Silver schema and write to sink."""
     silver_rows = flatten_bronze_bag_gpkg_verblijfsobject_rows(bronze_rows)
     return sink.write(silver_rows)
-
