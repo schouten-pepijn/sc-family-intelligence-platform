@@ -47,11 +47,11 @@ class Settings(BaseSettings):
     )
     s3_access_key_id: str = Field(
         default="rustfsadmin",
-        validation_alias=AliasChoices("S3_ACCESS_KEY_ID", "RUSTFS_ACCESS_KEY"),
+        validation_alias=AliasChoices("RUSTFS_ACCESS_KEY", "S3_ACCESS_KEY_ID"),
     )
     s3_secret_access_key: str = Field(
         default="rustfsadmin",
-        validation_alias=AliasChoices("S3_SECRET_ACCESS_KEY", "RUSTFS_SECRET_KEY"),
+        validation_alias=AliasChoices("RUSTFS_SECRET_KEY", "S3_SECRET_ACCESS_KEY"),
     )
     s3_path_style_access: bool = Field(
         default=True,
