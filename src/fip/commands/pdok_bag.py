@@ -15,6 +15,7 @@ from fip.gold.pdok_bag.bag_gpkg_verblijfsobject_writer import (
 )
 from fip.gold.pdok_bag.bag_pand_writer import BAGPandLandingWriter
 from fip.gold.pdok_bag.bag_verblijfsobject_writer import BAGVerblijfsobjectLandingWriter
+from fip.gold.source_runs_writer import SourceRunLandingWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.ingestion.pdok_bag.gpkg_cache import resolve_gpkg_source_ref
@@ -325,6 +326,8 @@ def archive_bag_gpkg(
             LocalManifestWriter(base_dir=output_dir).write(manifest)
         elif target == "s3":
             S3ManifestWriter().write(manifest)
+
+        SourceRunLandingWriter().write([manifest])
 
     typer.echo(f"Wrote {written} raw records")
 

@@ -14,6 +14,7 @@ from fip.commands._helpers import (
 )
 from fip.gold.cbs.cbs_observations_writer import CBSObservationLandingWriter
 from fip.gold.core.service import write_rows_to_sink
+from fip.gold.source_runs_writer import SourceRunLandingWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.cbs.adapter import CBSODataSource
 from fip.lakehouse.bronze.cbs_factory import CBSIcebergSinkFactory
@@ -139,6 +140,8 @@ def archive_cbs_raw(
             LocalManifestWriter(base_dir=output_dir).write(manifest, table_id=table_id)
         elif target == "s3":
             S3ManifestWriter().write(manifest, table_id=table_id)
+
+        SourceRunLandingWriter().write([manifest])
 
     typer.echo(f"Wrote {written} raw records")
 
