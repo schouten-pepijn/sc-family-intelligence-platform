@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: dim_source_run
+    columns:
+      - name: source_name
+        tests:
+          - not_null
+      - name: source_family
+        tests:
+          - not_null
+      - name: run_id
+        tests:
+          - not_null
+          - unique
+      - name: started_at
+        tests:
+          - not_null
+      - name: source_url
+        tests:
+          - not_null
+      - name: license
+        tests:
+          - not_null
+      - name: attribution
+        tests:
+          - not_null
+      - name: raw_uri
+        tests:
+          - not_null
+      - name: row_count
+        tests:
+          - not_null
+      - name: status
+        tests:
+          - not_null
