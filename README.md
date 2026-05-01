@@ -143,9 +143,7 @@ The local pipeline currently looks like this:
    Read BAG GeoPackage Silver rows and full-refresh the Postgres landing tables.
 11. `build-landing-observations`
    Read Silver rows and full-refresh the Postgres landing table.
-12. `inspect-bag-landing-verblijfsobject` / `inspect-bag-landing-pand`
-    Postgres readback of the BAG landing tables.
-13. `inspect-landing`
+12. `inspect-landing`
    Postgres readback of the landing table.
 
 Current write semantics:
