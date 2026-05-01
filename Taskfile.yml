@@ -206,15 +206,15 @@ tasks:
     cmds:
       - uv run --project sql dbt debug --project-dir sql --profiles-dir sql
 
-  dbt-run:
-    desc: Run dbt models against the local landing schema
+  dbt-run-cbs:
+    desc: Run CBS-only dbt models against the local landing schema
     cmds:
-      - uv run --project sql dbt run --project-dir sql --profiles-dir sql --exclude stg_cbs_eigendom_codes stg_cbs_observations_85036 dim_eigendom mart_municipality_woz_snapshot source:landing.cbs_eigendom_codes source:landing.cbs_observations_85036ned
+      - uv run --project sql dbt run --project-dir sql --profiles-dir sql --select +mart_cbs_observations +mart_cbs_observation_values_by_region_year mart_cbs_observation_exceptions
 
-  dbt-test:
-    desc: Run dbt tests against the local landing schema
+  dbt-test-cbs:
+    desc: Run CBS-only dbt tests against the local landing schema
     cmds:
-      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --exclude stg_cbs_eigendom_codes stg_cbs_observations_85036 dim_eigendom mart_municipality_woz_snapshot source:landing.cbs_eigendom_codes source:landing.cbs_observations_85036ned
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select +mart_cbs_observations +mart_cbs_observation_values_by_region_year mart_cbs_observation_exceptions --indirect-selection cautious
 
   dbt-run-woz:
     desc: Run only the 85036NED / WOZ dbt models against the local landing schema
@@ -226,20 +226,10 @@ tasks:
     cmds:
       - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_eigendom_codes stg_cbs_observations_85036 dim_eigendom mart_municipality_woz_snapshot source:landing.cbs_eigendom_codes source:landing.cbs_observations_85036ned
 
-  dbt-run-housing:
-    desc: Run only the 85035NED / housing dbt models against the local landing schema
-    cmds:
-      - uv run --project sql dbt run --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 mart_municipality_housing_snapshot
-
-  dbt-test-housing:
-    desc: Run only the 85035NED / housing dbt tests against the local landing schema
-    cmds:
-      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 mart_municipality_housing_snapshot source:landing.cbs_observations_85035ned
-
   dbt-test-smoke:
-    desc: Run a smoke-sized dbt test selection for the changed CBS, housing, and spatial models
+    desc: Run a smoke-sized dbt test selection for the changed CBS, housing, and BAG GeoPackage v2 spatial models
     cmds:
-      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 stg_cbs_observations_85036 stg_bag_adressen_spatial stg_bag_pand_spatial stg_region_geom mart_bag_region_bridge_comparison mart_cbs_observation_exceptions mart_municipality_housing_snapshot mart_municipality_woz_snapshot mart_bag_data_quality_by_municipality source:landing.cbs_observations_85035ned source:landing.cbs_observations_85036ned source:landing.region_geom
+      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_cbs_observations_85035 stg_cbs_observations_85036 stg_bag_gpkg_verblijfsobject stg_bag_gpkg_verblijfsobject_spatial stg_region_geom bridge_bag_gpkg_verblijfsobject_to_region_spatial mart_cbs_observation_exceptions mart_municipality_housing_snapshot mart_municipality_woz_snapshot mart_bag_data_quality_by_municipality source:landing.cbs_observations_85035ned source:landing.cbs_observations_85036ned source:landing.bag_gpkg_verblijfsobject source:landing.region_geom
 
   precommit:
     desc: Run pre-commit on all files
