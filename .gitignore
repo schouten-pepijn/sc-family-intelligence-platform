@@ -21,7 +21,7 @@ sql/.venv/
 
 # local files
 .duckdb/
-own_docs/
+notes/
 .vscode/
 .idea/
 .codex/
