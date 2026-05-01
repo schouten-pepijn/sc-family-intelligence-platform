@@ -21,6 +21,7 @@ def make_raw_record(natural_key: str) -> RawRecord:
 
 
 def test_iceberg_sink_initializes_with_table_ident() -> None:
+
     sink = IcebergSink(table_ident="bronze.cbs_observations_83625ned")
 
     assert sink.table_ident == "bronze.cbs_observations_83625ned"
