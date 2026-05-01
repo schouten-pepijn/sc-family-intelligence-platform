@@ -12,7 +12,6 @@ from fip.gold.readback import connect as connect_postgres
 from fip.gold.readback import count_rows as count_gold_rows
 from fip.gold.readback import sample_rows as sample_gold_rows
 from fip.ingestion.cbs.adapter import CBSODataSource
-from fip.ingestion.pdok_bag.adapter import PDOKBAGSource
 from fip.readback.duckdb import (
     attach_iceberg_catalog,
     count_rows,
@@ -34,27 +33,6 @@ def inspect_cbs_raw(
     ),
 ) -> None:
     source = CBSODataSource(table_id=table_id, run_id=run_id)
-    for record in iter_sampled_records(source=source, entity=entity, limit=limit):
-        typer.echo(record.entity_name)
-        typer.echo(f"natural_key={record.natural_key}")
-        typer.echo(json.dumps(record.payload, indent=2, ensure_ascii=False))
-        typer.echo("")
-
-
-@app.command("inspect-bag-raw")
-def inspect_bag_raw(
-    run_id: str = typer.Option("debug-raw", help="Run id for the inspection session."),
-    collection: str = typer.Option(
-        "verblijfsobject",
-        help="BAG collection to inspect, for example verblijfsobject or pand.",
-    ),
-    limit: int = typer.Option(5, help="Number of records to print."),
-    entity: str | None = typer.Option(
-        None,
-        help="Optional entity filter, for example verblijfsobject or pand.",
-    ),
-) -> None:
-    source = PDOKBAGSource(run_id=run_id, collection=collection)
     for record in iter_sampled_records(source=source, entity=entity, limit=limit):
         typer.echo(record.entity_name)
         typer.echo(f"natural_key={record.natural_key}")
@@ -86,21 +64,6 @@ def inspect_bronze(
         typer.echo(str(row))
 
 
-@app.command("inspect-bag-bronze")
-def inspect_bag_bronze(
-    collection: str = typer.Option(
-        "verblijfsobject",
-        help="BAG collection to inspect, for example verblijfsobject or pand.",
-    ),
-    namespace: str | None = typer.Option(
-        None,
-        help="Iceberg namespace to inspect. Defaults to configured bronze namespace.",
-    ),
-    limit: int = typer.Option(5, help="Number of sample rows to display."),
-) -> None:
-    inspect_bronze(table_name=f"bag_{collection}", namespace=namespace, limit=limit)
-
-
 @app.command("inspect-cbs-silver")
 def inspect_cbs_silver(
     table_name: str = typer.Option(
@@ -130,28 +93,6 @@ def inspect_cbs_silver(
         typer.echo(str(row))
 
 
-@app.command("inspect-bag-silver")
-def inspect_bag_silver(
-    namespace: str | None = typer.Option(
-        None,
-        help="Iceberg namespace to inspect. Defaults to configured silver namespace.",
-    ),
-    limit: int = typer.Option(5, help="Number of sample rows to display."),
-) -> None:
-    inspect_cbs_silver(table_name="bag_verblijfsobject_flat", namespace=namespace, limit=limit)
-
-
-@app.command("inspect-bag-silver-pand")
-def inspect_bag_silver_pand(
-    namespace: str | None = typer.Option(
-        None,
-        help="Iceberg namespace to inspect. Defaults to configured silver namespace.",
-    ),
-    limit: int = typer.Option(5, help="Number of sample rows to display."),
-) -> None:
-    inspect_cbs_silver(table_name="bag_pand_flat", namespace=namespace, limit=limit)
-
-
 @app.command("inspect-landing")
 def inspect_landing(
     table_name: str = typer.Option(
@@ -176,25 +117,3 @@ def inspect_landing(
     typer.echo(f"Sample rows ({len(rows)}):")
     for row in rows:
         typer.echo(str(row))
-
-
-@app.command("inspect-bag-landing-verblijfsobject")
-def inspect_bag_landing_verblijfsobject(
-    schema: str | None = typer.Option(
-        None,
-        help="Postgres schema to inspect. Defaults to configured landing schema.",
-    ),
-    limit: int = typer.Option(5, help="Number of sample rows to display."),
-) -> None:
-    inspect_landing(table_name="bag_verblijfsobject", schema=schema, limit=limit)
-
-
-@app.command("inspect-bag-landing-pand")
-def inspect_bag_landing_pand(
-    schema: str | None = typer.Option(
-        None,
-        help="Postgres schema to inspect. Defaults to configured landing schema.",
-    ),
-    limit: int = typer.Option(5, help="Number of sample rows to display."),
-) -> None:
-    inspect_landing(table_name="bag_pand", schema=schema, limit=limit)

@@ -14,7 +14,6 @@ from fip.ingestion.pdok_bag.adressen_mapping import (
 )
 
 
-@app.command("build-bag-geo-region-mapping")
 def build_bag_geo_region_mapping(
     table_name: str = typer.Option(
         "bag_adressen_flat",
