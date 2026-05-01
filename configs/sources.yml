@@ -55,26 +55,23 @@ sources:
       - geometry
     notes: "Municipality, wijk, and buurt geometry source."
 
-  politie_crime:
-    source_name: politie_crime
-    source_family: politie
+  cbs_crime:
+    source_name: cbs_crime
+    source_family: cbs
     access_type: odata_api
     core_or_plugin: core
-    base_url: https://dataderden.cbs.nl/ODataApi/OData
-    license: open_data
-    attribution: "Politie / CBS"
-    refresh_policy: monthly_or_yearly
+    base_url: https://opendata.cbs.nl/ODataApi/OData/83648NED
+    license: cbs_open_data
+    attribution: "CBS StatLine"
+    refresh_policy: annual
     requires_api_key: false
     raw_manifest_required: true
-    expected_grain: region_period_crime_type
+    expected_grain: region_year_crime_type
     join_keys:
       - region_id
       - period_id
       - crime_type_id
-    tables:
-      yearly: 47018NED
-      monthly: 47022NED
-    notes: "First new source family after BAG/CBS."
+    notes: "Registered crime counts and suspects by municipality and regional unit. Feeds region safety."
 
   duo_schools:
     source_name: duo_schools
