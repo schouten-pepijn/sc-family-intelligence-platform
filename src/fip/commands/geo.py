@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typer
 
-from fip.cli import app
 from fip.commands._helpers import read_silver_rows
 from fip.gold.core.service import write_rows_to_sink
 from fip.gold.pdok_bag.bag_geo_region_mapping_writer import (
