@@ -34,13 +34,13 @@ to `GMxxxx`.
 Netherlands, provinces, and the 4 largest municipalities, so it belongs in a
 separate price-index mart instead of a `GMxxxx`-wide snapshot.
 
-The BAG-to-municipality bridge is now spatial by default:
+The BAG-to-municipality bridge now uses the BAG GeoPackage v2 spatial flow:
 
-- `bridge_bag_to_geo_region` delegates to the spatial bridge
+- `bridge_bag_to_geo_region` delegates to the GeoPackage v2 spatial bridge
 - `bridge_bag_to_geo_region_legacy_code` preserves the old GM-code path for
   parity checks and rollback
-- `mart_bag_region_bridge_comparison` is the migration check between the two
-  paths
+- the old BAG API / GM-code path is retained in SQL for comparison and rollback,
+  but it is no longer part of the default smoke task
 
 ## Data Layers
 
@@ -68,9 +68,7 @@ The local validation loop is:
 - `task test-integration` for the Bronze -> Silver -> landing roundtrip against the local stack
 - `task cbs-flow` for the CBS-only raw -> Bronze -> Silver -> landing -> dbt flow, isolated with `run_id=smoke-flow`
 - `task load-woz` for the CBS 85036NED flow with its own raw -> Bronze -> Silver -> landing -> dbt path, isolated with `run_id=woz-load`, including the `EigendomCodes` codelist
-- `task load-medium` for the CBS + BAG flow with moderate BAG limits, isolated with `run_id=medium-load`
-- `task load-all` for the full CBS + BAG data load, isolated with `run_id=load-all`
-- `task load-smoke` for the full CBS + BAG data load with small limits, isolated with `run_id=smoke-load`
+- `task load-smoke` for the current CBS + BAG GeoPackage v2 data load with small limits, isolated with `run_id=smoke-load`
 - `task check` for the standard local quality gate
 
 ## Quick Start
@@ -83,13 +81,9 @@ The local validation loop is:
    Runs the CBS-only flow from raw through Bronze, Silver, landing, and dbt with `run_id=smoke-flow`.
 4. `task load-woz`
    Runs the CBS 85036NED flow from raw through Bronze, Silver, landing, and dbt with `run_id=woz-load`, including the `EigendomCodes` codelist.
-5. `task load-medium`
-   Runs the CBS + BAG flow with medium BAG limits and `run_id=medium-load`.
-6. `task load-all`
-   Runs the full CBS + BAG data load, including raw archiving, Bronze, Silver, landing, and dbt, with `run_id=load-all`.
-7. `task load-smoke`
-   Runs the same full flow with small limits and `run_id=smoke-load`.
-8. `task reset-data`
+5. `task load-smoke`
+   Runs the current CBS + BAG GeoPackage v2 flow with small limits and `run_id=smoke-load`.
+6. `task reset-data`
    Stops the stack, removes volumes, and clears generated local data.
 
 ## Project Structure
@@ -114,11 +108,12 @@ The local validation loop is:
 4. CBS Silver full refresh, DuckDB readback, and the `inspect-cbs-silver` CLI path are working.
    The Silver package now splits shared sink mechanics into `silver/core` and
    source-specific transforms into `silver/cbs/...` and `silver/pdok_bag/...`.
-5. BAG raw, Bronze, Silver, and landing slices are present for `verblijfsobject`, `pand`, and `adres`.
+5. BAG GeoPackage raw, Bronze, Silver, and landing slices are present for
+   `verblijfsobject`, `pand`, `woonplaats`, `ligplaats`, and `standplaats`.
 6. The BAG raw archive path now flushes in chunks instead of buffering a whole collection in memory.
-7. The BAG geo bridge now uses the spatial municipality bridge by default; the
-   GM-code path remains available as `bridge_bag_to_geo_region_legacy_code`
-   for comparison and rollback.
+7. The BAG geo bridge now uses the GeoPackage v2 spatial municipality bridge by
+   default; the GM-code path remains available as
+   `bridge_bag_to_geo_region_legacy_code` for comparison and rollback.
 8. The Postgres landing full refresh and the `inspect-landing` CLI path are working.
 9. Raw-reuse for ingest is in place; each full-chain task keeps a single `run_id` end-to-end. The next implementation steps are stronger BAG end-to-end validation, more marts on top of the current reference dims, and possibly COPY-based Postgres landing writes if landing becomes the bottleneck.
 
@@ -138,27 +133,19 @@ The local pipeline currently looks like this:
    Read Bronze rows, flatten them into Silver observations, and full-refresh the Silver Iceberg table.
 6. `inspect-cbs-silver`
    DuckDB validation against the Silver Iceberg table.
-7. `archive-bag-raw`
-   Persist BAG source payloads as raw JSONL snapshots. The BAG archive path now flushes in chunks instead of buffering the whole collection in memory.
-8. `ingest-bag`
-   Bronze ingest from raw BAG snapshots into Iceberg through Polaris.
-9. `build-bag-silver-verblijfsobject`
-   Build the first BAG Silver slice from `bag_verblijfsobject`.
-10. `build-bag-silver-pand`
-   Build the first BAG `pand` Silver slice from `bag_pand`.
-11. `build-bag-silver-adressen`
-   Build the BAG `adres` Silver slice, including the `GMxxxx` municipality key.
-12. `build-bag-landing-verblijfsobject`
-   Read BAG `verblijfsobject` Silver rows and full-refresh the Postgres landing table.
-13. `build-bag-landing-pand`
-   Read BAG `pand` Silver rows and full-refresh the Postgres landing table.
-14. `build-bag-landing-adressen`
-   Read BAG `adres` Silver rows and full-refresh the Postgres landing table.
-15. `build-landing-observations`
+7. `archive-bag-gpkg`
+   Persist BAG GeoPackage layer rows as raw JSONL snapshots.
+8. `ingest-bag-gpkg`
+   Bronze ingest from raw BAG GeoPackage snapshots into Iceberg through Polaris.
+9. `build-bag-gpkg-silver-*`
+   Build normalized BAG GeoPackage Silver slices.
+10. `build-bag-gpkg-landing-*`
+   Read BAG GeoPackage Silver rows and full-refresh the Postgres landing tables.
+11. `build-landing-observations`
    Read Silver rows and full-refresh the Postgres landing table.
-16. `inspect-bag-landing-verblijfsobject` / `inspect-bag-landing-pand`
+12. `inspect-bag-landing-verblijfsobject` / `inspect-bag-landing-pand`
     Postgres readback of the BAG landing tables.
-17. `inspect-landing`
+13. `inspect-landing`
    Postgres readback of the landing table.
 
 Current write semantics:
