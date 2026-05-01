@@ -17,4 +17,5 @@ def main() -> None:
 from fip.commands import cbs as _cbs  # noqa: E402,F401
 from fip.commands import gis as _gis  # noqa: E402,F401
 from fip.commands import inspection as _inspection  # noqa: E402,F401
+from fip.commands import onderwijsinspectie as _onderwijsinspectie  # noqa: E402,F401
 from fip.commands import pdok_bag as _pdok_bag  # noqa: E402,F401
