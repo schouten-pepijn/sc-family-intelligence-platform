@@ -42,11 +42,6 @@ tasks:
     cmds:
       - docker compose down --remove-orphans
 
-  infra-vol-down:
-    desc: Stop the stack and remove volumes (data will be lost)
-    cmds:
-      - docker compose down -v --remove-orphans
-
   reset-data:
     desc: Stop the stack, remove volumes, and clear local generated data
     cmds:
@@ -100,19 +95,6 @@ tasks:
     cmds:
       - uv run pytest tests/integration -m integration
 
-  test-spatial:
-    desc: Run only the spatial integration validation test
-    env:
-      FIP_RUN_INTEGRATION: "1"
-    cmds:
-      - uv run pytest tests/integration/test_spatial_validations.py -q
-
-  check-spatial-sql:
-    desc: Run the SQL spatial health-check against the local Postgres container (no Python deps)
-    cmds:
-      - task: infra-up
-      - docker compose exec -T postgres env PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -q < ops/postgres/spatial_health_check.sql
-
   test-raw:
     desc: Run the raw landing smoke test against RustFS
     cmds:
@@ -121,23 +103,6 @@ tasks:
       - >-
         docker compose --profile init run --rm --no-deps --entrypoint /bin/sh rustfs-init -lc 'aws --endpoint-url "$S3_ENDPOINT_INTERNAL"
         s3 ls "s3://$S3_BUCKET/raw/cbs/83625NED/smoke-raw/"'
-
-  test-all:
-    desc: Run unit and integration tests
-    cmds:
-      - task: test-unit
-      - task: test-integration
-
-  archive-region-geom:
-    desc: Download CBS municipality geometries from PDOK and archive them to S3
-    cmds:
-      - uv run fip archive-region-geom --year 2025 --run-id region-geom-2025 --target s3
-
-  build-region-geom:
-    desc: Load authoritative region polygons into landing.region_geom
-    cmds:
-      - uv run python -c "from pathlib import Path; import sys; uri = r'{{.REGION_GEOM_INPUT}}'; sys.exit(0 if uri.startswith('s3://') or Path(uri).is_file() else 1)"
-      - uv run fip build-region-geom --input "{{.REGION_GEOM_INPUT}}" --table region_geom
 
   load-region-geom:
     desc: Download CBS municipality geometries from PDOK, archive them to S3, and load landing.region_geom
@@ -164,8 +129,8 @@ tasks:
       - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id smoke-flow
       - task: load-region-geom
       - task: dbt-debug
-      - task: dbt-run
-      - task: dbt-test
+      - task: dbt-run-cbs
+      - task: dbt-test-cbs
 
   load-woz:
     desc: "Load the CBS 85036NED observations flow, including raw, bronze, silver, landing, and dbt"
@@ -180,114 +145,31 @@ tasks:
       - task: dbt-run-woz
       - task: dbt-test-woz
 
-  load-housing:
-    desc: "Alias for the smoke load path that now also materializes 85035NED for the housing mart"
-    cmds:
-      - task: load-smoke
-
-  load-all:
-    desc: "Load the full CBS + BAG data flow, including bridge and dbt models"
-    cmds:
-      - task: infra-init
-      - uv run fip archive-cbs-raw --table-id 83625NED --run-id load-all --target s3
-      - uv run fip archive-bag-raw --run-id load-all --collection verblijfsobject --target s3
-      - uv run fip archive-bag-raw --run-id load-all --collection pand --target s3
-      - uv run fip archive-bag-raw --run-id load-all --collection adres --target s3
-      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id load-all --raw-target s3
-      - uv run fip build-gold-period-codes --table-id 83625NED --run-id load-all --raw-target s3
-      - uv run fip build-gold-region-codes --table-id 83625NED --run-id load-all --raw-target s3
-      - uv run fip ingest-cbs --table-id 83625NED --run-id load-all --raw-target s3
-      - uv run fip ingest-bag --collection verblijfsobject --run-id load-all --raw-target s3
-      - uv run fip ingest-bag --collection pand --run-id load-all --raw-target s3
-      - uv run fip ingest-bag --collection adres --run-id load-all --raw-target s3
-      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id load-all
-      - uv run fip build-bag-silver-verblijfsobject --run-id load-all
-      - uv run fip build-bag-silver-pand --run-id load-all
-      - uv run fip build-bag-silver-adressen --run-id load-all
-      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id load-all
-      - uv run fip archive-cbs-raw --table-id 85036NED --run-id load-all --target s3
-      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id load-all --raw-target s3
-      - uv run fip ingest-cbs --table-id 85036NED --run-id load-all --raw-target s3
-      - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id load-all
-      - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id load-all
-      - uv run fip archive-cbs-raw --table-id 85035NED --run-id load-all --target s3
-      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id load-all --raw-target s3
-      - uv run fip build-gold-period-codes --table-id 85035NED --run-id load-all --raw-target s3
-      - uv run fip build-gold-region-codes --table-id 85035NED --run-id load-all --raw-target s3
-      - uv run fip ingest-cbs --table-id 85035NED --run-id load-all --raw-target s3
-      - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id load-all
-      - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id load-all
-      - uv run fip build-bag-landing-verblijfsobject --run-id load-all
-      - uv run fip build-bag-landing-pand --run-id load-all
-      - uv run fip build-bag-landing-adressen --run-id load-all
-      - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id load-all
-      - task: load-region-geom
-      - task: dbt-run
-      - task: dbt-test
-      - task: dbt-run-woz
-      - task: dbt-test-woz
-
-  load-medium:
-    desc: "Load the CBS + BAG data flow with medium BAG limits"
-    cmds:
-      - task: infra-init
-      - uv run fip archive-cbs-raw --table-id 83625NED --run-id medium-load --target s3
-      - uv run fip archive-bag-raw --run-id medium-load --collection verblijfsobject --target s3 --limit 1000
-      - uv run fip archive-bag-raw --run-id medium-load --collection pand --target s3 --limit 1000
-      - uv run fip archive-bag-raw --run-id medium-load --collection adres --target s3 --limit 1000
-      - uv run fip build-gold-measure-codes --table-id 83625NED --run-id medium-load --raw-target s3
-      - uv run fip build-gold-period-codes --table-id 83625NED --run-id medium-load --raw-target s3
-      - uv run fip build-gold-region-codes --table-id 83625NED --run-id medium-load --raw-target s3
-      - uv run fip ingest-cbs --table-id 83625NED --run-id medium-load --raw-target s3
-      - uv run fip ingest-bag --collection verblijfsobject --run-id medium-load --limit 1000 --progress-every 100 --raw-target s3
-      - uv run fip ingest-bag --collection pand --run-id medium-load --limit 1000 --progress-every 100 --raw-target s3
-      - uv run fip ingest-bag --collection adres --run-id medium-load --limit 1000 --progress-every 100 --raw-target s3
-      - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id medium-load
-      - uv run fip build-bag-silver-verblijfsobject --run-id medium-load
-      - uv run fip build-bag-silver-pand --run-id medium-load
-      - uv run fip build-bag-silver-adressen --run-id medium-load
-      - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id medium-load
-      - uv run fip archive-cbs-raw --table-id 85036NED --run-id medium-load --target s3
-      - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id medium-load --raw-target s3
-      - uv run fip ingest-cbs --table-id 85036NED --run-id medium-load --limit 10000 --raw-target s3
-      - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id medium-load
-      - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id medium-load
-      - uv run fip archive-cbs-raw --table-id 85035NED --run-id medium-load --target s3
-      - uv run fip build-gold-measure-codes --table-id 85035NED --run-id medium-load --raw-target s3
-      - uv run fip build-gold-period-codes --table-id 85035NED --run-id medium-load --raw-target s3
-      - uv run fip build-gold-region-codes --table-id 85035NED --run-id medium-load --raw-target s3
-      - uv run fip ingest-cbs --table-id 85035NED --run-id medium-load --raw-target s3
-      - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id medium-load
-      - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id medium-load
-      - uv run fip build-bag-landing-verblijfsobject --run-id medium-load
-      - uv run fip build-bag-landing-pand --run-id medium-load
-      - uv run fip build-bag-landing-adressen --run-id medium-load
-      - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id medium-load --limit 1000 --rows 20
-      - task: load-region-geom
-      - task: dbt-run
-      - task: dbt-test
-      - task: dbt-run-woz
-      - task: dbt-test-woz
-
   load-smoke:
-    desc: "Load the full CBS + BAG data flow with small limits"
+    desc: "Load the full CBS + BAG GeoPackage v2 data flow with small limits"
     cmds:
       - task: infra-init
       - uv run fip archive-cbs-raw --table-id 83625NED --run-id smoke-load --target s3
-      - uv run fip archive-bag-raw --run-id smoke-load --collection verblijfsobject --target s3 --limit 25
-      - uv run fip archive-bag-raw --run-id smoke-load --collection pand --target s3 --limit 25
-      - uv run fip archive-bag-raw --run-id smoke-load --collection adres --target s3 --limit 25
+      - uv run fip archive-bag-gpkg --run-id smoke-load --source-ref data/pdok-bag/bag-light.gpkg --layer verblijfsobject --target s3 --limit 25
+      - uv run fip archive-bag-gpkg --run-id smoke-load --source-ref data/pdok-bag/bag-light.gpkg --layer pand --target s3 --limit 25
+      - uv run fip archive-bag-gpkg --run-id smoke-load --source-ref data/pdok-bag/bag-light.gpkg --layer woonplaats --target s3 --limit 25
+      - uv run fip archive-bag-gpkg --run-id smoke-load --source-ref data/pdok-bag/bag-light.gpkg --layer ligplaats --target s3 --limit 25
+      - uv run fip archive-bag-gpkg --run-id smoke-load --source-ref data/pdok-bag/bag-light.gpkg --layer standplaats --target s3 --limit 25
       - uv run fip build-gold-measure-codes --table-id 83625NED --run-id smoke-load --raw-target s3
       - uv run fip build-gold-period-codes --table-id 83625NED --run-id smoke-load --raw-target s3
       - uv run fip build-gold-region-codes --table-id 83625NED --run-id smoke-load --raw-target s3
       - uv run fip ingest-cbs --table-id 83625NED --run-id smoke-load --raw-target s3
-      - uv run fip ingest-bag --collection verblijfsobject --run-id smoke-load --limit 25 --progress-every 5 --raw-target s3
-      - uv run fip ingest-bag --collection pand --run-id smoke-load --limit 25 --progress-every 5 --raw-target s3
-      - uv run fip ingest-bag --collection adres --run-id smoke-load --limit 25 --progress-every 5 --raw-target s3
+      - uv run fip ingest-bag-gpkg --run-id smoke-load --layer verblijfsobject --raw-target s3 --limit 25 --progress-every 5
+      - uv run fip ingest-bag-gpkg --run-id smoke-load --layer pand --raw-target s3 --limit 25 --progress-every 5
+      - uv run fip ingest-bag-gpkg --run-id smoke-load --layer woonplaats --raw-target s3 --limit 25 --progress-every 5
+      - uv run fip ingest-bag-gpkg --run-id smoke-load --layer ligplaats --raw-target s3 --limit 25 --progress-every 5
+      - uv run fip ingest-bag-gpkg --run-id smoke-load --layer standplaats --raw-target s3 --limit 25 --progress-every 5
       - uv run fip build-cbs-silver-observations --table cbs_observations_83625ned --run-id smoke-load
-      - uv run fip build-bag-silver-verblijfsobject --run-id smoke-load
-      - uv run fip build-bag-silver-pand --run-id smoke-load
-      - uv run fip build-bag-silver-adressen --run-id smoke-load
+      - uv run fip build-bag-gpkg-silver-verblijfsobject --run-id smoke-load
+      - uv run fip build-bag-gpkg-silver-pand --run-id smoke-load
+      - uv run fip build-bag-gpkg-silver-woonplaats --run-id smoke-load
+      - uv run fip build-bag-gpkg-silver-ligplaats --run-id smoke-load
+      - uv run fip build-bag-gpkg-silver-standplaats --run-id smoke-load
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id smoke-load
       - uv run fip archive-cbs-raw --table-id 85036NED --run-id smoke-load --target s3
       - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id smoke-load --raw-target s3
@@ -301,42 +183,15 @@ tasks:
       - uv run fip ingest-cbs --table-id 85035NED --run-id smoke-load --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85035ned --silver-table cbs_observations_flat_85035ned --run-id smoke-load
       - uv run fip build-landing-observations --table cbs_observations_flat_85035ned --landing-table cbs_observations_85035ned --run-id smoke-load
-      - uv run fip build-bag-landing-verblijfsobject --run-id smoke-load
-      - uv run fip build-bag-landing-pand --run-id smoke-load
-      - uv run fip build-bag-landing-adressen --run-id smoke-load
-      - uv run fip build-bag-geo-region-mapping --table bag_adressen_flat --run-id smoke-load --limit 25 --rows 5
+      - uv run fip build-bag-gpkg-landing-verblijfsobject --run-id smoke-load
+      - uv run fip build-bag-gpkg-landing-pand --run-id smoke-load
+      - uv run fip build-bag-gpkg-landing-woonplaats --run-id smoke-load
+      - uv run fip build-bag-gpkg-landing-ligplaats --run-id smoke-load
+      - uv run fip build-bag-gpkg-landing-standplaats --run-id smoke-load
       - task: load-region-geom
-      - task: dbt-run
+      - uv run --project sql dbt run --project-dir sql --profiles-dir sql --select +mart_municipality_overview +mart_bag_data_quality_by_municipality +mart_municipality_housing_snapshot --exclude stg_cbs_eigendom_codes stg_cbs_observations_85036 dim_eigendom mart_municipality_woz_snapshot source:landing.cbs_eigendom_codes source:landing.cbs_observations_85036ned
       - task: dbt-run-woz
       - task: dbt-test-smoke
-
-  load-bag-gpkg-smoke:
-    desc: "Smoke-test the BAG GeoPackage v2 flow with a small limit"
-    cmds:
-      - task: infra-init
-      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer verblijfsobject --target s3 --limit 25
-      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer pand --target s3 --limit 25
-      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer woonplaats --target s3 --limit 25
-      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer ligplaats --target s3 --limit 25
-      - uv run fip archive-bag-gpkg --run-id bag-gpkg-smoke --source-ref data/pdok-bag/bag-light.gpkg --layer standplaats --target s3 --limit 25
-      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer verblijfsobject --raw-target s3 --limit 25 --progress-every 5
-      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer pand --raw-target s3 --limit 25 --progress-every 5
-      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer woonplaats --raw-target s3 --limit 25 --progress-every 5
-      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer ligplaats --raw-target s3 --limit 25 --progress-every 5
-      - uv run fip ingest-bag-gpkg --run-id bag-gpkg-smoke --layer standplaats --raw-target s3 --limit 25 --progress-every 5
-      - uv run fip build-bag-gpkg-silver-verblijfsobject --run-id bag-gpkg-smoke
-      - uv run fip build-bag-gpkg-silver-pand --run-id bag-gpkg-smoke
-      - uv run fip build-bag-gpkg-silver-woonplaats --run-id bag-gpkg-smoke
-      - uv run fip build-bag-gpkg-silver-ligplaats --run-id bag-gpkg-smoke
-      - uv run fip build-bag-gpkg-silver-standplaats --run-id bag-gpkg-smoke
-      - uv run fip build-bag-gpkg-landing-verblijfsobject --run-id bag-gpkg-smoke
-      - uv run fip build-bag-gpkg-landing-pand --run-id bag-gpkg-smoke
-      - uv run fip build-bag-gpkg-landing-woonplaats --run-id bag-gpkg-smoke
-      - uv run fip build-bag-gpkg-landing-ligplaats --run-id bag-gpkg-smoke
-      - uv run fip build-bag-gpkg-landing-standplaats --run-id bag-gpkg-smoke
-      - task: load-region-geom
-      - uv run --project sql dbt run --project-dir sql --profiles-dir sql --select +bridge_bag_gpkg_verblijfsobject_to_region_spatial
-      - uv run --project sql dbt test --project-dir sql --profiles-dir sql --select stg_bag_gpkg_verblijfsobject stg_bag_gpkg_verblijfsobject_spatial bridge_bag_gpkg_verblijfsobject_to_region_spatial
 
   check:
     desc: Run the standard local quality gate
