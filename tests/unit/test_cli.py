@@ -532,6 +532,164 @@ def test_archive_bag_gpkg_command_wires_source_and_writes_jsonl(
 
 
 @pytest.mark.parametrize(
+    ("target", "expected_writer"),
+    [
+        ("local", "local"),
+        ("s3", "s3"),
+    ],
+)
+def test_archive_onderwijsinspectie_raw_command_writes_records(
+    monkeypatch, target: str, expected_writer: str
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSource:
+        name = "onderwijsinspectie"
+        schema_version = "v1"
+
+        def __init__(self, source_ref: str, run_id: str) -> None:
+            calls["source_ref"] = source_ref
+            calls["run_id"] = run_id
+
+        def iter_records(self):
+            yield RawRecord(
+                source_name="onderwijsinspectie",
+                entity_name="inspection.schools",
+                natural_key="school-001",
+                retrieved_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+                run_id="inspectie-load",
+                payload={"school_id": "school-001", "school_name": "De School"},
+                schema_version="v1",
+                http_status=200,
+            )
+
+    class FakeLocalWriter:
+        def __init__(self, base_dir: str) -> None:
+            calls["writer"] = "local"
+            calls["base_dir"] = base_dir
+
+        def open_for_record(self, record: RawRecord):
+            calls["record"] = record
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    rows = cast(list[str], calls.setdefault("rows", []))
+                    if value != "\n":
+                        rows.append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
+
+    class FakeS3Writer:
+        def __init__(self) -> None:
+            calls["writer"] = "s3"
+
+        def open_for_record(self, record: RawRecord):
+            calls["record"] = record
+
+            class FakeHandle:
+                def write(self, value: str) -> None:
+                    rows = cast(list[str], calls.setdefault("rows", []))
+                    if value != "\n":
+                        rows.append(value)
+
+                def close(self) -> None:
+                    return None
+
+            return FakeHandle()
+
+    class FakeLocalManifestWriter:
+        def __init__(self, base_dir: str) -> None:
+            calls["manifest_writer"] = "local"
+            calls["manifest_base_dir"] = base_dir
+
+        def write(self, manifest):
+            calls["manifest"] = manifest
+            return None
+
+    class FakeS3ManifestWriter:
+        def __init__(self) -> None:
+            calls["manifest_writer"] = "s3"
+
+        def write(self, manifest):
+            calls["manifest"] = manifest
+            return None
+
+    class FakeSourceRunLandingWriter:
+        def write(self, manifests) -> int:
+            rows = list(manifests)
+            calls["source_run_writer"] = "called"
+            calls["source_run_manifests"] = rows
+            return len(rows)
+
+    monkeypatch.setattr("fip.commands.onderwijsinspectie.OnderwijsInspectieSource", FakeSource)
+    monkeypatch.setattr("fip.commands.onderwijsinspectie.RawSnapshotWriter", FakeLocalWriter)
+    monkeypatch.setattr("fip.commands.onderwijsinspectie.S3RawSnapshotWriter", FakeS3Writer)
+    monkeypatch.setattr(
+        "fip.commands.onderwijsinspectie.LocalManifestWriter",
+        FakeLocalManifestWriter,
+    )
+    monkeypatch.setattr(
+        "fip.commands.onderwijsinspectie.S3ManifestWriter",
+        FakeS3ManifestWriter,
+    )
+    monkeypatch.setattr(
+        "fip.commands.onderwijsinspectie.SourceRunLandingWriter",
+        FakeSourceRunLandingWriter,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "archive-onderwijsinspectie-raw",
+            "--source-ref",
+            "data/onderwijsinspectie/sample.csv",
+            "--run-id",
+            "inspectie-load",
+            "--target",
+            target,
+            "--output-dir",
+            ".raw-smoke",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 raw records\n"
+    assert calls["source_ref"] == "data/onderwijsinspectie/sample.csv"
+    assert calls["run_id"] == "inspectie-load"
+    assert calls["writer"] == expected_writer
+    rows = cast(list[str], calls["rows"])
+    assert len(rows) == 1
+    assert '"entity_name": "inspection.schools"' in rows[0]
+    assert '"source_name": "onderwijsinspectie"' in rows[0]
+    if target == "local":
+        assert calls["base_dir"] == ".raw-smoke"
+        assert calls["manifest_base_dir"] == Path(".raw-smoke")
+    assert calls["manifest_writer"] == expected_writer
+    assert calls["source_run_writer"] == "called"
+    assert len(calls["source_run_manifests"]) == 1
+    manifest = calls["manifest"]
+    assert manifest.source_name == "onderwijsinspectie"
+    assert manifest.source_family == "inspection"
+    assert manifest.run_id == "inspectie-load"
+    assert manifest.source_version == "v1"
+    assert manifest.row_count == 1
+    assert manifest.status == "success"
+    assert manifest.error_message is None
+    assert manifest.source_url == "data/onderwijsinspectie/sample.csv"
+    assert manifest.license == "unknown"
+    assert manifest.attribution == "Inspectie van het Onderwijs"
+    if target == "local":
+        assert (
+            Path(manifest.raw_uri) == Path(".raw-smoke") / "raw" / "inspection" / "inspectie-load"
+        )
+    else:
+        assert manifest.raw_uri.endswith("/raw/inspection/inspectie-load/")
+
+
+@pytest.mark.parametrize(
     ("command", "expected_entity", "expected_table_name", "expected_natural_key"),
     [
         (
