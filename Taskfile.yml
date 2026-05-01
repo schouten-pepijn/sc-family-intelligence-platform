@@ -207,7 +207,7 @@ tasks:
       - uv run fip build-landing-observations --table cbs_observations_flat_83625ned --run-id load-all
       - uv run fip archive-cbs-raw --table-id 85036NED --run-id load-all --target s3
       - uv run fip build-gold-eigendom-codes --table-id 85036NED --run-id load-all --raw-target s3
-      - uv run fip ingest-cbs --table-id 85036NED --run-id load-all --limit 10000 --raw-target s3
+      - uv run fip ingest-cbs --table-id 85036NED --run-id load-all --raw-target s3
       - uv run fip build-cbs-silver-observations --table cbs_observations_85036ned --silver-table cbs_observations_flat_85036ned --run-id load-all
       - uv run fip build-landing-observations --table cbs_observations_flat_85036ned --landing-table cbs_observations_85036ned --run-id load-all
       - uv run fip archive-cbs-raw --table-id 85035NED --run-id load-all --target s3
