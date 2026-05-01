@@ -440,4 +440,3 @@ def build_bag_gpkg_landing_standplaats(
     ),
 ) -> None:
     _build_bag_gpkg_landing_layer("standplaats", table_name, namespace, run_id)
-
