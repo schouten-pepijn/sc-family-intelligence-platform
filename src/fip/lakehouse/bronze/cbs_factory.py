@@ -9,6 +9,8 @@ class CBSIcebergSinkFactory:
         "MeasureCodes": "measure_codes",
         "PeriodenCodes": "perioden_codes",
         "RegioSCodes": "regios_codes",
+        "EigendomCodes": "eigendom_codes",
+        "SoortMisdrijfCodes": "soort_misdrijf_codes",
     }
 
     def __init__(self, namespace: str = "bronze") -> None:
