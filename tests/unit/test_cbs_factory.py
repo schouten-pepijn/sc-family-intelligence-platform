@@ -20,6 +20,24 @@ def test_cbs_iceberg_sink_factory_routes_measure_codes_entity_to_expected_table(
     assert sink.table_ident == "bronze.cbs_measure_codes_83625ned"
 
 
+def test_cbs_iceberg_sink_factory_routes_eigendom_codes_to_expected_table() -> None:
+    factory = CBSIcebergSinkFactory()
+
+    sink = factory.for_entity("85036NED.EigendomCodes")
+
+    assert isinstance(sink, IcebergSink)
+    assert sink.table_ident == "bronze.cbs_eigendom_codes_85036ned"
+
+
+def test_cbs_iceberg_sink_factory_routes_crime_type_codes_to_expected_table() -> None:
+    factory = CBSIcebergSinkFactory()
+
+    sink = factory.for_entity("83648NED.SoortMisdrijfCodes")
+
+    assert isinstance(sink, IcebergSink)
+    assert sink.table_ident == "bronze.cbs_soort_misdrijf_codes_83648ned"
+
+
 def test_cbs_iceberg_sink_factory_raises_for_invalid_entity_name_format() -> None:
     factory = CBSIcebergSinkFactory()
 
