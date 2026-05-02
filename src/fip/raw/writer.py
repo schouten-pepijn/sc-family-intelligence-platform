@@ -58,7 +58,7 @@ class RawSnapshotWriter:
         return cast(RawSnapshotWriteHandle, path.open("w", encoding="utf-8"))
 
     def _snapshot_path(self, record: RawRecord) -> Path:
-        if record.source_name == "cbs_statline":
+        if record.source_name in {"cbs_statline", "cbs_crime"}:
             table_id, entity = record.entity_name.split(".", maxsplit=1)
             return self.base_dir / "raw" / "cbs" / table_id / record.run_id / f"{entity}.jsonl"
         if record.source_name == "bag_pdok":
@@ -118,7 +118,7 @@ class S3RawSnapshotWriter:
         )
 
     def _snapshot_path(self, record: RawRecord) -> str:
-        if record.source_name == "cbs_statline":
+        if record.source_name in {"cbs_statline", "cbs_crime"}:
             table_id, entity = record.entity_name.split(".", maxsplit=1)
             return f"s3://{self.bucket}/raw/cbs/{table_id}/{record.run_id}/{entity}.jsonl"
         if record.source_name == "bag_pdok":

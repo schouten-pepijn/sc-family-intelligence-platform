@@ -81,9 +81,7 @@ def test_inspection_source_resolves_page_download(monkeypatch) -> None:
                 200,
                 request=request,
                 content=ods_bytes,
-                headers={
-                    "content-type": "application/vnd.oasis.opendocument.spreadsheet"
-                },
+                headers={"content-type": "application/vnd.oasis.opendocument.spreadsheet"},
             )
         raise AssertionError(f"Unexpected URL requested: {url}")
 
@@ -131,7 +129,7 @@ def _build_ods_content(rows: list[tuple[str, ...]]) -> str:
     for row in rows:
         cells = "".join(
             (
-                "<table:table-cell office:value-type=\"string\">"
+                '<table:table-cell office:value-type="string">'
                 f"<text:p>{escape(cell)}</text:p>"
                 "</table:table-cell>"
             )
@@ -141,13 +139,11 @@ def _build_ods_content(rows: list[tuple[str, ...]]) -> str:
 
     return (
         '<?xml version="1.0" encoding="UTF-8"?>'
-        '<office:document-content '
+        "<office:document-content "
         'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" '
         'xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" '
         'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0">'
         "<office:body><office:spreadsheet>"
-        '<table:table table:name="Sheet1">'
-        + "".join(header_rows)
-        + "</table:table>"
+        '<table:table table:name="Sheet1">' + "".join(header_rows) + "</table:table>"
         "</office:spreadsheet></office:body></office:document-content>"
     )

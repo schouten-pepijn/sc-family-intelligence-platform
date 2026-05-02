@@ -43,6 +43,25 @@ def test_raw_snapshot_writer_writes_jsonl(tmp_path: Path) -> None:
     assert path.read_text(encoding="utf-8").count("\n") == 2
 
 
+def test_raw_snapshot_writer_writes_cbs_crime_jsonl(tmp_path: Path) -> None:
+    writer = RawSnapshotWriter(base_dir=tmp_path)
+    records = [
+        make_record(
+            "83648NED.Observations",
+            "1",
+            {"Id": 1, "Measure": "M004200_2"},
+            source_name="cbs_crime",
+        )
+    ]
+
+    written = writer.write(records)
+
+    assert written == 1
+    path = tmp_path / "raw" / "cbs" / "83648NED" / "debug-raw" / "Observations.jsonl"
+    assert path.exists()
+    assert path.read_text(encoding="utf-8").count("\n") == 1
+
+
 def test_serialize_raw_record_returns_json_payload() -> None:
     record = make_record(
         "83625NED.MeasureCodes",
@@ -95,6 +114,50 @@ def test_s3_raw_snapshot_writer_writes_jsonl(monkeypatch) -> None:
     content = writer.filesystem.buffers[path].getvalue()
     assert content.startswith('{"source_name": "cbs_statline"')
     assert content.count("\n") == 2
+
+
+def test_s3_raw_snapshot_writer_writes_cbs_crime_jsonl(monkeypatch) -> None:
+    class FakeFile:
+        def __init__(self, buffer: io.StringIO) -> None:
+            self.buffer = buffer
+
+        def __enter__(self) -> io.StringIO:
+            return self.buffer
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+    class FakeS3FileSystem:
+        def __init__(self, *args, **kwargs) -> None:
+            self.paths: list[str] = []
+            self.buffers: dict[str, io.StringIO] = {}
+
+        def open(self, path: str, mode: str, encoding: str = "utf-8") -> FakeFile:
+            self.paths.append(path)
+            buffer = io.StringIO()
+            self.buffers[path] = buffer
+            return FakeFile(buffer)
+
+    monkeypatch.setattr("fip.raw.writer.s3fs.S3FileSystem", FakeS3FileSystem)
+
+    writer = S3RawSnapshotWriter(bucket="fip-lakehouse")
+    records = [
+        make_record(
+            "83648NED.Observations",
+            "1",
+            {"Id": 1, "Measure": "M004200_2"},
+            source_name="cbs_crime",
+        )
+    ]
+
+    written = writer.write(records)
+
+    assert written == 1
+    path = "s3://fip-lakehouse/raw/cbs/83648NED/debug-raw/Observations.jsonl"
+    assert writer.filesystem.paths == [path]
+    content = writer.filesystem.buffers[path].getvalue()
+    assert content.startswith('{"source_name": "cbs_crime"')
+    assert content.count("\n") == 1
 
 
 def test_raw_snapshot_writer_writes_bag_jsonl(tmp_path: Path) -> None:

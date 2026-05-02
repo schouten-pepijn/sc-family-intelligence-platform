@@ -117,7 +117,7 @@ class S3ManifestWriter:
 def local_manifest_path(
     base_dir: Path, source_name: str, run_id: str, table_id: str | None = None
 ) -> Path:
-    if source_name == "cbs_statline":
+    if source_name in {"cbs_statline", "cbs_crime"}:
         if table_id is None:
             raise ValueError("table_id is required for CBS manifests")
         return base_dir / "raw" / "cbs" / table_id / run_id / "manifest.json"
@@ -132,7 +132,7 @@ def local_manifest_path(
 
 
 def s3_manifest_uri(bucket: str, source_name: str, run_id: str, table_id: str | None = None) -> str:
-    if source_name == "cbs_statline":
+    if source_name in {"cbs_statline", "cbs_crime"}:
         if table_id is None:
             raise ValueError("table_id is required for CBS manifests")
         return f"s3://{bucket}/raw/cbs/{table_id}/{run_id}/manifest.json"

@@ -45,6 +45,17 @@ def test_local_manifest_path_for_cbs(tmp_path: Path) -> None:
     assert path == tmp_path / "raw" / "cbs" / "83625NED" / "run-001" / "manifest.json"
 
 
+def test_local_manifest_path_for_cbs_crime(tmp_path: Path) -> None:
+    path = local_manifest_path(
+        base_dir=tmp_path,
+        source_name="cbs_crime",
+        run_id="run-001",
+        table_id="83648NED",
+    )
+
+    assert path == tmp_path / "raw" / "cbs" / "83648NED" / "run-001" / "manifest.json"
+
+
 def test_s3_manifest_uri_for_bag_gpkg() -> None:
     uri = s3_manifest_uri(
         bucket="fip-lakehouse",
