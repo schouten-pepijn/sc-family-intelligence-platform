@@ -6,9 +6,16 @@ from pathlib import Path
 import typer
 
 from fip.cli import app
+from fip.commands._helpers import read_bronze_rows
 from fip.gold.source_runs_writer import SourceRunLandingWriter
 from fip.ingestion.base import RawRecord
 from fip.ingestion.cbs_crime.adapter import CBSCrimeSource
+from fip.lakehouse.silver.cbs_crime.cbs_crime_observations_service import (
+    write_bronze_rows_to_cbs_crime_observation_sink,
+)
+from fip.lakehouse.silver.cbs_crime.cbs_crime_observations_sink import (
+    CBSCrimeObservationSink,
+)
 from fip.raw.manifest import LocalManifestWriter, S3ManifestWriter, SourceRunManifest
 from fip.raw.writer import RawSnapshotWriter, S3RawSnapshotWriter
 from fip.settings import get_settings
@@ -76,3 +83,34 @@ def archive_cbs_crime_raw(
         SourceRunLandingWriter().write([manifest])
 
     typer.echo(f"Wrote {written} raw records")
+
+
+@app.command("build-cbs-crime-silver-observations")
+def build_cbs_crime_silver_observations(
+    table_name: str = typer.Option(
+        "cbs_observations_83648ned",
+        "--table",
+        help="Bronze CBS crime observations table name to transform into Silver.",
+    ),
+    silver_table_name: str = typer.Option(
+        "cbs_crime_observations_flat_83648ned",
+        "--silver-table",
+        help="Silver CBS crime observations table name to write to.",
+    ),
+    run_id: str = typer.Option(
+        "debug-raw",
+        help="Bronze run identifier to materialize into Silver.",
+    ),
+    namespace: str | None = typer.Option(
+        None,
+        help="Bronze Iceberg namespace. Defaults to configured bronze namespace.",
+    ),
+) -> None:
+    bronze_rows = read_bronze_rows(table_name=table_name, namespace=namespace, run_id=run_id)
+    silver_namespace = get_settings().silver_namespace
+    sink = CBSCrimeObservationSink(
+        table_ident=f"{silver_namespace}.{silver_table_name}",
+    )
+
+    written = write_bronze_rows_to_cbs_crime_observation_sink(bronze_rows, sink)
+    typer.echo(f"Wrote {written} Silver crime rows")
