@@ -136,3 +136,61 @@ def test_archive_cbs_crime_raw_command_writes_records(monkeypatch) -> None:
     assert manifest.license == "cbs_open_data"
     assert manifest.attribution == "CBS StatLine"
     assert Path(manifest.raw_uri) == Path(".raw-smoke") / "raw" / "cbs" / "83648NED" / "crime-run"
+
+
+def test_build_cbs_crime_silver_observations_command_reads_bronze_and_writes_silver(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSilverSink:
+        def __init__(self, table_ident: str) -> None:
+            self.table_ident = table_ident
+            calls["table_ident"] = table_ident
+
+    def fake_read_bronze_rows(
+        table_name: str,
+        namespace: str | None,
+        run_id: str | None,
+    ) -> list[dict[str, object]]:
+        calls["table_name"] = table_name
+        calls["namespace"] = namespace
+        calls["run_id"] = run_id
+        return [{"source_name": "cbs_crime"}]
+
+    def fake_write_bronze_rows_to_sink(
+        bronze_rows: list[dict[str, object]],
+        sink: object,
+    ) -> int:
+        calls["bronze_rows"] = bronze_rows
+        calls["sink"] = sink
+        return 1
+
+    monkeypatch.setattr("fip.commands.cbs_crime.read_bronze_rows", fake_read_bronze_rows)
+    monkeypatch.setattr("fip.commands.cbs_crime.CBSCrimeObservationSink", FakeSilverSink)
+    monkeypatch.setattr(
+        "fip.commands.cbs_crime.write_bronze_rows_to_cbs_crime_observation_sink",
+        fake_write_bronze_rows_to_sink,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "build-cbs-crime-silver-observations",
+            "--table",
+            "cbs_observations_83648ned",
+            "--silver-table",
+            "cbs_crime_observations_flat_83648ned",
+            "--run-id",
+            "crime-run",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "Wrote 1 Silver crime rows\n"
+    assert calls["table_name"] == "cbs_observations_83648ned"
+    assert calls["namespace"] is None
+    assert calls["run_id"] == "crime-run"
+    assert calls["table_ident"] == "silver.cbs_crime_observations_flat_83648ned"
+    assert calls["bronze_rows"] == [{"source_name": "cbs_crime"}]
+    assert isinstance(calls["sink"], FakeSilverSink)
