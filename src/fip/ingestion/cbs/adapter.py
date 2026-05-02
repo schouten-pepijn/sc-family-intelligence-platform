@@ -12,6 +12,7 @@ class CBSODataSource:
     ENTITIES = ("Observations", "MeasureCodes", "PeriodenCodes", "RegioSCodes")
     EXTRA_ENTITIES_BY_TABLE_ID = {
         "85036NED": ("EigendomCodes",),
+        "83648NED": ("SoortMisdrijfCodes",),
     }
     ENTITY_KEY_FIELDS = {
         "Observations": ("Id",),
@@ -19,6 +20,7 @@ class CBSODataSource:
         "PeriodenCodes": ("Id", "Key", "Identifier"),
         "RegioSCodes": ("Id", "Key", "Identifier"),
         "EigendomCodes": ("Id", "Key", "Identifier"),
+        "SoortMisdrijfCodes": ("Id", "Key", "Identifier"),
     }
 
     name = "cbs_statline"

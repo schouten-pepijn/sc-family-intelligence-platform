@@ -15,6 +15,7 @@ def main() -> None:
 
 # Register command modules; imports must come after `app` is defined.
 from fip.commands import cbs as _cbs  # noqa: E402,F401
+from fip.commands import cbs_crime as _cbs_crime  # noqa: E402,F401
 from fip.commands import gis as _gis  # noqa: E402,F401
 from fip.commands import inspection as _inspection  # noqa: E402,F401
 from fip.commands import onderwijsinspectie as _onderwijsinspectie  # noqa: E402,F401
