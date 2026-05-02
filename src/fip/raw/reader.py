@@ -10,6 +10,16 @@ import s3fs  # type: ignore[import-untyped]
 from fip.ingestion.base import RawRecord
 from fip.settings import Settings, get_settings
 
+CBS_ENTITIES = ("Observations", "MeasureCodes", "PeriodenCodes", "RegioSCodes")
+CBS_EXTRA_ENTITIES_BY_TABLE_ID = {
+    "85036NED": ("EigendomCodes",),
+    "83648NED": ("SoortMisdrijfCodes",),
+}
+
+
+def cbs_entities_for_table(table_id: str) -> tuple[str, ...]:
+    return CBS_ENTITIES + CBS_EXTRA_ENTITIES_BY_TABLE_ID.get(table_id, ())
+
 
 def deserialize_raw_record(line: str) -> RawRecord:
     data = json.loads(line)
@@ -30,7 +40,7 @@ class RawSnapshotReader:
         self.base_dir = Path(base_dir)
 
     def iter_cbs_records(self, table_id: str, run_id: str) -> Iterator[RawRecord]:
-        for entity in ("Observations", "MeasureCodes", "PeriodenCodes", "RegioSCodes"):
+        for entity in cbs_entities_for_table(table_id):
             yield from self.iter_cbs_entity_records(table_id=table_id, run_id=run_id, entity=entity)
 
     def iter_cbs_entity_records(
@@ -71,7 +81,7 @@ class S3RawSnapshotReader:
         self.filesystem = filesystem or self._build_filesystem(settings)
 
     def iter_cbs_records(self, table_id: str, run_id: str) -> Iterator[RawRecord]:
-        for entity in ("Observations", "MeasureCodes", "PeriodenCodes", "RegioSCodes"):
+        for entity in cbs_entities_for_table(table_id):
             yield from self.iter_cbs_entity_records(table_id=table_id, run_id=run_id, entity=entity)
 
     def iter_cbs_entity_records(
