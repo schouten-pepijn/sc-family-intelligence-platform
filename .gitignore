@@ -19,6 +19,9 @@ sql/.venv/
 # Local environment files
 .env
 
+# temp files
+tests/unit/.tmp_onderwijsinspectie/
+
 # local files
 .duckdb/
 notes/
